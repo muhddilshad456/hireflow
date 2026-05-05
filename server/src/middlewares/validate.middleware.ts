@@ -1,6 +1,7 @@
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { Request, Response, NextFunction } from "express";
+import { logger } from "../utils/logger.util";
 
 export const validateDto =
   (dtoClass: any) =>
@@ -11,12 +12,24 @@ export const validateDto =
       forbidNonWhitelisted: true,
     });
     if (errors.length > 0) {
+      const formattedErrors = errors.map((err) => ({
+        field: err.property,
+        messages: Object.values(err.constraints || {}),
+      }));
+
+      logger.error(
+        {
+          route: req.originalUrl,
+          method: req.method,
+          body: req.body,
+          validationErrors: formattedErrors,
+        },
+        "DTO validation failed",
+      );
+
       return res.status(400).json({
         message: "Validation failed",
-        errors: errors.map((err) => ({
-          field: err.property,
-          constraints: err.constraints,
-        })),
+        errors: formattedErrors,
       });
     }
     req.body = dtoObject;

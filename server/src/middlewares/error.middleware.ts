@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { BaseError } from "../errors/base.error.js";
+import { ResponseHandler } from "../utils/responseHandler.js";
+import { HttpStatus } from "../constants/httpStatus.js";
 
 export const errorMiddleware = (
   err: Error,
@@ -7,16 +9,19 @@ export const errorMiddleware = (
   res: Response,
   next: NextFunction,
 ) => {
-  console.error("❌ Error:", err.message);
-  console.error("📍 Stack Trace:", err.stack);
-
   if (err instanceof BaseError) {
-    return res
-      .status(err.statusCode)
-      .json({ success: false, message: err.message });
+    return ResponseHandler.error(
+      res,
+      err.message,
+      err.statusCode,
+      err.constructor.name,
+    );
   }
 
-  return res
-    .status(500)
-    .json({ success: false, message: "Internal Server Error" });
+  return ResponseHandler.error(
+    res,
+    "Internal Server Error",
+    HttpStatus.INTERNAL_SERVER_ERROR,
+    "Internal Server Error",
+  );
 };

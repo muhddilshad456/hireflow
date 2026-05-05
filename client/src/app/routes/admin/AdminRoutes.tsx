@@ -1,0 +1,39 @@
+import { Routes, Route } from "react-router-dom";
+import Login from "../../../features/admin/auth/pages/Login";
+import { AdminLayout } from "./AdminLayout";
+import { Dashboard } from "../../../features/admin/dashboard/pages/DashBoard";
+import { CompanyManagement } from "../../../features/admin/dashboard/pages/CompanyMangement";
+import { UserManagement } from "../../../features/admin/dashboard/pages/UserManagement";
+import { AuditReports } from "../../../features/admin/dashboard/pages/AuditReport";
+import { JobManagement } from "../../../features/admin/dashboard/pages/JobManagement";
+import { NotFound } from "../../../features/shared/pages/NotFound";
+import ForgotPassword from "../../../features/admin/auth/pages/ForgotPassword";
+import ResetPassword from "../../../features/admin/auth/pages/ResetPassword";
+import ProtectedRoute from "../../../routes/ProtectedRoute";
+import PublicRoute from "../../../routes/PublicRoute";
+
+const AdminRoutes = () => {
+  return (
+    <>
+      <Routes>
+        <Route element={<PublicRoute redirectTo="/admin/dashboard" />}>
+          <Route path="login" element={<Login />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
+        <Route element={<ProtectedRoute redirectTo="/admin/login" />}>
+          <Route path="/" element={<AdminLayout />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="companies" element={<CompanyManagement />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="jobs" element={<JobManagement />} />
+            <Route path="audit-report" element={<AuditReports />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Route>
+      </Routes>
+    </>
+  );
+};
+
+export default AdminRoutes;
