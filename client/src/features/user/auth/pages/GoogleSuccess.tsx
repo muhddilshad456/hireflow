@@ -34,10 +34,17 @@ export function GoogleSuccess() {
       try {
         const result = await getUsersApi();
 
+        const userData = result.data;
+
         dispatch(
           setCredentials({
             token,
-            user: result.data,
+            user: {
+              id: userData._id,
+              email: userData.email,
+              name: userData.name,
+              role: userData.role,
+            },
           }),
         );
 

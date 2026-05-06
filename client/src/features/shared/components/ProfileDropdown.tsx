@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 interface UserDropdownProps {
   avatarUrl: string;
@@ -27,26 +28,28 @@ export function ProfileDropdown({
       />
 
       {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 top-full pt-2 w-36">
-          {/* This wrapper prevents gap */}
-          <div className="bg-white border border-gray-100 rounded-lg shadow-md overflow-hidden">
-            <button
-              onClick={onProfile}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-            >
-              Profile
-            </button>
+      {open &&
+        createPortal(
+          <div className="fixed z-[9999] right-6 top-12 w-36">
+            {/* This wrapper prevents gap */}
+            <div className="bg-white border border-gray-100 rounded-lg shadow-md overflow-hidden">
+              <button
+                onClick={onProfile}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Profile
+              </button>
 
-            <button
-              onClick={onLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      )}
+              <button
+                onClick={onLogout}
+                className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+              >
+                Logout
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -39,7 +39,7 @@ export function UserManagement() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const limit = 2;
+  const limit = 4;
 
   const fetchUsers = async () => {
     try {
@@ -115,9 +115,9 @@ export function UserManagement() {
                     {h}
                   </th>
                 ))}
-                <th className="text-left px-4 md:px-6 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
+                {/* <th className="text-left px-4 md:px-6 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
                   Profile
-                </th>
+                </th> */}
                 <th className="text-left px-4 md:px-6 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
                   Actions
                 </th>
@@ -165,11 +165,11 @@ export function UserManagement() {
                       </span>
                     </td>
 
-                    <td className="px-4 md:px-6 py-4">
+                    {/* <td className="px-4 md:px-6 py-4">
                       <button className="text-violet-500 font-semibold hover:text-violet-700 text-[13px] whitespace-nowrap hover:underline underline-offset-2 transition-colors">
                         View Details
                       </button>
-                    </td>
+                    </td> */}
 
                     <td className="px-4 md:px-6 py-4">
                       <button

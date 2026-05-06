@@ -5,18 +5,19 @@ import { AuthRequest } from "../../../../middlewares/auth.middleware.js";
 import { injectable, inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
 import { ResponseHandler } from "../../../../utils/responseHandler";
+import { IAuthController } from "../interface/IAuthController.js";
 
 @injectable()
-export class AuthController {
+export class AuthController implements IAuthController {
   constructor(@inject(TYPES.AuthService) private authService: IAuthService) {}
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
       const result = await this.authService.signup(dto);
-      return ResponseHandler.success(res, result.message, {
+      ResponseHandler.success(res, "Otp send successfully", {
         email: result.email,
       });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -36,7 +37,7 @@ export class AuthController {
         user,
         accessToken,
       });
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -44,11 +45,8 @@ export class AuthController {
   async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
-      const result = await this.authService.verifyOtp(dto);
-      res.status(200).json({
-        success: true,
-        ...result,
-      });
+      await this.authService.verifyOtp(dto);
+      ResponseHandler.success(res, "Otp verified successfully");
     } catch (error) {
       next(error);
     }
@@ -57,11 +55,8 @@ export class AuthController {
   async resendOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto: ResendOtpDto = req.body;
-      const result = await this.authService.resendOtp(dto.email);
-      res.status(200).json({
-        success: true,
-        ...result,
-      });
+      await this.authService.resendOtp(dto.email);
+      ResponseHandler.success(res, "Resend otp successfully");
     } catch (error) {
       next(error);
     }
@@ -102,7 +97,7 @@ export class AuthController {
     try {
       const tdo = req.body;
       const result = await this.authService.resetPassword(tdo);
-      return ResponseHandler.success(res, "Password changed successfully..");
+      ResponseHandler.success(res, "Password changed successfully..", result);
     } catch (error) {
       next(error);
     }
@@ -113,7 +108,7 @@ export class AuthController {
       const userId = req.user?.userId;
       console.log(userId);
       const result = await this.authService.getCurrentUser(userId);
-      return ResponseHandler.success(res, "Token Check successfull..", result);
+      ResponseHandler.success(res, "Token Check successfull..", result);
     } catch (error) {
       next(error);
     }
@@ -133,20 +128,21 @@ export class AuthController {
       const code = req.query.code as string;
 
       if (!code) {
-        return res.status(400).json({ message: "No code provided" });
+        res.status(400).json({ message: "No code provided" });
+        return;
       }
 
       const result = await this.authService.handleGoogleCallback(code);
 
-      res.cookie("refreshToken", result.data.refreshToken, {
+      res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
         secure: false,
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      return res.redirect(
-        `http://localhost:5173/google-success?token=${result.data.accessToken}`,
+      res.redirect(
+        `http://localhost:5173/google-success?token=${result.accessToken}`,
       );
     } catch (error) {
       next(error);

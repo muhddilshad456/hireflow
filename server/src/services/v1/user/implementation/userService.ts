@@ -2,9 +2,9 @@ import { inject, injectable } from "inversify";
 import { IUserService } from "../interface/IUserService";
 import { TYPES } from "../../../../dependency-injection/types";
 import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
-import { IUser } from "../../../../models/user.model";
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { ConflictError } from "../../../../errors/conflict.error";
+import { GetAllUsersResponse } from "../../../../types/getAllUsers";
 
 @injectable()
 export class UserService implements IUserService {
@@ -16,7 +16,7 @@ export class UserService implements IUserService {
     limit: number,
     search: string,
     status: string,
-  ): Promise<any> {
+  ): Promise<GetAllUsersResponse> {
     const { users, totalUsers } = await this.userRepository.getAllUsers(
       page,
       limit,
@@ -26,11 +26,11 @@ export class UserService implements IUserService {
 
     const totalPages = Math.ceil(totalUsers / limit);
 
-    const formattedUsers = users.map((users: Partial<IUser>) => ({
-      id: users._id,
-      name: users.name,
-      email: users.email,
-      status: users.isBlocked ? "Blocked" : "Active",
+    const formattedUsers = users.map((user) => ({
+      id: user._id?.toString(),
+      name: user.name,
+      email: user.email,
+      status: user.isBlocked ? "Blocked" : "Active",
     }));
 
     return {
@@ -41,12 +41,12 @@ export class UserService implements IUserService {
     };
   }
 
-  async updateStatus(id: string, status: string): Promise<any> {
+  async updateStatus(id: string, status: string): Promise<void> {
     const user = await this.userRepository.findById(id);
 
     if (!user) throw new NotFoundError("user not found");
 
-    let currentStatus = user.isBlocked ? "BLOCKED" : "ACTIVE";
+    const currentStatus = user.isBlocked ? "BLOCKED" : "ACTIVE";
 
     if (status == currentStatus) {
       throw new ConflictError(`User already ${currentStatus}`);

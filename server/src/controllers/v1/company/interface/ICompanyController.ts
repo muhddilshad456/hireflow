@@ -5,5 +5,5 @@ export interface ICompanyController {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<any>;
+  ): Promise<void>;
 }

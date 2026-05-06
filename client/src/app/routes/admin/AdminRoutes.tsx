@@ -9,19 +9,19 @@ import { JobManagement } from "../../../features/admin/dashboard/pages/JobManage
 import { NotFound } from "../../../features/shared/pages/NotFound";
 import ForgotPassword from "../../../features/admin/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/admin/auth/pages/ResetPassword";
-import ProtectedRoute from "../../../routes/ProtectedRoute";
-import PublicRoute from "../../../routes/PublicRoute";
+import ProtectedRoute from "../../../routes/admin/ProtectedRoute";
+import PublicRoute from "../../../routes/admin/PublicRoute";
 
 const AdminRoutes = () => {
   return (
     <>
       <Routes>
-        <Route element={<PublicRoute redirectTo="/admin/dashboard" />}>
+        <Route element={<PublicRoute />}>
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="reset-password" element={<ResetPassword />} />
         </Route>
-        <Route element={<ProtectedRoute redirectTo="/admin/login" />}>
+        <Route element={<ProtectedRoute />}>
           <Route path="/" element={<AdminLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="companies" element={<CompanyManagement />} />

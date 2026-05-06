@@ -3,15 +3,15 @@ import { verifyAccessToken } from "../../middlewares/auth.middleware";
 import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
 import { container } from "../../dependency-injection/container";
-import { CompanyController } from "../../controllers/v1/company/implementation/companyController";
 import { TYPES } from "../../dependency-injection/types";
 import { upload } from "../../config/multer";
 import { validateDto } from "../../middlewares/validate.middleware";
 import { VerifyReqDto } from "../../dtos/v1/company/verifyReqDto";
+import { ICompanyController } from "../../controllers/v1/company/interface/ICompanyController";
 
 const router = Router();
 
-const companyController = container.get<CompanyController>(
+const companyController = container.get<ICompanyController>(
   TYPES.CompanyController,
 );
 

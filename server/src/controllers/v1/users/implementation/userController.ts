@@ -12,7 +12,7 @@ export class UserController implements IUserController {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<any> {
+  ): Promise<void> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -26,7 +26,7 @@ export class UserController implements IUserController {
         status,
       );
 
-      return ResponseHandler.success(res, "Fetched users successfully", result);
+      ResponseHandler.success(res, "Fetched users successfully", result);
     } catch (error) {
       next(error);
     }
@@ -36,13 +36,13 @@ export class UserController implements IUserController {
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<any> {
+  ): Promise<void> {
     try {
       const id = req.params.userId as string;
       const status = req.body.status as string;
       console.log();
       await this.userService.updateStatus(id, status);
-      return ResponseHandler.success(res, "Status updated successfully");
+      ResponseHandler.success(res, "Status updated successfully");
     } catch (error) {
       next(error);
     }

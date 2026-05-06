@@ -1,7 +1,7 @@
 import { injectable, inject } from "inversify";
 import { ICompanyController } from "../interface/ICompanyController";
 import { TYPES } from "../../../../dependency-injection/types";
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { ICompanyService } from "../../../../services/v1/company/interface/ICompanyService";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
@@ -15,7 +15,7 @@ export class CompanyController implements ICompanyController {
     req: AuthRequest,
     res: Response,
     next: NextFunction,
-  ): Promise<any> {
+  ): Promise<void> {
     try {
       const userId = req.user?.userId;
       const dto = req.body;
@@ -27,11 +27,7 @@ export class CompanyController implements ICompanyController {
         file,
       );
 
-      return ResponseHandler.success(
-        res,
-        "Verification Request Submitted",
-        result,
-      );
+      ResponseHandler.success(res, "Verification Request Submitted", result);
     } catch (error) {
       next(error);
     }

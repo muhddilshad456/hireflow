@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validateDto } from "../../middlewares/validate.middleware";
-import { AuthController } from "../../controllers/v1/auth/implementation/authController";
+import { IAuthController } from "../../controllers/v1/auth/interface/IAuthController";
 import { SignupDto } from "../../dtos/v1/auth/signup.dto";
 import { LoginDto } from "../../dtos/v1/auth/login.dto";
 import { VerifyOtpDto } from "../../dtos/v1/auth/verify-otp.dto";
@@ -12,7 +12,7 @@ import { ResetPasswordDto } from "../../dtos/v1/auth/reset-password.dto";
 
 const router = Router();
 
-const authController = container.get<AuthController>(TYPES.AuthController);
+const authController = container.get<IAuthController>(TYPES.AuthController);
 
 router.post(
   "/signup",

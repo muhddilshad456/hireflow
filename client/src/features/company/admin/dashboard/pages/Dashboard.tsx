@@ -3,6 +3,15 @@ import type { ReactNode, ChangeEvent } from "react";
 import type { VerificationFormData } from "../types/verification.types";
 import { verifyRequestApi } from "../services/comapanyServices";
 import toast from "react-hot-toast";
+import { ProfileDropdown } from "../../../../shared/components/ProfileDropdown";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "../../../../../hooks/reduxHooks";
+import { useNavigate } from "react-router-dom";
+import { logoutApi } from "../../../../shared/services/authService";
+import { logout } from "../../../../../redux/slice/authSlice";
+import { ConfirmModal } from "../../../../shared/components/ConfirmationModal";
 
 /* ═══════════════════════════════ TYPES ════════════════════════════════ */
 type Page = "dashboard" | "recruiter" | "reviewer" | "jobs" | "report";
@@ -603,51 +612,85 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
               cls: "text-slate-600 bg-slate-100 border-slate-200",
             };
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const logoutUser = () => setShowLogoutModal(true);
+  const cancelModal = () => setShowLogoutModal(false);
+  const userId = useAppSelector((state) => state.auth.user?.id);
+
+  const handleLogout = async () => {
+    if (!userId) {
+      console.log("userId not accesible");
+      return;
+    }
+    try {
+      await logoutApi({ id: userId });
+      dispatch(logout());
+      toast.success("Logged out");
+      navigate("/company/login");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
-    <header className="h-16 bg-white border-b border-slate-100 flex items-center gap-3 px-4 md:px-6 flex-shrink-0 z-10">
-      <button
-        onClick={onMenu}
-        className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
-      >
-        <Ico.Menu />
-      </button>
-      <div className="md:hidden flex items-center gap-2">
-        <div className="w-7 h-7">
-          <Ico.Logo />
-        </div>
-        <span className="font-black text-slate-800 text-base">HireFlow</span>
-      </div>
-
-      <div className="hidden sm:flex flex-1 max-w-xs items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
-        <span className="text-slate-400">
-          <Ico.Search />
-        </span>
-        <input
-          className="bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 w-full"
-          placeholder="Search jobs, candidates…"
-        />
-      </div>
-
-      <div className="ml-auto flex items-center gap-2.5">
-        {chip && (
-          <span
-            className={`hidden lg:flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${chip.cls}`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${status === "pending" ? "bg-amber-400 animate-pulse" : status === "rejected" ? "bg-rose-400" : "bg-slate-400"}`}
-            />
-            {chip.text}
-          </span>
-        )}
-        <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
-          <Ico.Bell />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+    <>
+      <header className="h-16 bg-white border-b border-slate-100 flex items-center gap-3 px-4 md:px-6 flex-shrink-0 z-10">
+        <button
+          onClick={onMenu}
+          className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+        >
+          <Ico.Menu />
         </button>
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-black select-none cursor-pointer">
-          A
+        <div className="md:hidden flex items-center gap-2">
+          <div className="w-7 h-7">
+            <Ico.Logo />
+          </div>
+          <span className="font-black text-slate-800 text-base">HireFlow</span>
         </div>
-      </div>
-    </header>
+
+        <div className="hidden sm:flex flex-1 max-w-xs items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+          <span className="text-slate-400">
+            <Ico.Search />
+          </span>
+          <input
+            className="bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 w-full"
+            placeholder="Search jobs, candidates…"
+          />
+        </div>
+
+        <div className="ml-auto flex items-center gap-2.5">
+          {chip && (
+            <span
+              className={`hidden lg:flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${chip.cls}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${status === "pending" ? "bg-amber-400 animate-pulse" : status === "rejected" ? "bg-rose-400" : "bg-slate-400"}`}
+              />
+              {chip.text}
+            </span>
+          )}
+          <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
+            <Ico.Bell />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+          </button>
+          <ProfileDropdown
+            avatarUrl={"https://i.pravatar.cc/40?img=12"}
+            onProfile={() => navigate("/profile")}
+            onLogout={logoutUser}
+          />
+        </div>
+      </header>
+      <ConfirmModal
+        open={showLogoutModal}
+        message="Do you want to logout"
+        title="Logout"
+        onConfirm={handleLogout}
+        onCancel={cancelModal}
+      />
+    </>
   );
 }
 

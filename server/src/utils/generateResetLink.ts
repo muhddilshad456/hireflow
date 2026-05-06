@@ -3,7 +3,7 @@ export function generateResetLink(
   role: string,
   token: string,
 ) {
-  let path = "";
+  let path;
 
   switch (role) {
     case "company_admin":

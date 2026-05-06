@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 import { BaseError } from "../errors/base.error.js";
 import { ResponseHandler } from "../utils/responseHandler.js";
 import { HttpStatus } from "../constants/httpStatus.js";

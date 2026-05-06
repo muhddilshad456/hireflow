@@ -1,14 +1,14 @@
 import { Router } from "express";
-import { UserController } from "../../controllers/v1/users/implementation/userController";
 import { container } from "../../dependency-injection/container";
 import { TYPES } from "../../dependency-injection/types";
 import { verifyAccessToken } from "../../middlewares/auth.middleware";
 import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
+import { IUserController } from "../../controllers/v1/users/interface/IUserController";
 
 const router = Router();
 
-const userController = container.get<UserController>(TYPES.UserController);
+const userController = container.get<IUserController>(TYPES.UserController);
 
 router.get(
   "/users",

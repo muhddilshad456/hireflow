@@ -321,7 +321,8 @@ const Login = () => {
       toast.success("Logged in");
       navigate("/");
     } catch (error: any) {
-      console.error("login failed : ", error);
+      toast.error(error.response?.data?.message);
+      console.error("login failed : ", error.response?.data);
     }
   };
 

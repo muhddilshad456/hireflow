@@ -2,6 +2,8 @@ import { IUserRepository } from "../interfaces/IUserRepository.js";
 import { BaseRepository } from "./base.repository.js";
 import { UserModel, IUser } from "../../../models/user.model.js";
 import { injectable } from "inversify";
+import { QueryFilter } from "mongoose";
+import { GetUsersResponse } from "../../../types/userRepo.js";
 
 @injectable()
 export class UserRepository
@@ -17,7 +19,7 @@ export class UserRepository
   async findByRefreshToken(token: string) {
     return await UserModel.findOne({ refreshToken: token });
   }
-  async removeRefreshToken(userId: string): Promise<any> {
+  async removeRefreshToken(userId: string): Promise<void> {
     await UserModel.findByIdAndUpdate(userId, { refreshToken: null });
   }
   async findByResetToken(token: string): Promise<IUser | null> {
@@ -28,10 +30,10 @@ export class UserRepository
     limit: number,
     search: string,
     status: string,
-  ): Promise<any> {
+  ): Promise<GetUsersResponse> {
     const skip = (page - 1) * limit;
 
-    let filter: any = {};
+    const filter: QueryFilter<IUser> = {};
 
     if (search) {
       filter.$or = [
@@ -40,12 +42,13 @@ export class UserRepository
       ];
     }
 
-    // 🔹 status filter
     if (status === "Blocked") {
       filter.isBlocked = true;
     } else if (status === "Active") {
       filter.isBlocked = false;
     }
+
+    filter.role = "user";
 
     const users = await UserModel.find(filter)
       .skip(skip)

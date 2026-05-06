@@ -1,10 +1,4 @@
-import {
-  IsEnum,
-  IsEmail,
-  isEnum,
-  IsNotEmpty,
-  MinLength,
-} from "class-validator";
+import { IsEnum, IsEmail, IsNotEmpty, MinLength } from "class-validator";
 
 export enum UserRole {
   USER = "user",

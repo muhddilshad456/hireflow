@@ -7,6 +7,7 @@ import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinarySer
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { VerificationStatus } from "../../../../constants/companyStatus";
 import mongoose from "mongoose";
+import { ICompanyVerification } from "../../../../models/company.verification.model";
 
 @injectable()
 export class CompanyService implements ICompanyService {
@@ -21,7 +22,7 @@ export class CompanyService implements ICompanyService {
     userId: string,
     dto: VerifyReqDto,
     file: Express.Multer.File,
-  ): Promise<any> {
+  ): Promise<ICompanyVerification> {
     if (!file) throw new NotFoundError("Document is required");
 
     const documentUrl = await this.cloudinaryService.uploadFile(file);

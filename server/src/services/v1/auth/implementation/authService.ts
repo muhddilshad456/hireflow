@@ -26,6 +26,7 @@ import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto.js";
 import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto.js";
 import { generateResetLink } from "../../../../utils/generateResetLink.js";
 import { IUser } from "../../../../models/user.model.js";
+import { TokenPair } from "../../../../types/tokenPair.js";
 
 @injectable()
 export class AuthService implements IAuthService {
@@ -37,7 +38,7 @@ export class AuthService implements IAuthService {
   ) {}
 
   // signup
-  async signup(dto: SignupDto) {
+  async signup(dto: SignupDto): Promise<{ email: string }> {
     this.logger.info({
       event: "SIGNUP_STARTED",
       email: dto.email,
@@ -91,7 +92,6 @@ export class AuthService implements IAuthService {
     });
 
     return {
-      message: "OTP sent to email successfully",
       email: user.email,
     };
   }
@@ -113,6 +113,14 @@ export class AuthService implements IAuthService {
         email,
       });
       throw new UnauthorizedError("Invalid email or password");
+    }
+
+    if (user.isBlocked) {
+      this.logger.warn({
+        event: "User Blocked",
+        email,
+      });
+      throw new UnauthorizedError("Access Rescricted");
     }
 
     if (!user.isVerified) {
@@ -145,6 +153,7 @@ export class AuthService implements IAuthService {
       user: {
         id: user._id,
         email: user.email,
+        name: user.name,
         role: user.role,
       },
       accessToken,
@@ -202,8 +211,6 @@ export class AuthService implements IAuthService {
       userId: user._id,
       email,
     });
-
-    return { message: "Email verified successfully..." };
   }
 
   // * resend otp
@@ -221,8 +228,6 @@ export class AuthService implements IAuthService {
     await this.redisService.set(`otp:${email}`, hashedOtp, 120);
 
     console.log(`otp : ${otp} send to ${email}`);
-
-    return { message: "Otp resend successfully." };
   }
 
   // * refresh token
@@ -339,6 +344,7 @@ export class AuthService implements IAuthService {
     return {
       _id: user._id,
       email: user.email,
+      name: user.name,
       role: user.role,
     };
   }
@@ -365,7 +371,7 @@ export class AuthService implements IAuthService {
   }
 
   // * handle google callback
-  async handleGoogleCallback(code: string): Promise<any> {
+  async handleGoogleCallback(code: string): Promise<TokenPair> {
     this.logger.info({
       event: "GOOGLE_LOGIN_STARTED",
       message: "Google login process started",
@@ -457,12 +463,8 @@ export class AuthService implements IAuthService {
     });
 
     return {
-      success: true,
-      message: "Google authentication successful",
-      data: {
-        accessToken,
-        refreshToken,
-      },
+      accessToken,
+      refreshToken,
     };
   }
 }
