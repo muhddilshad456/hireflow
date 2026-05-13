@@ -1,5 +1,6 @@
 import { Model, Document } from "mongoose";
-import { IBaseRepository } from "../interfaces/IBaseRepository.js";
+import { IBaseRepository } from "../interface/IBaseRepository.js";
+import { QueryFilter } from "mongoose";
 
 export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   constructor(private model: Model<T>) {}
@@ -17,5 +18,8 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   }
   async delete(id: string): Promise<T | null> {
     return this.model.findByIdAndDelete(id);
+  }
+  async findOne(filter: QueryFilter<T>): Promise<T | null> {
+    return this.model.findOne(filter);
   }
 }

@@ -24,4 +24,11 @@ router.post(
   companyController.createVerifyRequest.bind(companyController),
 );
 
+router.get(
+  "/verification-status",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_ADMIN]),
+  companyController.getVerificationStatus.bind(companyController),
+);
+
 export default router;

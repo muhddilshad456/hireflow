@@ -1,13 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 
-export interface ICompanyController {
-  createVerifyRequest(
+export interface IAdminController {
+  getAllCompanyVerificationReq(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void>;
-
-  getVerificationStatus(
+  getCompanyVerificationReq(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  approveCompany(
     req: Request,
     res: Response,
     next: NextFunction,

@@ -1,7 +1,6 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
-import { VerificationStatus } from "../constants/companyStatus";
 
-export interface ICompanyVerification extends Document {
+export interface ICompany extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
 
@@ -22,14 +21,13 @@ export interface ICompanyVerification extends Document {
 
   document: string;
 
-  status: VerificationStatus;
-  adminNote?: string;
+  isActive: boolean;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
-const companyVerificationSchema = new Schema<ICompanyVerification>(
+const companySchema = new Schema<ICompany>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -57,20 +55,12 @@ const companyVerificationSchema = new Schema<ICompanyVerification>(
       required: true,
     },
 
-    status: {
-      type: String,
-      enum: Object.values(VerificationStatus),
-      default: VerificationStatus.NOT_SUBMITTED,
-    },
-
-    adminNote: {
-      type: String,
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true },
 );
 
-export const CompanyVerificationModel = mongoose.model<ICompanyVerification>(
-  "CompanyVerification",
-  companyVerificationSchema,
-);
+export const CompanyModel = mongoose.model<ICompany>("Company", companySchema);

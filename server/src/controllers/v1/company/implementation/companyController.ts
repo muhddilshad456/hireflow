@@ -1,13 +1,13 @@
 import { injectable, inject } from "inversify";
 import { ICompanyController } from "../interface/ICompanyController";
 import { TYPES } from "../../../../dependency-injection/types";
-import { Response, NextFunction } from "express";
+import { Response, NextFunction, Request } from "express";
 import { ICompanyService } from "../../../../services/v1/company/interface/ICompanyService";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
 
 @injectable()
-export class CompanyController implements ICompanyController {
+export class CompanyController {
   constructor(
     @inject(TYPES.CompanyService) private companyService: ICompanyService,
   ) {}
@@ -28,6 +28,24 @@ export class CompanyController implements ICompanyController {
       );
 
       ResponseHandler.success(res, "Verification Request Submitted", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getVerificationStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      const result = await this.companyService.getVerificationStatus(userId);
+      ResponseHandler.success(
+        res,
+        "Company status fetched successfully.",
+        result,
+      );
     } catch (error) {
       next(error);
     }

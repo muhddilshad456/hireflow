@@ -7,4 +7,5 @@ export interface ICompanyService {
     dto: VerifyReqDto,
     file: Express.Multer.File,
   ): Promise<ICompanyVerification>;
+  getVerificationStatus(userId: string): Promise<Partial<ICompanyVerification>>;
 }

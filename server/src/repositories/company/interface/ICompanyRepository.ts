@@ -1,4 +1,4 @@
-import { ICompanyVerification } from "../../../models/company.verification.model";
-import { IBaseRepository } from "../../user/interfaces/IBaseRepository";
+import { ICompany } from "../../../models/company.model";
+import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
-export interface ICompanyRepository extends IBaseRepository<ICompanyVerification> {}
+export interface ICompanyRepository extends IBaseRepository<ICompany> {}

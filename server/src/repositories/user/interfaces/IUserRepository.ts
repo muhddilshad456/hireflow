@@ -1,6 +1,6 @@
 import { IUser } from "../../../models/user.model.js";
 import { GetUsersResponse } from "../../../types/userRepo.js";
-import { IBaseRepository } from "./IBaseRepository.js";
+import { IBaseRepository } from "../../base/interface/IBaseRepository.js";
 
 export interface IUserRepository extends IBaseRepository<IUser> {
   findByEmail(email: string): Promise<IUser | null>;
@@ -14,4 +14,5 @@ export interface IUserRepository extends IBaseRepository<IUser> {
     search: string,
     status: string,
   ): Promise<GetUsersResponse>;
+  getAllCompanies(): Promise<any>;
 }

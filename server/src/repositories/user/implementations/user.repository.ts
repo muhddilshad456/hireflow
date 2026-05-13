@@ -1,5 +1,5 @@
 import { IUserRepository } from "../interfaces/IUserRepository.js";
-import { BaseRepository } from "./base.repository.js";
+import { BaseRepository } from "../../base/implementation/base.repository.js";
 import { UserModel, IUser } from "../../../models/user.model.js";
 import { injectable } from "inversify";
 import { QueryFilter } from "mongoose";
@@ -14,7 +14,7 @@ export class UserRepository
     super(UserModel);
   }
   async findByEmail(email: string): Promise<IUser | null> {
-    return UserModel.findOne({ email });
+    return await UserModel.findOne({ email });
   }
   async findByRefreshToken(token: string) {
     return await UserModel.findOne({ refreshToken: token });
@@ -58,5 +58,9 @@ export class UserRepository
     const totalUsers = await UserModel.countDocuments(filter);
 
     return { users, totalUsers };
+  }
+
+  async getAllCompanies(): Promise<any> {
+    return await UserModel.find({ role: "company_admin" });
   }
 }

@@ -3,7 +3,7 @@ import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto";
 import { SignupDto } from "../../../../dtos/v1/auth/signup.dto";
 import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto";
 import { IUser } from "../../../../models/user.model";
-import { AuthResponse } from "../../../../types/loginResponce";
+import { AuthResponse } from "../../../../types/loginResponse";
 import { TokenPair } from "../../../../types/tokenPair";
 
 export interface IAuthService {

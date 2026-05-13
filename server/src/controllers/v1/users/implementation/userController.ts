@@ -32,6 +32,19 @@ export class UserController implements IUserController {
     }
   }
 
+  async getAllCompanies(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await this.userService.getAllCompanies();
+      ResponseHandler.success(res, "Companies fetched successfully", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updateUser(
     req: Request,
     res: Response,
