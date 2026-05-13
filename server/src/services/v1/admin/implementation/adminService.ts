@@ -125,4 +125,53 @@ export class AdminService implements IAdminService {
     });
     return company;
   }
+  //* reject company
+  async rejectCompany(
+    companyVerificationId: string,
+    reason: string,
+  ): Promise<any> {
+    if (!companyVerificationId) {
+      this.logger.warn({
+        event: "COMPANY_VERIFICATION_ID_REQUIRED",
+      });
+      throw new BadRequestError("companyVerificationId is required");
+    }
+
+    if (!reason || reason.trim() === "") {
+      this.logger.warn({
+        event: "REASON_REQUIRED",
+      });
+      throw new BadRequestError("Rejection reason is required");
+    }
+
+    const request = await this.companyVerRepository.findById(
+      companyVerificationId,
+    );
+
+    if (!request) {
+      this.logger.warn({
+        event: "COMPANY_VERIFICATION_REQ_NOT_FOUND",
+      });
+      throw new NotFoundError("Verification request not found");
+    }
+
+    if (request.status !== VerificationStatus.PENDING) {
+      this.logger.warn({
+        event: "REQUEST_ALREADY_PROCESSED",
+      });
+      throw new ConflictError("Request already processed");
+    }
+
+    const data = {
+      status: VerificationStatus.REJECTED,
+      adminNote: reason,
+    };
+
+    await this.companyVerRepository.update(companyVerificationId, data);
+
+    this.logger.info({
+      event: "COMPANY_VERIFICATION_REJECTED",
+      companyVerificationId,
+    });
+  }
 }

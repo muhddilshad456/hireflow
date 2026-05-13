@@ -68,4 +68,21 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  async rejectCompany(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const companyVerificationId = req.params.id as string;
+      const reason = req.body.reason;
+      const result = await this.adminService.rejectCompany(
+        companyVerificationId,
+        reason,
+      );
+      ResponseHandler.success(res, "Company rejected successfully.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
