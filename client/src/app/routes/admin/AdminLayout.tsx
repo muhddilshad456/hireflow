@@ -3,10 +3,7 @@ import { Header } from "../../../features/admin/shared/components/Header";
 import { Sidebar } from "../../../features/admin/shared/components/Sidebar";
 import { Outlet } from "react-router-dom";
 
-type Page = "dashboard" | "company" | "user" | "job" | "audit";
-
 export function AdminLayout() {
-  const [page, setPage] = useState<Page>("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (

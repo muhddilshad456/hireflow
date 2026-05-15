@@ -5,6 +5,7 @@ import axios, {
 } from "axios";
 import { store } from "../redux/store/store";
 import { logout, updateToken } from "../redux/slice/authSlice";
+import type { RootState } from "../redux/store/store";
 
 const isLocalhost = window.location.hostname == "localhost";
 const API_URL = isLocalhost
@@ -19,7 +20,8 @@ const api = axios.create({
 //Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = store.getState().auth.token;
+    const state = store.getState() as RootState;
+    const token = state.auth.token;
 
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

@@ -2,11 +2,12 @@ import { Routes, Route } from "react-router-dom";
 import Login from "../../../../features/company/admin/auth/pages/Login";
 import SignUp from "../../../../features/company/admin/auth/pages/SignUp";
 import VerifyOtp from "../../../../features/company/admin/auth/pages/VerifyOtp";
-import HireFlow from "../../../../features/company/admin/dashboard/pages/Dashboard";
+import { AdminLayout } from "./AdminLayout";
 import ForgotPassword from "../../../../features/company/admin/auth/pages/ForgotPassword";
 import ResetPassword from "../../../../features/company/admin/auth/pages/ResetPassword";
 import PublicRoute from "../../../../routes/company/PublicRoute";
 import ProtectedRoute from "../../../../routes/company/ProtectedRoute";
+import { Dashboard } from "../../../../features/company/admin/dashboard/pages/Dashboard";
 
 const AdminRoutes = () => {
   return (
@@ -19,7 +20,9 @@ const AdminRoutes = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<HireFlow />} />
+        <Route path="/" element={<AdminLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Route>
     </Routes>
   );

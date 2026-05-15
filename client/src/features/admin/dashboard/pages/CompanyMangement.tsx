@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { FilterDropdown } from "../../shared/components/Filter";
 
 type CompanyFilterType = "All" | "Active" | "Blocked";
@@ -60,6 +60,7 @@ const INIT_COMPANIES: CompanyItem[] = [
 
 export function CompanyManagement() {
   const [companies, setCompanies] = useState<CompanyItem[]>(INIT_COMPANIES);
+  const [data, setData] = useState([]);
   const [tab, setTab] = useState<CompanyTab>("all");
   const [filter, setFilter] = useState<CompanyFilterType>("All");
 
@@ -75,6 +76,11 @@ export function CompanyManagement() {
           : c,
       ),
     );
+
+  useEffect(() => {
+    async function fetchCompanies() {}
+    fetchCompanies();
+  }, []);
 
   const visible =
     filter === "All"

@@ -11,6 +11,8 @@ import ForgotPassword from "../../../features/admin/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/admin/auth/pages/ResetPassword";
 import ProtectedRoute from "../../../routes/admin/ProtectedRoute";
 import PublicRoute from "../../../routes/admin/PublicRoute";
+import { CompanyApprovalManagement } from "../../../features/admin/dashboard/pages/CompanyApprovalManagement";
+import CompanyDetailsReview from "../../../features/admin/dashboard/pages/CompanyReqDetails";
 
 const AdminRoutes = () => {
   return (
@@ -25,6 +27,14 @@ const AdminRoutes = () => {
           <Route path="/" element={<AdminLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="companies" element={<CompanyManagement />} />
+            <Route
+              path="companies-verify-requests"
+              element={<CompanyApprovalManagement />}
+            />
+            <Route
+              path="/companies-verify-request/:id"
+              element={<CompanyDetailsReview />}
+            />
             <Route path="users" element={<UserManagement />} />
             <Route path="jobs" element={<JobManagement />} />
             <Route path="audit-report" element={<AuditReports />} />

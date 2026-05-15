@@ -3,6 +3,7 @@ import { getUsersApi, updateStatusApi } from "../services/adminServices";
 import toast from "react-hot-toast";
 import { FilterDropdown } from "../../shared/components/Filter";
 import { Pagination } from "../../shared/components/Pagination";
+import { Ico } from "../../../../assets/icons/CompanyIcons";
 
 type CompanyFilterType = "All" | "Active" | "Blocked";
 type UserFilterType = "All" | "Active" | "Blocked";
@@ -14,22 +15,6 @@ interface UserItem {
   email: string;
   status: AccountStatus;
 }
-
-const IcoSearch = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.35-4.35" />
-  </svg>
-);
 
 export function UserManagement() {
   const [users, setUsers] = useState<UserItem[]>([]);
@@ -85,7 +70,7 @@ export function UserManagement() {
         </h1>
         <div className="relative w-full max-w-xs">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-            <IcoSearch />
+            <Ico.Search />
           </span>
           <input
             type="text"

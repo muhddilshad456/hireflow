@@ -9,6 +9,7 @@ import { NotFoundError } from "../../../../errors/not-found.error";
 import { VerificationStatus } from "../../../../constants/companyStatus";
 import { ICompanyRepository } from "../../../../repositories/company/interface/ICompanyRepository";
 import { ConflictError } from "../../../../errors/conflict.error";
+import { CompanyMapper } from "../../../../mapper/companyMapper";
 
 export class AdminService implements IAdminService {
   constructor(
@@ -102,21 +103,7 @@ export class AdminService implements IAdminService {
       throw new ConflictError("Company already verified");
     }
 
-    const companyData = {
-      userId: request.userId,
-      companyName: request.companyName,
-      regNumber: request.regNumber,
-      email: request.email,
-      phone: request.phone,
-      website: request.website,
-      description: request.description,
-      address: request.address,
-      country: request.country,
-      state: request.state,
-      city: request.city,
-      zip: request.zip,
-      document: request.document,
-    };
+    const companyData = CompanyMapper.toCompanyEntity(request);
 
     const company = await this.companyRepository.create(companyData);
 
