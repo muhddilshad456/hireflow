@@ -8,6 +8,7 @@ import ResetPassword from "../../../../features/company/admin/auth/pages/ResetPa
 import PublicRoute from "../../../../routes/company/PublicRoute";
 import ProtectedRoute from "../../../../routes/company/ProtectedRoute";
 import { Dashboard } from "../../../../features/company/admin/dashboard/pages/Dashboard";
+import { RecruiterInvitations } from "../../../../features/company/admin/dashboard/pages/RecruiterInvitations";
 
 const AdminRoutes = () => {
   return (
@@ -22,6 +23,10 @@ const AdminRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<AdminLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/recruiter-invitations"
+            element={<RecruiterInvitations />}
+          />
         </Route>
       </Route>
     </Routes>

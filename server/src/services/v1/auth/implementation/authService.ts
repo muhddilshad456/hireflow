@@ -14,7 +14,6 @@ import {
   genarateAccessToken,
   genarateRefreshToken,
 } from "../../../../utils/jwt.util.js";
-import { genarateResetToken } from "../../../../utils/token.util.js";
 import { UnauthorizedError } from "../../../../errors/unauthorized.error.js";
 import { inject, injectable } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
@@ -24,9 +23,10 @@ import { AuthMapper } from "../../../../mapper/authMapper.js";
 import { LoginDto } from "../../../../dtos/v1/auth/login.dto.js";
 import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto.js";
 import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto.js";
-import { generateResetLink } from "../../../../utils/generateResetLink.js";
+import { generateLink } from "../../../../utils/generateLink.js";
 import { IUser } from "../../../../models/user.model.js";
 import { TokenPair } from "../../../../types/tokenPair.js";
+import { generateToken } from "../../../../utils/token.util.js";
 
 @injectable()
 export class AuthService implements IAuthService {
@@ -262,7 +262,7 @@ export class AuthService implements IAuthService {
 
     this.logger.info({ email }, "Processing forgot password");
 
-    const resetToken = genarateResetToken();
+    const resetToken = generateToken();
 
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
@@ -273,7 +273,12 @@ export class AuthService implements IAuthService {
 
     const baseUrl = process.env.FRONTEND_URL!;
 
-    const resetLink = generateResetLink(baseUrl, user.role, resetToken);
+    const resetLink = generateLink(
+      baseUrl,
+      "RESET_PASSWORD",
+      user.role,
+      resetToken,
+    );
 
     this.logger.info({
       EVENT: "Reset link created..",

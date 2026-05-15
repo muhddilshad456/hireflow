@@ -12,14 +12,46 @@ import { VerifyForm } from "../../../../features/company/admin/dashboard/compone
 import { getStatusApi } from "../../../../features/company/admin/dashboard/services/comapanyServices";
 
 type Status = "unverified" | "form" | "pending" | "approved" | "rejected";
-type Page = "dashboard" | "recruiter" | "reviewer" | "jobs" | "report";
+type Page =
+  | "dashboard"
+  | "recruiter-invitations"
+  | "recruiter"
+  | "reviewer"
+  | "jobs"
+  | "report";
 
-const NAV: { id: Page; label: string; icon: ReactNode }[] = [
-  { id: "dashboard", label: "Dashboard", icon: <Ico.Home /> },
-  { id: "recruiter", label: "Recruiter Management", icon: <Ico.Users /> },
-  { id: "reviewer", label: "Reviewer Management", icon: <Ico.Clipboard /> },
-  { id: "jobs", label: "Jobs Management", icon: <Ico.Briefcase /> },
-  { id: "report", label: "Report", icon: <Ico.Chart /> },
+const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: <Ico.Home />,
+    path: "/company/dashboard",
+  },
+  {
+    id: "recruiter-invitations",
+    label: "Recruiter Invitations",
+    icon: <Ico.Users />,
+    path: "/company/recruiter-invitations",
+  },
+  {
+    id: "recruiter",
+    label: "Recruiter Management",
+    icon: <Ico.Users />,
+    path: "/recruiters",
+  },
+  {
+    id: "reviewer",
+    label: "Reviewer Management",
+    icon: <Ico.Clipboard />,
+    path: "/reviewers",
+  },
+  {
+    id: "jobs",
+    label: "Jobs Management",
+    icon: <Ico.Briefcase />,
+    path: "/jobs",
+  },
+  { id: "report", label: "Report", icon: <Ico.Chart />, path: "/report" },
 ];
 
 /* ═══════════════════════ HEADER ════════════════════════════════════════ */
@@ -81,16 +113,6 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
           <span className="font-black text-slate-800 text-base">HireFlow</span>
         </div>
 
-        <div className="hidden sm:flex flex-1 max-w-xs items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
-          <span className="text-slate-400">
-            <Ico.Search />
-          </span>
-          <input
-            className="bg-transparent outline-none text-sm text-slate-700 placeholder-slate-400 w-full"
-            placeholder="Search jobs, candidates…"
-          />
-        </div>
-
         <div className="ml-auto flex items-center gap-2.5">
           {chip && (
             <span
@@ -138,6 +160,7 @@ function Sidebar({
   onClose?: () => void;
   isMobile?: boolean;
 }) {
+  const navigate = useNavigate();
   const dot =
     status === "approved"
       ? {
@@ -196,30 +219,40 @@ function Sidebar({
         <p className="px-3 pb-3 text-[10px] font-extrabold text-slate-300 uppercase tracking-[0.15em]">
           Main Menu
         </p>
-        {NAV.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => {
-              onNav(n.id);
-              onClose?.();
-            }}
-            className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-              active === n.id
-                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
-                : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-            }`}
-          >
-            <span
-              className={`flex-shrink-0 ${active === n.id ? "text-white" : "text-slate-400 group-hover:text-emerald-500 transition-colors"}`}
+        {NAV.map((n) => {
+          const isActive = location.pathname === n.path;
+
+          return (
+            <button
+              key={n.id}
+              onClick={() => {
+                navigate(n.path); // 🔥 route change
+                onClose?.();
+              }}
+              className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
+                isActive
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
+                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+              }`}
             >
-              {n.icon}
-            </span>
-            <span className="truncate">{n.label}</span>
-            {active === n.id && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
-            )}
-          </button>
-        ))}
+              <span
+                className={`flex-shrink-0 ${
+                  isActive
+                    ? "text-white"
+                    : "text-slate-400 group-hover:text-emerald-500"
+                }`}
+              >
+                {n.icon}
+              </span>
+
+              <span className="truncate">{n.label}</span>
+
+              {isActive && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       {/* Status chip */}
@@ -337,27 +370,6 @@ function PendingOverlay() {
             </div>
           ))}
         </div>
-
-        {/* Demo buttons for admin simulation */}
-        {/* <div className="mt-6 pt-5 border-t border-slate-100 space-y-2">
-          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3">
-            — Demo: Simulate admin decision —
-          </p>
-          <div className="flex gap-2">
-            <button
-              id="demo-approve"
-              className="flex-1 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors"
-            >
-              ✓ Approve
-            </button>
-            <button
-              id="demo-reject"
-              className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-xs font-bold hover:bg-rose-600 transition-colors"
-            >
-              ✗ Reject
-            </button>
-          </div>
-        </div> */}
       </div>
     </div>
   );

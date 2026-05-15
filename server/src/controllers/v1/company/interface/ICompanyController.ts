@@ -12,4 +12,6 @@ export interface ICompanyController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+
+  invite(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

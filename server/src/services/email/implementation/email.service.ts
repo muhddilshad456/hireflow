@@ -34,4 +34,22 @@ export class EmailService implements IEmailService {
     `;
     await this.sendEmail(email, subject, html);
   }
+
+  async sendInviteEmail(
+    email: string,
+    link: string,
+    role: string,
+  ): Promise<void> {
+    const subject = `You're invited to join as a ${role}`;
+
+    const html = `
+    <h2>You're Invited!</h2>
+    <p>You have been invited to join our platform as a <strong>${role}</strong>.</p>
+    <p>Click the link below to set your password and activate your account:</p>
+    <a href="${link}">Accept Invitation</a>
+    <p>This link will expire in 24 hours.</p>
+  `;
+
+    await this.sendEmail(email, subject, html);
+  }
 }

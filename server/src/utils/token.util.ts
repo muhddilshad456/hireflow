@@ -1,5 +1,5 @@
 import crypto from "crypto";
 
-export const genarateResetToken = () => {
+export const generateToken = () => {
   return crypto.randomBytes(32).toString("hex");
 };

@@ -16,6 +16,7 @@ import { CloudinaryService } from "../services/cloudinary/implementation/cloudin
 import { AdminService } from "../services/v1/admin/implementation/adminService";
 import { AdminController } from "../controllers/v1/admin/implementation/adminController";
 import { CompanyRepository } from "../repositories/company/implementation/companyRepository";
+import { InvitationRepository } from "../repositories/company/implementation/invitationRepository";
 
 const container = new Container();
 
@@ -23,6 +24,7 @@ const container = new Container();
 container.bind(TYPES.UserRepository).to(UserRepository);
 container.bind(TYPES.CompanyVerRepository).to(CompanyVerRepository);
 container.bind(TYPES.CompanyRepository).to(CompanyRepository);
+container.bind(TYPES.InvitationRepository).to(InvitationRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.UserService).to(UserService);

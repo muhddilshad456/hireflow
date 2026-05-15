@@ -31,4 +31,6 @@ router.get(
   companyController.getVerificationStatus.bind(companyController),
 );
 
+router.post("/invite", companyController.invite.bind(companyController));
+
 export default router;
