@@ -57,7 +57,11 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const { name, email, role, companyId } = req.body;
+      const companyId = req.user.userId;
+      const { name, email, role } = req.body;
+      console.log(
+        `name : ${name} , email : ${email} , role : ${role} , comapanyId : ${companyId}`,
+      );
       const result = await this.companyService.invite(
         name,
         email,

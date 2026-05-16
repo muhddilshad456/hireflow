@@ -27,11 +27,15 @@ import { generateLink } from "../../../../utils/generateLink.js";
 import { IUser } from "../../../../models/user.model.js";
 import { TokenPair } from "../../../../types/tokenPair.js";
 import { generateToken } from "../../../../utils/token.util.js";
+import { IInvitationRepository } from "../../../../repositories/company/interface/IInvitationRepository.js";
+import { InvitationStatus } from "../../../../models/recruiter.invitation.model.js";
 
 @injectable()
 export class AuthService implements IAuthService {
   constructor(
     @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    @inject(TYPES.InvitationRepository)
+    private invitationRepository: IInvitationRepository,
     @inject(TYPES.EmailService) private emailService: IEmailService,
     @inject(TYPES.RedisService) private redisService: IRedisService,
     @inject(TYPES.Logger) private logger: Logger,
@@ -470,6 +474,83 @@ export class AuthService implements IAuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+  //* accept invite
+  async acceptInvite(
+    id: string,
+    token: string,
+    password: string,
+  ): Promise<any> {
+    const invitation = await this.invitationRepository.findById(id);
+    if (!invitation) {
+      this.logger.info({
+        event: "Invalid invitation",
+      });
+      throw new BadRequestError("Invalid invitation");
+    }
+
+    const isValidToken = await bcrypt.compare(token, invitation.token);
+    if (!isValidToken) {
+      this.logger.info({
+        event: "Invalid Token",
+      });
+      throw new BadRequestError("Invalid token");
+    }
+
+    const existingUser = await this.userRepository.findByEmail(
+      invitation.email,
+    );
+    if (existingUser) {
+      this.logger.info({
+        event: "User already exist",
+      });
+      throw new ConflictError("User already exists");
+    }
+
+    if (invitation.status == InvitationStatus.ACCEPTED) {
+      this.logger.info({
+        event: "Invitation already accepted",
+      });
+      throw new ConflictError("Invite already accepted");
+    }
+    if (invitation.status == InvitationStatus.CANCELLED) {
+      this.logger.info({
+        event: "Invitation canceled",
+      });
+      throw new ConflictError("Invite canceled");
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      this.logger.info({
+        event: "Invitation expired",
+      });
+      throw new BadRequestError("Invite expired");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userData = {
+      name: invitation.name,
+      email: invitation.email,
+      password: hashedPassword,
+      role: invitation.role,
+    };
+
+    const user = await this.userRepository.create(userData);
+
+    this.logger.info({
+      event: "USER_CREATED",
+      userId: user._id,
+      email: user.email,
+    });
+
+    await this.invitationRepository.update(invitation._id.toString(), {
+      status: InvitationStatus.ACCEPTED,
+    });
+
+    return {
+      message: "Account created successfully",
+      userId: user._id,
     };
   }
 }

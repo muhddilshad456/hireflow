@@ -1,5 +1,7 @@
 import { useState } from "react";
-import SearchInput from "../../../shared/SearchBar";
+import SearchInput from "../../../shared/components/SearchBar";
+import { inviteApi } from "../services/comapanyServices";
+import toast from "react-hot-toast";
 
 /* ═══════════════════════════ TYPES ═══════════════════════════ */
 type Status = "Accepted" | "Pending" | "Rejected";
@@ -381,15 +383,19 @@ export function RecruiterInvitations() {
     setCancellingId(null);
   };
 
-  const handleAdd = (name: string, email: string) => {
-    const newRecruiter: Recruiter = {
-      id: Date.now(),
-      name,
-      email,
-      status: "Pending",
-    };
-    setRecruiters((prev) => [newRecruiter, ...prev]);
-    setCurrentPage(1);
+  const handleAdd = async (name: string, email: string) => {
+    try {
+      const result = await inviteApi({
+        name,
+        email,
+        role: "company_recruiter",
+      });
+      console.log("result from invite recruiter : ", result);
+      toast.success("invite send successfully.");
+    } catch (error: any) {
+      console.log(error?.response?.data);
+      toast.error(error?.response?.data?.message);
+    }
   };
 
   const handleFilterChange = (val: "Active" | "All") => {

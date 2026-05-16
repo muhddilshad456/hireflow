@@ -148,4 +148,17 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+  async acceptInvite(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { id, token, password } = req.body;
+      const result = await this.authService.acceptInvite(id, token, password);
+      ResponseHandler.success(res, "account created successfull.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

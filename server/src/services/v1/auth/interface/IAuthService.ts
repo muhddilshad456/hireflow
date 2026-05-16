@@ -18,4 +18,5 @@ export interface IAuthService {
   getCurrentUser(userId: string): Promise<Partial<IUser>>;
   getGoogleAuthUrl(): Promise<string>;
   handleGoogleCallback(code: string): Promise<TokenPair>;
+  acceptInvite(id: string, token: string, password: string): Promise<any>;
 }

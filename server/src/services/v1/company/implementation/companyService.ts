@@ -124,7 +124,13 @@ export class CompanyService implements ICompanyService {
 
     const baseUrl = process.env.FRONTEND_URL!;
 
-    const inviteLink = generateLink(baseUrl, "INVITE", role, token);
+    const inviteLink = generateLink(
+      baseUrl,
+      "INVITE",
+      role,
+      token,
+      result._id.toString(),
+    );
 
     this.logger.info({
       EVENT: "Invitation link created..",

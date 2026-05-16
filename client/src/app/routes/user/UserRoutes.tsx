@@ -6,14 +6,18 @@ import Home from "../../../features/user/home/pages/Home";
 import ForgotPassword from "../../../features/user/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/user/auth/pages/ResetPassword";
 import { GoogleSuccess } from "../../../features/user/auth/pages/GoogleSuccess";
-import ProtectedRoute from "../../../routes/user/ProtectedRoute";
-import PublicRoute from "../../../routes/user/PublicRoute";
+import ProtectedRoute from "../../../routes/ProtectedRoute";
+import PublicRoute from "../../../routes/PublicRoute";
 
 const UserRoutes = () => {
   return (
     <>
       <Routes>
-        <Route element={<ProtectedRoute />}>
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={["user"]} redirectTo="/login" />
+          }
+        >
           <Route path="/" element={<Home />} />
         </Route>
         <Route element={<PublicRoute />}>

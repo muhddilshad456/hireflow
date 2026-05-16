@@ -3,11 +3,13 @@ export function generateLink(
   type: "RESET_PASSWORD" | "INVITE",
   role: string,
   token: string,
+  id?: string,
 ) {
   let path = "";
 
   if (type === "INVITE") {
-    path = "company/accept-invite";
+    path = "/company/accept-invite";
+    return `${baseUrl}${path}?token=${token}&id=${id}`;
   } else {
     switch (role) {
       case "company_admin":

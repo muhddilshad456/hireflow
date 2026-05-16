@@ -25,13 +25,13 @@ const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: <Ico.Home />,
-    path: "/company/dashboard",
+    path: "/company/admin/dashboard",
   },
   {
     id: "recruiter-invitations",
     label: "Recruiter Invitations",
     icon: <Ico.Users />,
-    path: "/company/recruiter-invitations",
+    path: "/company/admin/recruiter-invitations",
   },
   {
     id: "recruiter",
