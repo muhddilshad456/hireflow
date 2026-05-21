@@ -9,7 +9,9 @@ import { NotFoundError } from "../../../../errors/not-found.error";
 import { VerificationStatus } from "../../../../constants/companyStatus";
 import { ICompanyRepository } from "../../../../repositories/company/interface/ICompanyRepository";
 import { ConflictError } from "../../../../errors/conflict.error";
-import { CompanyMapper } from "../../../../mapper/companyMapper";
+import { CompanyMapper } from "../../../../mapper/company/admin/companyMapper";
+import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
+import { InternalServerError } from "../../../../errors/internal-server.error";
 
 export class AdminService implements IAdminService {
   constructor(
@@ -17,6 +19,8 @@ export class AdminService implements IAdminService {
     private companyVerRepository: ICompanyVerRepository,
     @inject(TYPES.CompanyRepository)
     private companyRepository: ICompanyRepository,
+    @inject(TYPES.UserRepository)
+    private userRepository: IUserRepository,
     @inject(TYPES.Logger)
     private logger: Logger,
   ) {}
@@ -93,7 +97,7 @@ export class AdminService implements IAdminService {
     }
 
     const existingCompany = await this.companyRepository.findOne({
-      userId: request.userId,
+      adminId: request.adminId,
     });
 
     if (existingCompany) {
@@ -106,6 +110,18 @@ export class AdminService implements IAdminService {
     const companyData = CompanyMapper.toCompanyEntity(request);
 
     const company = await this.companyRepository.create(companyData);
+
+    if (!company) {
+      this.logger.error({
+        event: "COMPANY_CREATION_FAILED",
+      });
+
+      throw new InternalServerError("Failed to create company");
+    }
+
+    await this.userRepository.update(request.adminId.toString(), {
+      company: company._id,
+    });
 
     await this.companyVerRepository.update(companyVerificationId, {
       status: VerificationStatus.APPROVED,
@@ -160,5 +176,10 @@ export class AdminService implements IAdminService {
       event: "COMPANY_VERIFICATION_REJECTED",
       companyVerificationId,
     });
+  }
+
+  async getAllCompanies(): Promise<any> {
+    const result = await this.companyRepository.findAll();
+    return { result };
   }
 }

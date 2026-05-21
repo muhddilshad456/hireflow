@@ -6,8 +6,8 @@ import { container } from "../../dependency-injection/container";
 import { TYPES } from "../../dependency-injection/types";
 import { upload } from "../../config/multer";
 import { validateDto } from "../../middlewares/validate.middleware";
-import { VerifyReqDto } from "../../dtos/v1/company/verifyReqDto";
-import { ICompanyController } from "../../controllers/v1/company/interface/ICompanyController";
+import { VerifyReqDto } from "../../dtos/v1/company/admin/request-dtos/verifyReqDto";
+import { ICompanyController } from "../../controllers/v1/company/admin/interface/ICompanyController";
 
 const router = Router();
 
@@ -36,6 +36,13 @@ router.post(
   verifyAccessToken,
   roleGuard([UserRole.COMPANY_ADMIN]),
   companyController.invite.bind(companyController),
+);
+
+router.get(
+  "/profile",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_ADMIN]),
+  companyController.getCompanyProfile.bind(companyController),
 );
 
 export default router;

@@ -75,7 +75,6 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
             };
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const logoutUser = () => setShowLogoutModal(true);
@@ -83,10 +82,7 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
   const userId = useAppSelector((state) => state.auth.user?.id);
 
   const handleLogout = async () => {
-    if (!userId) {
-      console.log("userId not accesible");
-      return;
-    }
+    if (!userId) return;
     try {
       await logoutApi({ id: userId });
       dispatch(logout());
@@ -99,35 +95,63 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-100 flex items-center gap-3 px-4 md:px-6 flex-shrink-0 z-10">
+      <header className="h-14 flex items-center px-6 bg-slate-100">
+        {/* Mobile hamburger */}
         <button
           onClick={onMenu}
-          className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+          className="md:hidden p-1.5 rounded-lg text-slate-500 hover:bg-black/5 transition-colors"
         >
           <Ico.Menu />
         </button>
-        <div className="md:hidden flex items-center gap-2">
-          <div className="w-7 h-7">
-            <Ico.Logo />
-          </div>
-          <span className="font-black text-slate-800 text-base">HireFlow</span>
+
+        {/* ✦ HireFlow logo */}
+        <div className="flex items-center gap-1.5 select-none">
+          <span style={{ color: "#1a1a1a", fontSize: "13px", lineHeight: 1 }}>
+            ✦
+          </span>
+          <span
+            className="font-black text-[15px] tracking-tight"
+            style={{ color: "#1a1a1a" }}
+          >
+            HireFlow
+          </span>
         </div>
 
+        {/* Right side */}
         <div className="ml-auto flex items-center gap-2.5">
+          {/* Verification chip — hidden on small screens */}
           {chip && (
             <span
               className={`hidden lg:flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${chip.cls}`}
             >
               <span
-                className={`w-1.5 h-1.5 rounded-full ${status === "pending" ? "bg-amber-400 animate-pulse" : status === "rejected" ? "bg-rose-400" : "bg-slate-400"}`}
+                className={`w-1.5 h-1.5 rounded-full ${
+                  status === "pending"
+                    ? "bg-amber-400 animate-pulse"
+                    : status === "rejected"
+                      ? "bg-rose-400"
+                      : "bg-slate-400"
+                }`}
               />
               {chip.text}
             </span>
           )}
-          <button className="relative w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-500 transition-colors">
+
+          {/* Bell — outline style, no dot */}
+          <button
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
+            style={{ color: "#555550" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.06)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
+          >
             <Ico.Bell />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
           </button>
+
+          {/* Dark avatar circle */}
           <ProfileDropdown
             avatarUrl={"https://i.pravatar.cc/40?img=12"}
             onProfile={() => navigate("/profile")}
@@ -135,6 +159,7 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
           />
         </div>
       </header>
+
       <ConfirmModal
         open={showLogoutModal}
         message="Do you want to logout"
@@ -161,129 +186,74 @@ function Sidebar({
   isMobile?: boolean;
 }) {
   const navigate = useNavigate();
-  const dot =
-    status === "approved"
-      ? {
-          bg: "bg-emerald-500",
-          text: "Verified",
-          tx: "text-emerald-700",
-          card: "bg-emerald-50 border-emerald-100",
-        }
-      : status === "pending"
-        ? {
-            bg: "bg-amber-400",
-            text: "Pending Review",
-            tx: "text-amber-700",
-            card: "bg-amber-50 border-amber-200",
-          }
-        : status === "rejected"
-          ? {
-              bg: "bg-rose-500",
-              text: "Rejected",
-              tx: "text-rose-700",
-              card: "bg-rose-50 border-rose-200",
-            }
-          : {
-              bg: "bg-slate-400",
-              text: "Not Verified",
-              tx: "text-slate-600",
-              card: "bg-slate-50 border-slate-200",
-            };
 
   return (
-    <div
-      className={`flex flex-col h-full bg-white border-r border-slate-100/80 ${isMobile ? "w-72" : "w-60 lg:w-64"}`}
-    >
-      {/* Brand row */}
-      <div className="flex items-center justify-between h-16 px-5 border-b border-slate-100 flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 flex-shrink-0">
-            <Ico.Logo />
+    <div className="flex flex-col h-full bg-slate-100">
+      {/* Brand row — only shown on mobile drawer (desktop header has the logo) */}
+      {isMobile && (
+        <div
+          className="flex items-center justify-between h-14 px-5 flex-shrink-0"
+          style={{ borderBottom: "1px solid #e0e0da" }}
+        >
+          <div className="flex items-center gap-1.5 select-none">
+            <span style={{ color: "#1a1a1a", fontSize: "15px" }}>✦</span>
+            <span
+              className="font-black text-[15px] tracking-tight"
+              style={{ color: "#1a1a1a" }}
+            >
+              HireFlow
+            </span>
           </div>
-          <span className="font-black text-slate-800 text-[17px] tracking-tight">
-            HireFlow
-          </span>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+            >
+              <Ico.X />
+            </button>
+          )}
         </div>
-        {isMobile && onClose && (
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-          >
-            <Ico.X />
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 pt-5 pb-3 space-y-0.5">
-        <p className="px-3 pb-3 text-[10px] font-extrabold text-slate-300 uppercase tracking-[0.15em]">
-          Main Menu
-        </p>
         {NAV.map((n) => {
           const isActive = location.pathname === n.path;
-
           return (
             <button
               key={n.id}
               onClick={() => {
-                navigate(n.path); // 🔥 route change
+                navigate(n.path);
                 onClose?.();
               }}
-              className={`group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${
-                isActive
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              }`}
+              className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150"
+              style={{
+                backgroundColor: isActive ? "#e2e8e2" : "transparent",
+                color: isActive ? "#1a1a1a" : "#555550",
+                fontWeight: isActive ? 600 : 400,
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                    "#e8e8e3";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive)
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                    "transparent";
+              }}
             >
               <span
-                className={`flex-shrink-0 ${
-                  isActive
-                    ? "text-white"
-                    : "text-slate-400 group-hover:text-emerald-500"
-                }`}
+                className="flex-shrink-0 w-4 h-4"
+                style={{ color: isActive ? "#1a1a1a" : "#888884" }}
               >
                 {n.icon}
               </span>
-
-              <span className="truncate">{n.label}</span>
-
-              {isActive && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
-              )}
+              <span className="truncate text-[13px]">{n.label}</span>
             </button>
           );
         })}
       </nav>
-
-      {/* Status chip */}
-      <div className="flex-shrink-0 px-3 pb-2 pt-2 border-t border-slate-100">
-        <div
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border ${dot.card}`}
-        >
-          <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${dot.bg} ${status === "pending" ? "animate-pulse" : ""}`}
-          />
-          <span className={`text-xs font-bold ${dot.tx}`}>{dot.text}</span>
-        </div>
-
-        {/* User */}
-        <div className="flex items-center gap-2.5 mt-2 p-2 rounded-xl hover:bg-slate-50 cursor-pointer group transition-colors">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-black flex-shrink-0">
-            A
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-slate-700 truncate">
-              Admin User
-            </p>
-            <p className="text-[10px] text-slate-400 truncate">
-              admin@hireflow.io
-            </p>
-          </div>
-          <span className="text-slate-300 group-hover:text-slate-500 transition-colors">
-            <Ico.Logout />
-          </span>
-        </div>
-      </div>
     </div>
   );
 }
@@ -462,18 +432,51 @@ export function AdminLayout() {
   }, [showForm]);
 
   return (
-    <div
-      className="flex h-screen bg-slate-50 overflow-hidden"
-      style={{
-        fontFamily: "'Plus Jakarta Sans','DM Sans',ui-sans-serif,sans-serif",
-      }}
-    >
-      {/* Desktop sidebar */}
-      <div className="hidden md:flex flex-shrink-0 h-full shadow-sm">
-        <Sidebar active={page} onNav={setPage} status={status} />
+    <div className="h-screen flex flex-col bg-slate-50">
+      {/* 🔹 HEADER (FULL WIDTH) */}
+      <Header onMenu={() => setMobileOpen(true)} status={status} />
+
+      {/* 🔹 BELOW HEADER */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className="hidden md:flex flex-shrink-0 shadow-sm">
+          <Sidebar active={page} onNav={setPage} status={status} />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <div
+            className="flex-1 relative overflow-hidden"
+            onClick={status === "pending" ? handlePendingClick : undefined}
+          >
+            <div
+              className={`h-full ${
+                status !== "approved" ? "overflow-hidden" : "overflow-y-auto"
+              }`}
+            >
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                <Outlet />
+              </div>
+            </div>
+
+            {/* Overlays */}
+            {verification?.status === "not_submitted" && (
+              <UnverifiedOverlay onVerify={() => setShowForm(true)} />
+            )}
+            {verification?.status === "pending" && <PendingOverlay />}
+            {verification?.status === "rejected" && (
+              <RejectedOverlay
+                onTryAgain={() => {
+                  setStatus("unverified");
+                  setShowForm(true);
+                }}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile Drawer stays same */}
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
@@ -492,40 +495,7 @@ export function AdminLayout() {
         </div>
       )}
 
-      {/* Main */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Header onMenu={() => setMobileOpen(true)} status={status} />
-
-        {/* Content */}
-        <div
-          className="flex-1 relative overflow-hidden"
-          onClick={status === "pending" ? handlePendingClick : undefined}
-        >
-          {/* Scrollable page — disabled when locked */}
-          <div
-            className={`h-full ${status !== "approved" ? "overflow-hidden" : "overflow-y-auto"}`}
-          >
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-              <Outlet />
-            </div>
-          </div>
-
-          {/* ── Overlays ── */}
-          {verification?.status === "not_submitted" && (
-            <UnverifiedOverlay onVerify={() => setShowForm(true)} />
-          )}
-          {verification?.status === "pending" && <PendingOverlay />}
-          {verification?.status === "rejected" && (
-            <RejectedOverlay
-              onTryAgain={() => {
-                setStatus("unverified");
-                setShowForm(true);
-              }}
-            />
-          )}
-        </div>
-      </div>
-      {/* ── Verification Form (slides over everything) ── */}
+      {/* Verification Form */}
       {showForm && (
         <VerifyForm
           onSubmit={handleVerificationSubmitted}

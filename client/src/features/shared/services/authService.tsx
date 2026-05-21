@@ -48,3 +48,13 @@ export const getUsersApi = async () => {
 export const logoutApi = async (data: { id: string }) => {
   return api.post(`${AUTH_BASE_ROUTE}/logout`, data).then((res) => res.data);
 };
+
+export const acceptInviteApi = async (data: {
+  id: string;
+  token: string;
+  password: string;
+}) => {
+  return api
+    .post(`${AUTH_BASE_ROUTE}/accept-invite`, data)
+    .then((res) => res.data);
+};

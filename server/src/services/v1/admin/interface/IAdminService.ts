@@ -8,4 +8,5 @@ export interface IAdminService {
   getCompanyVerificationReq(companyVerificationId: string): Promise<any>;
   approveCompany(companyVerificationId: string): Promise<any>;
   rejectCompany(companyVerificationId: string, reason: string): Promise<any>;
+  getAllCompanies(): Promise<any>;
 }

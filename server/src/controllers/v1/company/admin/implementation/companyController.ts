@@ -1,10 +1,11 @@
 import { injectable, inject } from "inversify";
 import { ICompanyController } from "../interface/ICompanyController";
-import { TYPES } from "../../../../dependency-injection/types";
+import { TYPES } from "../../../../../dependency-injection/types";
 import { Response, NextFunction, Request } from "express";
-import { ICompanyService } from "../../../../services/v1/company/interface/ICompanyService";
-import { ResponseHandler } from "../../../../utils/responseHandler";
-import { AuthRequest } from "../../../../middlewares/auth.middleware";
+import { ICompanyService } from "../../../../../services/v1/company/admin/interface/ICompanyService";
+import { ResponseHandler } from "../../../../../utils/responseHandler";
+import { AuthRequest } from "../../../../../middlewares/auth.middleware";
+import { PROFILE_MESSAGES } from "../../../../../constants/messages/profile";
 
 @injectable()
 export class CompanyController implements ICompanyController {
@@ -32,7 +33,7 @@ export class CompanyController implements ICompanyController {
       next(error);
     }
   }
-
+  //* get verification status
   async getVerificationStatus(
     req: AuthRequest,
     res: Response,
@@ -50,26 +51,39 @@ export class CompanyController implements ICompanyController {
       next(error);
     }
   }
-
+  //* invite
   async invite(
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const companyId = req.user.userId;
+      const companyAdminId = req.user.userId;
       const { name, email, role } = req.body;
-      console.log(
-        `name : ${name} , email : ${email} , role : ${role} , comapanyId : ${companyId}`,
-      );
       const result = await this.companyService.invite(
         name,
         email,
         role,
-        companyId,
+        companyAdminId,
       );
       console.log(`result : ${result}`);
       ResponseHandler.success(res, "Invitation send successfully.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  //* profile
+  async getCompanyProfile(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const companyAdminId = req.user.userId;
+      const result =
+        await this.companyService.getCompanyProfile(companyAdminId);
+      ResponseHandler.success(res, PROFILE_MESSAGES.FETCH_SUCCESS, result);
     } catch (error) {
       next(error);
     }

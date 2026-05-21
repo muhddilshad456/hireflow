@@ -61,7 +61,13 @@ export default function Login() {
       );
       console.log("login response =", res);
       toast.success("Logged in");
-      navigate("/company/dashboard");
+      if (res.user.role == "company_admin") {
+        navigate("company/admin/dashboard");
+      } else if (res.user.role == "company_recruiter") {
+        navigate("/company/recruiter/dashboard");
+      } else {
+        navigate("/company/interviewer/dashboard");
+      }
     } catch (error: any) {
       console.error("login failed : ", error.response?.data);
       toast.error(error.response?.data?.message);

@@ -1,4 +1,4 @@
-import { SignupDto } from "../dtos/v1/auth/signup.dto";
+import { SignupDto } from "../../dtos/v1/auth/signup.dto";
 
 export class AuthMapper {
   static toUserEntity(dto: SignupDto) {

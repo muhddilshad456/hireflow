@@ -7,6 +7,7 @@ import VerifyOtp from "../../../features/company/shared/auth/pages/VerifyOtp";
 import ForgotPassword from "../../../features/company/shared/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/company/shared/auth/pages/ResetPassword";
 import AcceptInvite from "../../../features/company/shared/auth/pages/AcceptInvite";
+import RecruiterRoutes from "./recruiter/RecruiterRoutes";
 
 const CompanyRoutes = () => {
   return (
@@ -22,6 +23,7 @@ const CompanyRoutes = () => {
 
       {/* ✅ Role-based route splitting */}
       <Route path="admin/*" element={<AdminRoutes />} />
+      <Route path="recruiter/*" element={<RecruiterRoutes />} />
     </Routes>
   );
 };

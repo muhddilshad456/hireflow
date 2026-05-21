@@ -85,4 +85,16 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  async getAllCompanies(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await this.adminService.getAllCompanies();
+      ResponseHandler.success(res, "Companies fetched successfully.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

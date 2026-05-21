@@ -19,7 +19,7 @@ export class CompanyVerRepository
   async findLatestVerificationReq(
     userId: string,
   ): Promise<ICompanyVerification | null> {
-    return await CompanyVerificationModel.findOne({ userId }).sort({
+    return await CompanyVerificationModel.findOne({ adminId: userId }).sort({
       createdAt: -1,
     });
   }

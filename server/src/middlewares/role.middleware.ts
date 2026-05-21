@@ -6,6 +6,7 @@ export const roleGuard = (allowedRoles: string[]) => {
     const user = req.user;
 
     if (!user || !allowedRoles.includes(user.role)) {
+      console.error("Access denied");
       return res.status(403).json({
         message: "Access denied",
       });

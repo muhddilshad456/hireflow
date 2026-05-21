@@ -13,6 +13,7 @@ export interface IUser extends Document {
   emailLinkToken: string | null;
   emailLinkTokenExpiry: Date | null;
   refreshToken: string;
+  company?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +48,10 @@ const userSchema = new Schema<IUser>(
     },
     refreshToken: {
       type: String,
+    },
+    company: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
     },
   },
   { timestamps: true },

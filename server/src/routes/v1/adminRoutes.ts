@@ -7,7 +7,7 @@ import { UserRole } from "../../constants/roles";
 import { IUserController } from "../../controllers/v1/users/interface/IUserController";
 import { IAdminController } from "../../controllers/v1/admin/interface/IAdminController";
 import { validateDto } from "../../middlewares/validate.middleware";
-import { CompanyRejectDto } from "../../dtos/v1/company/companyRejectDto";
+import { CompanyRejectDto } from "../../dtos/v1/company/admin/request-dtos/companyRejectDto";
 
 const router = Router();
 
@@ -43,6 +43,10 @@ router.patch(
   "/reject-company/:id",
   validateDto(CompanyRejectDto),
   adminController.rejectCompany.bind(adminController),
+);
+router.get(
+  "/getCompanies",
+  adminController.getAllCompanies.bind(adminController),
 );
 
 export default router;

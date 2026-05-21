@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ICompany extends Document {
   _id: Types.ObjectId;
-  userId: Types.ObjectId;
+  adminId: Types.ObjectId;
 
   companyName: string;
   regNumber: string;
@@ -29,7 +29,7 @@ export interface ICompany extends Document {
 
 const companySchema = new Schema<ICompany>(
   {
-    userId: {
+    adminId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,

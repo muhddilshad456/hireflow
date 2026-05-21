@@ -3,7 +3,7 @@ import { VerificationStatus } from "../constants/companyStatus";
 
 export interface ICompanyVerification extends Document {
   _id: Types.ObjectId;
-  userId: Types.ObjectId;
+  adminId: Types.ObjectId;
 
   companyName: string;
   regNumber: string;
@@ -31,7 +31,7 @@ export interface ICompanyVerification extends Document {
 
 const companyVerificationSchema = new Schema<ICompanyVerification>(
   {
-    userId: {
+    adminId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,

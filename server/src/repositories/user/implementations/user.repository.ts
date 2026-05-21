@@ -4,6 +4,8 @@ import { UserModel, IUser } from "../../../models/user.model.js";
 import { injectable } from "inversify";
 import { QueryFilter } from "mongoose";
 import { GetUsersResponse } from "../../../types/userRepo.js";
+import { IUserWithCompany } from "../../../types/userWithCompany.js";
+import { ICompany } from "../../../models/company.model.js";
 
 @injectable()
 export class UserRepository
@@ -62,5 +64,11 @@ export class UserRepository
 
   async getAllCompanies(): Promise<any> {
     return await UserModel.find({ role: "company_admin" });
+  }
+
+  async findByIdWithCompany(userId: string): Promise<IUserWithCompany | null> {
+    return await UserModel.findById(userId)
+      .populate<{ company: ICompany }>("company") // ✅ key fix
+      .lean();
   }
 }

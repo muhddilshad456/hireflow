@@ -363,7 +363,6 @@ export function RecruiterInvitations() {
   );
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  /* ── filter ── */
   const filtered =
     filterStatus === "Active"
       ? recruiters.filter((r) => r.status !== "Rejected")
@@ -375,7 +374,6 @@ export function RecruiterInvitations() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  /* ── actions ── */
   const handleCancel = (id: number) => {
     setRecruiters((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "Rejected" } : r)),
@@ -390,10 +388,8 @@ export function RecruiterInvitations() {
         email,
         role: "company_recruiter",
       });
-      console.log("result from invite recruiter : ", result);
-      toast.success("invite send successfully.");
+      toast.success("Invite sent successfully.");
     } catch (error: any) {
-      console.log(error?.response?.data);
       toast.error(error?.response?.data?.message);
     }
   };
@@ -406,7 +402,7 @@ export function RecruiterInvitations() {
 
   return (
     <>
-      {/* ── Modals ── */}
+      {/* Modals — unchanged */}
       {showAddModal && (
         <AddRecruiterModal
           onClose={() => setShowAddModal(false)}
@@ -419,8 +415,6 @@ export function RecruiterInvitations() {
           onClose={() => setViewingRecruiter(null)}
         />
       )}
-
-      {/* ── Confirm Cancel ── */}
       {cancellingId !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
@@ -459,50 +453,51 @@ export function RecruiterInvitations() {
       )}
 
       {/* ── Page ── */}
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-              Recruiter Management
-            </h1>
-            <p className="text-sm text-slate-400 mt-0.5">
-              Manage and track recruiter invitations.
-            </p>
-          </div>
-          <SearchInput />
+      <div className="space-y-5">
+        {/* ── Top row: Title + Add button ── */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+            Recruiter Management
+          </h1>
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm shadow-emerald-200 transition-colors hover:from-emerald-600 hover:to-teal-600 flex-shrink-0"
+            className="flex items-center gap-1.5 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-colors flex-shrink-0"
+            style={{ backgroundColor: "#6abf4b" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#58a83b")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#6abf4b")
+            }
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
+            <span className="text-base leading-none">+</span>
             Add Recruiter
           </button>
         </div>
 
-        {/* Table card */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-          {/* Card header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
-            <h2 className="font-bold text-slate-700">Invitations</h2>
+        {/* ── Table section ── */}
+        <div
+          className="bg-white rounded-2xl overflow-hidden"
+          style={{ border: "1px solid #e8e8e4" }}
+        >
+          {/* Invitations row + filter */}
+          <div className="flex items-center justify-between px-6 py-4">
+            <h2 className="font-bold text-slate-800 text-[15px]">
+              Invitations
+            </h2>
 
-            {/* Filter dropdown */}
+            {/* Filter pill */}
             <div className="relative">
               <button
                 onClick={() => setFilterOpen((v) => !v)}
-                className="flex items-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full transition-colors"
+                style={{ backgroundColor: "#e8e8e4", color: "#444" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#ddddd8")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#e8e8e4")
+                }
               >
                 <svg
                   className={`w-3.5 h-3.5 transition-transform ${filterOpen ? "rotate-180" : ""}`}
@@ -527,7 +522,7 @@ export function RecruiterInvitations() {
                       onClick={() => handleFilterChange(opt)}
                       className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
                         filterStatus === opt
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "text-emerald-700 bg-emerald-50"
                           : "text-slate-600 hover:bg-slate-50"
                       }`}
                     >
@@ -543,7 +538,12 @@ export function RecruiterInvitations() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[520px]">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100">
+                <tr
+                  style={{
+                    borderTop: "1px solid #e8e8e4",
+                    borderBottom: "1px solid #e8e8e4",
+                  }}
+                >
                   {[
                     "Recruiter Name",
                     "Email",
@@ -553,14 +553,15 @@ export function RecruiterInvitations() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="text-left px-5 py-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider first:pl-6 last:pr-6"
+                      className="text-left px-6 py-3 text-xs font-semibold"
+                      style={{ color: "#888884" }}
                     >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody>
                 {paginated.length === 0 ? (
                   <tr>
                     <td
@@ -571,41 +572,62 @@ export function RecruiterInvitations() {
                     </td>
                   </tr>
                 ) : (
-                  paginated.map((r) => (
+                  paginated.map((r, idx) => (
                     <tr
                       key={r.id}
-                      className="hover:bg-slate-50/60 transition-colors"
+                      style={{
+                        borderBottom:
+                          idx < paginated.length - 1
+                            ? "1px solid #f0f0eb"
+                            : "none",
+                      }}
                     >
                       {/* Name */}
-                      <td className="px-5 pl-6 py-4 font-semibold text-slate-700">
+                      <td className="px-6 py-4 font-medium text-slate-800">
                         {r.name}
                       </td>
                       {/* Email */}
-                      <td className="px-5 py-4 text-slate-500">{r.email}</td>
+                      <td className="px-6 py-4 text-slate-500">{r.email}</td>
                       {/* Status */}
-                      <td className="px-5 py-4">
+                      <td className="px-6 py-4">
                         <span
-                          className={`font-semibold ${STATUS_STYLES[r.status]}`}
+                          className={`font-semibold text-sm ${STATUS_STYLES[r.status]}`}
                         >
                           {r.status}
                         </span>
                       </td>
                       {/* Actions */}
-                      <td className="px-5 py-4">
+                      <td className="px-6 py-4">
                         {r.status === "Pending" && (
                           <button
                             onClick={() => setCancellingId(r.id)}
-                            className="bg-rose-400 hover:bg-rose-500 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-colors"
+                            className="text-white text-xs font-bold px-5 py-2 rounded-full transition-colors"
+                            style={{ backgroundColor: "#f87171" }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.backgroundColor =
+                                "#ef4444")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.backgroundColor =
+                                "#f87171")
+                            }
                           >
-                            Cancel
+                            Cancell
                           </button>
                         )}
                       </td>
-                      {/* View */}
-                      <td className="px-5 pr-6 py-4">
+                      {/* View Details */}
+                      <td className="px-6 py-4">
                         <button
                           onClick={() => setViewingRecruiter(r)}
-                          className="text-xs font-bold text-emerald-600 hover:underline"
+                          className="text-sm font-semibold transition-colors"
+                          style={{ color: "#6abf4b" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "#58a83b")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "#6abf4b")
+                          }
                         >
                           View
                         </button>
@@ -619,7 +641,10 @@ export function RecruiterInvitations() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 pb-4">
+            <div
+              className="px-6 py-4"
+              style={{ borderTop: "1px solid #f0f0eb" }}
+            >
               <Pagination
                 current={currentPage}
                 total={totalPages}

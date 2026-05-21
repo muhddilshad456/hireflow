@@ -1,5 +1,6 @@
 import { IUser } from "../../../models/user.model.js";
 import { GetUsersResponse } from "../../../types/userRepo.js";
+import { IUserWithCompany } from "../../../types/userWithCompany.js";
 import { IBaseRepository } from "../../base/interface/IBaseRepository.js";
 
 export interface IUserRepository extends IBaseRepository<IUser> {
@@ -15,4 +16,5 @@ export interface IUserRepository extends IBaseRepository<IUser> {
     status: string,
   ): Promise<GetUsersResponse>;
   getAllCompanies(): Promise<any>;
+  findByIdWithCompany(userId: string): Promise<IUserWithCompany | null>;
 }

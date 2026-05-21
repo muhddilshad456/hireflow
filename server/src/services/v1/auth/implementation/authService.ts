@@ -19,7 +19,7 @@ import { inject, injectable } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
 import { IRedisService } from "../../../redis/interface/IRedisService.js";
 import { SignupDto, UserRole } from "../../../../dtos/v1/auth/signup.dto.js";
-import { AuthMapper } from "../../../../mapper/authMapper.js";
+import { AuthMapper } from "../../../../mapper/auth/authMapper.js";
 import { LoginDto } from "../../../../dtos/v1/auth/login.dto.js";
 import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto.js";
 import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto.js";
@@ -534,6 +534,8 @@ export class AuthService implements IAuthService {
       email: invitation.email,
       password: hashedPassword,
       role: invitation.role,
+      isVerified: true,
+      company: invitation.companyId,
     };
 
     const user = await this.userRepository.create(userData);

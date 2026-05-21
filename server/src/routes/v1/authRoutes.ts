@@ -9,7 +9,7 @@ import { verifyAccessToken } from "../../middlewares/auth.middleware";
 import { container } from "../../dependency-injection/container";
 import { TYPES } from "../../dependency-injection/types";
 import { ResetPasswordDto } from "../../dtos/v1/auth/reset-password.dto";
-import { AcceptInviteDto } from "../../dtos/v1/company/acceptInvitationDto";
+import { AcceptInviteDto } from "../../dtos/v1/company/admin/request-dtos/acceptInvitationDto";
 
 const router = Router();
 

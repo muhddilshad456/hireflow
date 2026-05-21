@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PrimaryButton from "../../../../shared/components/FormButton";
 import FormFieldInput from "../../../../shared/components/FormFieldInput";
 import toast from "react-hot-toast";
+import { acceptInviteApi } from "../../../../shared/services/authService";
 
 interface FormState {
   password: string;
@@ -37,14 +38,27 @@ export default function AcceptInvite() {
     (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get("id");
+  const token = searchParams.get("token");
+
+  if (!id || !token) return;
+
   const handleCreate = async () => {
     setLoading(true);
     setTimeout(() => setLoading(false), 1500);
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length !== 0) return;
-
     try {
+      const result = await acceptInviteApi({
+        id,
+        token,
+        password: form.password,
+      });
+      console.log("result from handle accept invitation : ", result);
+      navigate("/company/login");
+      toast.success("Account created.");
     } catch (error: any) {
       console.error("login failed : ", error.response.data);
       toast.error(error.response?.data?.message);
