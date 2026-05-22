@@ -19,6 +19,7 @@ export interface ICompany extends Document {
   city: string;
   zip: string;
 
+  profilePicture?: string;
   document: string;
 
   isActive: boolean;
@@ -49,6 +50,11 @@ const companySchema = new Schema<ICompany>(
     state: { type: String, required: true },
     city: { type: String, required: true },
     zip: { type: String, required: true },
+
+    profilePicture: {
+      type: String,
+      default: "",
+    },
 
     document: {
       type: String,

@@ -154,7 +154,7 @@ function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
           {/* Dark avatar circle */}
           <ProfileDropdown
             avatarUrl={"https://i.pravatar.cc/40?img=12"}
-            onProfile={() => navigate("/profile")}
+            onProfile={() => navigate("/company/admin/profile")}
             onLogout={logoutUser}
           />
         </div>
@@ -449,11 +449,7 @@ export function AdminLayout() {
             className="flex-1 relative overflow-hidden"
             onClick={status === "pending" ? handlePendingClick : undefined}
           >
-            <div
-              className={`h-full ${
-                status !== "approved" ? "overflow-hidden" : "overflow-y-auto"
-              }`}
-            >
+            <div className="h-full overflow-y-auto">
               <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                 <Outlet />
               </div>

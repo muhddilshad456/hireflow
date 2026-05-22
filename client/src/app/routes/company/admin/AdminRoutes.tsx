@@ -3,6 +3,7 @@ import { AdminLayout } from "./AdminLayout";
 import { Dashboard } from "../../../../features/company/admin/dashboard/pages/Dashboard";
 import { RecruiterInvitations } from "../../../../features/company/admin/dashboard/pages/RecruiterInvitations";
 import ProtectedRoute from "../../../../routes/ProtectedRoute";
+import ProfilePage from "../../../../features/company/admin/profile/pages/Profile";
 
 const AdminRoutes = () => {
   return (
@@ -21,6 +22,7 @@ const AdminRoutes = () => {
             path="recruiter-invitations"
             element={<RecruiterInvitations />}
           />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
       </Route>
     </Routes>

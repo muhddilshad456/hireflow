@@ -12,6 +12,7 @@ export interface ProfileResponseDto {
     companyName: string;
     email: string;
     phone: string;
+    regNumber: string;
     website?: string;
     description: string;
     address: string;

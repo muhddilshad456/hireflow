@@ -39,6 +39,7 @@ export class CompanyMapper {
         ? {
             id: company._id.toString(),
             companyName: company.companyName,
+            regNumber: company.regNumber,
             email: company.email,
             phone: company.phone,
             website: company.website,
