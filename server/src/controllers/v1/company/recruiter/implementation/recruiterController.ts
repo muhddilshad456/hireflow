@@ -19,12 +19,9 @@ export class RecruiterController implements IRecruiterController {
       console.log("jiklsjdfk");
       const dto = req.body;
       console.log("dto for job creation : ", dto);
-      const recruiterId = req.query.id?.toString();
-      if (!recruiterId) {
-        console.log("id required");
-        return;
-      }
-      console.log("id for job creation : ", recruiterId);
+      const recruiterId = req.user?.userId;
+      console.log("req.user:", req.user);
+      console.log("Recruiter ID:", recruiterId);
       const result = await this.recruiterService.createJob(dto, recruiterId);
       ResponseHandler.success(res, "Job created successfully.", result);
     } catch (error) {

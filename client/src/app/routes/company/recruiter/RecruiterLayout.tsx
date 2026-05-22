@@ -404,15 +404,6 @@ export function RecruiterLayout() {
     });
   };
 
-  useEffect(() => {
-    async function getStatus() {
-      let result = await getStatusApi();
-      setVerification(result.data);
-      console.log(result);
-    }
-    getStatus();
-  }, [showForm]);
-
   return (
     <div className="h-screen flex flex-col bg-slate-50">
       {/* 🔹 HEADER (FULL WIDTH) */}
