@@ -2,7 +2,10 @@ import { inject } from "inversify";
 import { IAdminService } from "../interface/IAdminService";
 import { TYPES } from "../../../../dependency-injection/types";
 import { ICompanyVerRepository } from "../../../../repositories/company/interface/ICompanyVerRepository";
-import { ICompanyVerification } from "../../../../models/company.verification.model";
+import {
+  ICompanyVerification,
+  VerificationType,
+} from "../../../../models/company.verification.model";
 import { Logger } from "pino";
 import { BadRequestError } from "../../../../errors/bad-request.error";
 import { NotFoundError } from "../../../../errors/not-found.error";
@@ -12,6 +15,7 @@ import { ConflictError } from "../../../../errors/conflict.error";
 import { CompanyMapper } from "../../../../mapper/company/admin/companyMapper";
 import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
 import { InternalServerError } from "../../../../errors/internal-server.error";
+import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation";
 
 export class AdminService implements IAdminService {
   constructor(
@@ -29,6 +33,7 @@ export class AdminService implements IAdminService {
     limit: number,
     search: string,
     status: string,
+    type: VerificationType,
   ): Promise<any> {
     const { verificationRequests, totalVerificationRequests } =
       await this.companyVerRepository.getAllVerificationReq(
@@ -36,9 +41,22 @@ export class AdminService implements IAdminService {
         limit,
         search,
         status,
+        type,
       );
 
-    console.log("status : ", status);
+    if (!type) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.TYPE_REQUIRED,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.TYPE_REQUIRED);
+    }
+
+    if (type != VerificationType.NEW && type != VerificationType.UPDATE) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.INVALID_TYPE,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.INVALID_TYPE);
+    }
 
     const totalPages = Math.ceil(totalVerificationRequests / limit);
 
@@ -58,12 +76,13 @@ export class AdminService implements IAdminService {
       currentPage: page,
     };
   }
+  //* get all verification req
   async getCompanyVerificationReq(companyVerificationId: string): Promise<any> {
     if (!companyVerificationId) {
       this.logger.warn({
-        event: "VERIFICATION_ID_NOT_FOUND",
+        event: VALIDATION_MESSAGES.ID_REQUIRED,
       });
-      throw new BadRequestError("companyVerificationId not found");
+      throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
     const result = await this.companyVerRepository.findById(
       companyVerificationId,
@@ -96,27 +115,43 @@ export class AdminService implements IAdminService {
       throw new ConflictError("Request already processed");
     }
 
-    const existingCompany = await this.companyRepository.findOne({
-      adminId: request.adminId,
-    });
-
-    if (existingCompany) {
-      this.logger.warn({
-        event: "COMPANY_ALREADY_VERIFIED",
-      });
-      throw new ConflictError("Company already verified");
-    }
-
     const companyData = CompanyMapper.toCompanyEntity(request);
 
-    const company = await this.companyRepository.create(companyData);
+    let company;
+
+    if (request.verificationType == VerificationType.NEW) {
+      company = await this.companyRepository.create(companyData);
+    } else if (request.verificationType == VerificationType.UPDATE) {
+      if (!request.companyId) {
+        this.logger.warn({
+          event: "companyId missing for update",
+          companyId: request.companyId,
+        });
+        throw new BadRequestError("companyId missing for update");
+      }
+      const existingCompany = await this.companyRepository.findById(
+        request.companyId.toString(),
+      );
+
+      if (!existingCompany) {
+        this.logger.warn({
+          event: "Company not found for update",
+          companyId: request.companyId,
+        });
+        throw new NotFoundError("Company not found for update");
+      }
+      company = await this.companyRepository.update(
+        request.companyId.toString(),
+        companyData,
+      );
+    }
 
     if (!company) {
       this.logger.error({
-        event: "COMPANY_CREATION_FAILED",
+        event: "Failed to process company",
       });
 
-      throw new InternalServerError("Failed to create company");
+      throw new InternalServerError("Failed to process company");
     }
 
     await this.userRepository.update(request.adminId.toString(), {
@@ -124,6 +159,7 @@ export class AdminService implements IAdminService {
     });
 
     await this.companyVerRepository.update(companyVerificationId, {
+      companyId: company._id,
       status: VerificationStatus.APPROVED,
     });
     return company;

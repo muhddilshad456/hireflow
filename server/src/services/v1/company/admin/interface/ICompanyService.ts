@@ -1,15 +1,24 @@
 import { UserRole } from "../../../../../constants/roles";
 import { VerifyReqDto } from "../../../../../dtos/v1/company/admin/request-dtos/verifyReqDto";
 import { ProfileResponseDto } from "../../../../../dtos/v1/company/admin/response-dto/companyProfileDto";
-import { ICompanyVerification } from "../../../../../models/company.verification.model";
+import {
+  ICompanyVerification,
+  VerificationType,
+} from "../../../../../models/company.verification.model";
 
 export interface ICompanyService {
   createVerifyRequest(
     userId: string,
     dto: VerifyReqDto,
-    file: Express.Multer.File,
+    files: {
+      document?: Express.Multer.File[];
+      profilePicture?: Express.Multer.File[];
+    },
   ): Promise<ICompanyVerification>;
-  getVerificationStatus(userId: string): Promise<Partial<ICompanyVerification>>;
+  getVerificationStatus(
+    userId: string,
+    type: VerificationType,
+  ): Promise<Partial<ICompanyVerification>>;
   invite(
     name: string,
     email: string,

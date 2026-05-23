@@ -6,12 +6,14 @@ import { ICompanyService } from "../../../../../services/v1/company/admin/interf
 import { ResponseHandler } from "../../../../../utils/responseHandler";
 import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 import { PROFILE_MESSAGES } from "../../../../../constants/messages/profile";
+import { VerificationType } from "../../../../../models/company.verification.model";
 
 @injectable()
 export class CompanyController implements ICompanyController {
   constructor(
     @inject(TYPES.CompanyService) private companyService: ICompanyService,
   ) {}
+  //* create verify request
   async createVerifyRequest(
     req: AuthRequest,
     res: Response,
@@ -20,12 +22,15 @@ export class CompanyController implements ICompanyController {
     try {
       const userId = req.user?.userId;
       const dto = req.body;
-      const file = req.file;
+      const files = req.files as {
+        document?: Express.Multer.File[];
+        profilePicture?: Express.Multer.File[];
+      };
 
       const result = await this.companyService.createVerifyRequest(
         userId,
         dto,
-        file,
+        files,
       );
 
       ResponseHandler.success(res, "Verification Request Submitted", result);
@@ -41,7 +46,11 @@ export class CompanyController implements ICompanyController {
   ): Promise<void> {
     try {
       const userId = req.user?.userId;
-      const result = await this.companyService.getVerificationStatus(userId);
+      const type = req.query?.type?.toString() as VerificationType;
+      const result = await this.companyService.getVerificationStatus(
+        userId,
+        type,
+      );
       ResponseHandler.success(
         res,
         "Company status fetched successfully.",

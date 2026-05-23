@@ -17,7 +17,10 @@ const companyController = container.get<ICompanyController>(
 
 router.post(
   "/verify-request",
-  upload.single("document"),
+  upload.fields([
+    { name: "document", maxCount: 1 },
+    { name: "profilePicture", maxCount: 1 },
+  ]),
   validateDto(VerifyReqDto),
   verifyAccessToken,
   roleGuard([UserRole.COMPANY_ADMIN]),

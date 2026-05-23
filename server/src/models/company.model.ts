@@ -19,7 +19,7 @@ export interface ICompany extends Document {
   city: string;
   zip: string;
 
-  profilePicture?: string;
+  profilePicture?: string | null;
   document: string;
 
   isActive: boolean;

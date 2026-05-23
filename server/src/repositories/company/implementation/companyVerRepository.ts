@@ -3,6 +3,7 @@ import { QueryFilter } from "mongoose";
 import {
   CompanyVerificationModel,
   ICompanyVerification,
+  VerificationType,
 } from "../../../models/company.verification.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { ICompanyVerRepository } from "../interface/ICompanyVerRepository";
@@ -18,8 +19,12 @@ export class CompanyVerRepository
   //* find latest verification request
   async findLatestVerificationReq(
     userId: string,
+    type: VerificationType,
   ): Promise<ICompanyVerification | null> {
-    return await CompanyVerificationModel.findOne({ adminId: userId }).sort({
+    return await CompanyVerificationModel.findOne({
+      adminId: userId,
+      verificationType: type,
+    }).sort({
       createdAt: -1,
     });
   }
@@ -29,10 +34,13 @@ export class CompanyVerRepository
     limit: number,
     search: string,
     status: string,
+    type: VerificationType,
   ): Promise<any> {
     const skip = (page - 1) * limit;
 
     const filter: QueryFilter<ICompanyVerification> = {};
+
+    filter.verificationType = type;
 
     if (search) {
       filter.$or = [

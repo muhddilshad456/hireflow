@@ -4,11 +4,13 @@ import { IAdminService } from "../../../../services/v1/admin/interface/IAdminSer
 import { inject } from "inversify";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { IAdminController } from "../interface/IAdminController";
+import { VerificationType } from "../../../../models/company.verification.model";
 
 export class AdminController implements IAdminController {
   constructor(
     @inject(TYPES.AdminService) private adminService: IAdminService,
   ) {}
+  //* get all verification request
   async getAllCompanyVerificationReq(
     req: Request,
     res: Response,
@@ -19,11 +21,13 @@ export class AdminController implements IAdminController {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string) || "";
       const status = (req.query.status as string)?.toLowerCase() || "";
+      const type = req.query.type as VerificationType;
       const result = await this.adminService.getAllCompanyVerificationReq(
         page,
         limit,
         search,
         status,
+        type,
       );
       ResponseHandler.success(
         res,

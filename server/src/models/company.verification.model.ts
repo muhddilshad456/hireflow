@@ -1,9 +1,18 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 import { VerificationStatus } from "../constants/companyStatus";
 
+export enum VerificationType {
+  NEW = "NEW",
+  UPDATE = "UPDATE",
+}
+
 export interface ICompanyVerification extends Document {
   _id: Types.ObjectId;
+
+  companyId?: Types.ObjectId;
   adminId: Types.ObjectId;
+
+  verificationType: VerificationType;
 
   companyName: string;
   regNumber: string;
@@ -20,6 +29,7 @@ export interface ICompanyVerification extends Document {
   city: string;
   zip: string;
 
+  profilePicture?: string | null;
   document: string;
 
   status: VerificationStatus;
@@ -34,6 +44,16 @@ const companyVerificationSchema = new Schema<ICompanyVerification>(
     adminId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+    },
+    companyId: {
+      type: Schema.Types.ObjectId,
+      ref: "Company",
+    },
+
+    verificationType: {
+      type: String,
+      enum: Object.values(VerificationType),
       required: true,
     },
 
@@ -51,6 +71,10 @@ const companyVerificationSchema = new Schema<ICompanyVerification>(
     state: { type: String, required: true },
     city: { type: String, required: true },
     zip: { type: String, required: true },
+
+    profilePicture: {
+      type: String,
+    },
 
     document: {
       type: String,

@@ -7,7 +7,10 @@ import { ICloudinaryService } from "../../../../cloudinary/interface/ICloudinary
 import { NotFoundError } from "../../../../../errors/not-found.error";
 import { VerificationStatus } from "../../../../../constants/companyStatus";
 import mongoose from "mongoose";
-import { ICompanyVerification } from "../../../../../models/company.verification.model";
+import {
+  ICompanyVerification,
+  VerificationType,
+} from "../../../../../models/company.verification.model";
 import { Logger } from "pino";
 import { BadRequestError } from "../../../../../errors/bad-request.error";
 import { IUserRepository } from "../../../../../repositories/user/interfaces/IUserRepository";
@@ -22,6 +25,7 @@ import { InternalServerError } from "../../../../../errors/internal-server.error
 import { CompanyMapper } from "../../../../../mapper/company/admin/companyMapper";
 import { USER_MESSAGES } from "../../../../../constants/messages/user";
 import { ProfileResponseDto } from "../../../../../dtos/v1/company/admin/response-dto/companyProfileDto";
+import { CompanyVerificationMapper } from "../../../../../mapper/company/admin/verificationMapper";
 
 @injectable()
 export class CompanyService implements ICompanyService {
@@ -42,20 +46,32 @@ export class CompanyService implements ICompanyService {
   async createVerifyRequest(
     userId: string,
     dto: VerifyReqDto,
-    file: Express.Multer.File,
+    files: {
+      document?: Express.Multer.File[];
+      profilePicture?: Express.Multer.File[];
+    },
   ): Promise<ICompanyVerification> {
-    if (!file) throw new NotFoundError("Document is required");
+    const documentFile = files.document?.[0];
+    const profileFile = files.profilePicture?.[0];
 
-    const documentUrl = await this.cloudinaryService.uploadFile(file);
+    if (!documentFile) {
+      throw new NotFoundError("Document is required");
+    }
 
-    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const documentUrl = await this.cloudinaryService.uploadFile(documentFile);
 
-    const data = {
-      adminId: userObjectId,
-      ...dto,
-      document: documentUrl,
-      status: VerificationStatus.PENDING,
-    };
+    let profilePictureUrl: string | null = null;
+
+    if (profileFile) {
+      profilePictureUrl = await this.cloudinaryService.uploadFile(profileFile);
+    }
+
+    const data = CompanyVerificationMapper.toVerificationEntity(
+      dto,
+      userId,
+      documentUrl,
+      profilePictureUrl,
+    );
 
     const result = await this.companyVerRepository.create(data);
 
@@ -71,6 +87,7 @@ export class CompanyService implements ICompanyService {
   //* get verification status
   async getVerificationStatus(
     userId: string,
+    type: VerificationType,
   ): Promise<Partial<ICompanyVerification>> {
     if (!userId) {
       this.logger.warn({
@@ -79,6 +96,15 @@ export class CompanyService implements ICompanyService {
       });
 
       throw new BadRequestError("userId missing");
+    }
+
+    if (!type) {
+      this.logger.warn({
+        event: "TYPE_MISSING",
+        userId,
+      });
+
+      throw new BadRequestError("type missing");
     }
 
     const result =

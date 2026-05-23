@@ -1,5 +1,4 @@
 import { ICompanyVerification } from "../../../models/company.verification.model";
-import { IUser } from "../../../models/user.model";
 import { ICompany } from "../../../models/company.model";
 import { ProfileResponseDto } from "../../../dtos/v1/company/admin/response-dto/companyProfileDto";
 import { IUserWithCompany } from "../../../types/userWithCompany";
@@ -20,6 +19,7 @@ export class CompanyMapper {
       city: request.city,
       zip: request.zip,
       document: request.document,
+      profilePicture: request.profilePicture ?? null,
     };
   }
   static toProfileResponse(
