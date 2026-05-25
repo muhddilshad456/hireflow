@@ -9,7 +9,7 @@ export enum VerificationType {
 export interface ICompanyVerification extends Document {
   _id: Types.ObjectId;
 
-  companyId?: Types.ObjectId;
+  companyId?: Types.ObjectId | null;
   adminId: Types.ObjectId;
 
   verificationType: VerificationType;

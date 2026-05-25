@@ -50,6 +50,7 @@ export class CompanyMapper {
             city: company.city,
             zip: company.zip,
             document: company.document,
+            profilePicture: company.profilePicture ?? null,
             isActive: company.isActive,
           }
         : null,

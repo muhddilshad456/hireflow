@@ -24,7 +24,7 @@ export class CompanyVerificationMapper {
       zip: dto.zip,
       document: documentUrl,
       profilePicture: profilePictureUrl,
-      companyId: new mongoose.Types.ObjectId(dto.companyId),
+      companyId: null,
       verificationType: dto.verificationType,
       status: VerificationStatus.PENDING,
     };

@@ -3,11 +3,13 @@ export interface VerificationFormData {
   regNumber: string;
   email: string;
   phone: string;
-  website: string;
+  website?: string;
   address: string;
   description: string;
   country: string;
   state: string;
   city: string;
   zip: string;
+  profilePicture?: string;
+  document?: string;
 }

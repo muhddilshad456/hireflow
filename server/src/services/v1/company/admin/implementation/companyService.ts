@@ -107,8 +107,10 @@ export class CompanyService implements ICompanyService {
       throw new BadRequestError("type missing");
     }
 
-    const result =
-      await this.companyVerRepository.findLatestVerificationReq(userId);
+    const result = await this.companyVerRepository.findLatestVerificationReq(
+      userId,
+      type,
+    );
 
     if (!result) {
       return {

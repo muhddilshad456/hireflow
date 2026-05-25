@@ -21,6 +21,7 @@ export interface ProfileResponseDto {
     city: string;
     zip: string;
     document: string;
+    profilePicture: string | null;
     isActive: boolean;
   } | null;
 }

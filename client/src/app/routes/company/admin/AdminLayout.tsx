@@ -9,7 +9,10 @@ import { ConfirmModal } from "../../../../features/shared/components/Confirmatio
 import { ProfileDropdown } from "../../../../features/shared/components/ProfileDropdown";
 import type { ReactNode } from "react";
 import { VerifyForm } from "../../../../features/company/admin/dashboard/components/VerifyReqForm";
-import { getStatusApi } from "../../../../features/company/admin/dashboard/services/comapanyServices";
+import {
+  getStatusApi,
+  verifyRequestApi,
+} from "../../../../features/company/admin/dashboard/services/comapanyServices";
 
 type Status = "unverified" | "form" | "pending" | "approved" | "rejected";
 type Page =
@@ -415,16 +418,26 @@ export function AdminLayout() {
     if (btn?.id === "demo-reject") setStatus("rejected");
   };
 
-  const handleVerificationSubmitted = () => {
-    setShowForm(false);
-    setVerification({
-      status: "pending",
-    });
+  const handleVerificationSubmitted = async (data: FormData) => {
+    try {
+      const result = await verifyRequestApi(data, "NEW");
+
+      toast.success("verification requested");
+
+      console.log(result);
+
+      setShowForm(false);
+      setVerification({
+        status: "pending",
+      });
+    } catch (error: any) {
+      console.log("company verify req error", error.response?.data);
+    }
   };
 
   useEffect(() => {
     async function getStatus() {
-      let result = await getStatusApi();
+      let result = await getStatusApi("NEW");
       setVerification(result.data);
       console.log(result);
     }

@@ -14,7 +14,7 @@ interface CompanyRequestData {
   status: string;
 }
 
-export function CompanyApprovalManagement() {
+export function CompanyEditReqManagement() {
   const [requests, setRequests] = useState<CompanyRequestData[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<CompanyFilterType>("All");
@@ -32,7 +32,7 @@ export function CompanyApprovalManagement() {
           limit,
           search,
           filter,
-          "NEW",
+          "UPDATE",
         );
         setRequests(result.data.verificationRequests);
         setTotalPages(result.data.totalPages);
@@ -56,7 +56,7 @@ export function CompanyApprovalManagement() {
   return (
     <div className="space-y-5">
       <h1 className="text-xl md:text-2xl font-bold text-violet-600 tracking-tight">
-        Company Verify Requests
+        Company Edit Requests
       </h1>
 
       {/* Tab bar + filter */}

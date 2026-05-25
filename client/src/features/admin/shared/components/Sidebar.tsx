@@ -112,6 +112,11 @@ const NAV = [
     label: "Company Approvals",
     icon: <IcoCompany />,
   },
+  {
+    path: "/admin/companies-edit-requests",
+    label: "Company Edit Approvals",
+    icon: <IcoCompany />,
+  },
   { path: "/admin/users", label: "User Management", icon: <IcoUser /> },
   { path: "/admin/jobs", label: "Job Management", icon: <IcoJob /> },
   {

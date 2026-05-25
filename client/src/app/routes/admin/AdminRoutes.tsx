@@ -13,6 +13,7 @@ import ProtectedRoute from "../../../routes/ProtectedRoute";
 import PublicRoute from "../../../routes/PublicRoute";
 import { CompanyApprovalManagement } from "../../../features/admin/dashboard/pages/CompanyApprovalManagement";
 import CompanyDetailsReview from "../../../features/admin/dashboard/pages/CompanyReqDetails";
+import { CompanyEditReqManagement } from "../../../features/admin/dashboard/pages/CompanyEditReqManagement";
 
 const AdminRoutes = () => {
   return (
@@ -37,6 +38,10 @@ const AdminRoutes = () => {
             <Route
               path="companies-verify-requests"
               element={<CompanyApprovalManagement />}
+            />
+            <Route
+              path="companies-edit-requests"
+              element={<CompanyEditReqManagement />}
             />
             <Route
               path="/companies-verify-request/:id"

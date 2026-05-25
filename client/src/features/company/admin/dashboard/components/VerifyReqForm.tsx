@@ -1,8 +1,6 @@
 import { useState, useRef } from "react";
 import type { ReactNode, ChangeEvent } from "react";
 import type { VerificationFormData } from "../types/verification.types";
-import toast from "react-hot-toast";
-import { verifyRequestApi } from "../services/comapanyServices";
 import { Ico } from "../../../../../assets/icons/CompanyIcons";
 
 interface FormErrors {
@@ -59,15 +57,21 @@ function Input({
 export function VerifyForm({
   onSubmit,
   onClose,
+  initialData,
+  mode = "initial",
 }: {
-  onSubmit: () => void;
+  onSubmit: (data: FormData) => void;
   onClose: () => void;
+  initialData?: VerificationFormData | null;
+  mode?: "initial" | "edit";
 }) {
-  const [fd, setFd] = useState<VerificationFormData>(EMPTY);
-  const [file, setFile] = useState<File | null>(null);
+  const [fd, setFd] = useState<VerificationFormData>(initialData || EMPTY);
+  const [docFile, setDocFile] = useState<File | null>(null);
   const [err, setErr] = useState<FormErrors>({});
   const [loading, setLd] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [logo, setLogo] = useState<File | null>(null);
 
   const set =
     (k: keyof VerificationFormData) =>
@@ -89,8 +93,11 @@ export function VerifyForm({
     if (!fd.address.trim()) e.address = "Business address is required";
     if (!fd.description.trim())
       e.description = "Company description is required";
-    if (!file) {
-      e.document = "Document required";
+    if (!docFile) {
+      e.docFile = "Document required";
+    }
+    if (!logo) {
+      e.logo = "logo required";
     }
     if (!fd.country.trim()) e.country = "Country is required";
     if (!fd.state.trim()) e.state = "State is required";
@@ -105,7 +112,6 @@ export function VerifyForm({
 
     if (!selectedFile) return;
 
-    // 🔹 validate (optional but recommended)
     const validTypes = ["application/pdf", "image/jpeg", "image/png"];
     if (!validTypes.includes(selectedFile.type)) {
       alert("Invalid file type");
@@ -116,31 +122,49 @@ export function VerifyForm({
       alert("File too large (max 10MB)");
       return;
     }
+    setDocFile(selectedFile);
+  };
 
-    setFile(selectedFile);
+  const handleLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+
+    const validTypes = ["image/jpeg", "image/png"];
+    if (!validTypes.includes(selected.type)) {
+      alert("Only JPG/PNG allowed");
+      return;
+    }
+
+    if (selected.size > 5 * 1024 * 1024) {
+      alert("Logo too large (max 5MB)");
+      return;
+    }
+
+    setLogo(selected);
   };
 
   const handleSubmit = async () => {
     if (!validate()) return;
 
-    try {
-      const formData = new FormData();
+    const formData = new FormData();
 
-      Object.entries(fd).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
+    formData.append("companyName", fd.companyName);
+    formData.append("regNumber", fd.regNumber);
+    formData.append("email", fd.email);
+    formData.append("phone", fd.phone);
+    formData.append("website", fd.website || "");
+    formData.append("address", fd.address);
+    formData.append("description", fd.description);
+    formData.append("country", fd.country);
+    formData.append("state", fd.state);
+    formData.append("city", fd.city);
+    formData.append("zip", fd.zip);
 
-      formData.append("document", file as File);
+    if (docFile) formData.append("document", docFile);
 
-      const result = await verifyRequestApi(formData);
+    if (logo) formData.append("profilePicture", logo);
 
-      toast.success("verification requested");
-
-      console.log(result);
-      onSubmit();
-    } catch (error: any) {
-      console.log("company verify req error", error.response?.data);
-    }
+    onSubmit(formData);
   };
 
   return (
@@ -154,7 +178,9 @@ export function VerifyForm({
         <div className="flex items-center justify-between px-7 pt-7 pb-5 border-b border-slate-100 flex-shrink-0">
           <div>
             <h2 className="text-lg font-black text-slate-800 tracking-tight">
-              Verify Your Company
+              {mode == "initial"
+                ? "Verify Your Company"
+                : "Edit verification details"}
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Fill in the details below to submit your verification request
@@ -288,33 +314,84 @@ export function VerifyForm({
               type="button"
               onClick={() => fileRef.current?.click()}
               className={`w-full flex flex-col items-center gap-2 py-6 rounded-xl border-2 border-dashed transition-colors
-                ${err.docName ? "border-rose-300 bg-rose-50" : file?.name ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50/50"}`}
+                ${err.docName ? "border-rose-300 bg-rose-50" : docFile?.name ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50/50"}`}
             >
               <span
-                className={file?.name ? "text-emerald-500" : "text-slate-400"}
+                className={
+                  docFile?.name ? "text-emerald-500" : "text-slate-400"
+                }
               >
                 <Ico.Upload />
               </span>
-              {file ? (
-                <p className="text-xs font-bold text-emerald-700">
-                  {file.name}
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs font-semibold text-slate-600">
-                    Click to upload PDF or image
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    PDF, JPG, PNG up to 10MB
-                  </p>
-                </>
-              )}
+              <div>
+                {docFile ? (
+                  // ✅ SHOW SELECTED FILE
+                  docFile.type === "application/pdf" ? (
+                    <iframe
+                      src={URL.createObjectURL(docFile)}
+                      className="w-full h-40 border rounded"
+                    />
+                  ) : (
+                    <img
+                      src={URL.createObjectURL(docFile)}
+                      alt="preview"
+                      className="h-32 object-contain border rounded"
+                    />
+                  )
+                ) : initialData?.document ? (
+                  // ✅ SHOW EXISTING FILE (EDIT MODE)
+                  initialData.document.endsWith(".pdf") ? (
+                    <iframe
+                      src={initialData.document}
+                      className="w-full h-40 border rounded"
+                    />
+                  ) : (
+                    <img
+                      src={initialData.document}
+                      alt="existing"
+                      className="h-32 object-contain border rounded"
+                    />
+                  )
+                ) : (
+                  <p className="text-sm text-gray-400">No document selected</p>
+                )}
+              </div>
             </button>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={handleFile}
+              className="hidden"
+            />
+          </Field>
+          {/* log upload */}
+          <Field label="Company Logo" error={err.logo}>
+            <button
+              type="button"
+              onClick={() => logoRef.current?.click()}
+              className="w-full flex flex-col items-center gap-2 py-6 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:border-emerald-300"
+            >
+              {logo ? (
+                <img
+                  src={URL.createObjectURL(logo)}
+                  className="h-16 object-contain"
+                />
+              ) : initialData?.profilePicture ? (
+                <img
+                  src={initialData.profilePicture}
+                  className="h-16 object-contain"
+                />
+              ) : (
+                <p className="text-xs text-slate-500">Upload company logo</p>
+              )}
+            </button>
+
+            <input
+              ref={logoRef}
+              type="file"
+              accept=".jpg,.jpeg,.png"
+              onChange={handleLogo}
               className="hidden"
             />
           </Field>

@@ -28,6 +28,7 @@ export class AdminService implements IAdminService {
     @inject(TYPES.Logger)
     private logger: Logger,
   ) {}
+  //* get all company verification requests
   async getAllCompanyVerificationReq(
     page: number,
     limit: number,
@@ -76,7 +77,7 @@ export class AdminService implements IAdminService {
       currentPage: page,
     };
   }
-  //* get all verification req
+  //* get verification req
   async getCompanyVerificationReq(companyVerificationId: string): Promise<any> {
     if (!companyVerificationId) {
       this.logger.warn({
@@ -122,16 +123,16 @@ export class AdminService implements IAdminService {
     if (request.verificationType == VerificationType.NEW) {
       company = await this.companyRepository.create(companyData);
     } else if (request.verificationType == VerificationType.UPDATE) {
-      if (!request.companyId) {
+      if (!request.adminId) {
         this.logger.warn({
-          event: "companyId missing for update",
-          companyId: request.companyId,
+          event: "adminId missing for update",
+          companyId: request.adminId,
         });
-        throw new BadRequestError("companyId missing for update");
+        throw new BadRequestError("adminId missing for update");
       }
-      const existingCompany = await this.companyRepository.findById(
-        request.companyId.toString(),
-      );
+      const existingCompany = await this.companyRepository.findOne({
+        adminId: request.adminId,
+      });
 
       if (!existingCompany) {
         this.logger.warn({
@@ -141,7 +142,7 @@ export class AdminService implements IAdminService {
         throw new NotFoundError("Company not found for update");
       }
       company = await this.companyRepository.update(
-        request.companyId.toString(),
+        existingCompany._id.toString(),
         companyData,
       );
     }

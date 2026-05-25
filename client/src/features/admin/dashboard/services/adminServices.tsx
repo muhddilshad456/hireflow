@@ -25,10 +25,11 @@ export const getAllCompanyRequests = async (
   limit: number,
   search: string,
   status: string,
+  type: string,
 ) => {
   return api
     .get(
-      `${ADMIN_BASE_ROUTE}/company-verification-requests?page=${page}&&limit=${limit}&&search=${search}&&status=${status}`,
+      `${ADMIN_BASE_ROUTE}/company-verification-requests?page=${page}&&limit=${limit}&&search=${search}&&status=${status}&&type=${type}`,
     )
     .then((res) => res.data);
 };

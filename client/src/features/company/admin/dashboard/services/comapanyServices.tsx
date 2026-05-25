@@ -1,7 +1,8 @@
 import { COMPANY_BASE_ROUTE } from "../../../../../constents/apiRoutes";
 import api from "../../../../../services/api";
 
-export const verifyRequestApi = (data: FormData) => {
+export const verifyRequestApi = (data: FormData, type: string) => {
+  data.set("verificationType", type);
   return api
     .post(`/${COMPANY_BASE_ROUTE}/verify-request`, data, {
       headers: {
@@ -11,9 +12,9 @@ export const verifyRequestApi = (data: FormData) => {
     .then((res) => res.data);
 };
 
-export const getStatusApi = () => {
+export const getStatusApi = (type: string) => {
   return api
-    .get(`/${COMPANY_BASE_ROUTE}/verification-status`)
+    .get(`/${COMPANY_BASE_ROUTE}/verification-status?type=${type}`)
     .then((res) => res.data);
 };
 
