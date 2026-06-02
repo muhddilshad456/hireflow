@@ -20,6 +20,8 @@ import { InvitationRepository } from "../repositories/company/implementation/inv
 import { RecruiterService } from "../services/v1/company/recruiter/implementation/recruiterService";
 import { RecruiterController } from "../controllers/v1/company/recruiter/implementation/recruiterController";
 import { JobRepository } from "../repositories/job/implementation/jobRepository";
+import { JobService } from "../services/v1/job/implementation/jobService";
+import { JobController } from "../controllers/v1/job/implementation/jobController";
 
 const container = new Container();
 
@@ -35,6 +37,7 @@ container.bind(TYPES.UserService).to(UserService);
 container.bind(TYPES.CompanyService).to(CompanyService);
 container.bind(TYPES.AdminService).to(AdminService);
 container.bind(TYPES.RecruiterService).to(RecruiterService);
+container.bind(TYPES.JobService).to(JobService);
 container.bind(TYPES.EmailService).to(EmailService);
 container.bind(TYPES.RedisService).to(RedisService);
 container.bind(TYPES.CloudinaryService).to(CloudinaryService);
@@ -45,5 +48,6 @@ container.bind(TYPES.UserController).to(UserController);
 container.bind(TYPES.CompanyController).to(CompanyController);
 container.bind(TYPES.AdminController).to(AdminController);
 container.bind(TYPES.RecruiterController).to(RecruiterController);
+container.bind(TYPES.JobController).to(JobController);
 
 export { container };

@@ -5,12 +5,14 @@ export const TYPES = {
   CompanyController: Symbol.for("CompanyController"),
   AdminController: Symbol.for("AdminController"),
   RecruiterController: Symbol.for("RecruiterController"),
+  JobController: Symbol.for("JobController"),
   //service
   CompanyService: Symbol.for("CompanyService"),
   AuthService: Symbol.for("AuthService"),
   UserService: Symbol.for("UserService"),
   AdminService: Symbol.for("AdminService"),
   RecruiterService: Symbol.for("RecruiterService"),
+  JobService: Symbol.for("JobService"),
   //repository
   UserRepository: Symbol.for("UserRepository"),
   CompanyVerRepository: Symbol.for("CompanyVerRepository"),

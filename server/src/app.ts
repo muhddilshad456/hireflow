@@ -3,6 +3,7 @@ import authRoutes from "./routes/v1/authRoutes";
 import adminRoutes from "./routes/v1/adminRoutes";
 import companyRoutes from "./routes/v1/companyRoutes";
 import recruiterRoutes from "./routes/v1/recruiterRoutes";
+import jobRoutes from "./routes/v1/jobRoutes";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -25,6 +26,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/company", companyRoutes);
 app.use("/api/v1/recruiter", recruiterRoutes);
+app.use("/api/v1/job", jobRoutes);
 
 app.use(errorMiddleware);
 

@@ -349,12 +349,13 @@ function PendingOverlay() {
 }
 
 /** Rejected modal */
-function RejectedOverlay({ onTryAgain }: { onTryAgain: () => void }) {
-  const reasons = [
-    "The uploaded registration document appears to be invalid or expired.",
-    "We could not verify the provided business email domain.",
-    "Additional information is required to complete the verification.",
-  ];
+function RejectedOverlay({
+  onTryAgain,
+  reason,
+}: {
+  onTryAgain: () => void;
+  reason: string;
+}) {
   return (
     <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-white/60 backdrop-blur-[4px]" />
@@ -371,18 +372,12 @@ function RejectedOverlay({ onTryAgain }: { onTryAgain: () => void }) {
         </p>
 
         {/* Reason list */}
-        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-left space-y-2.5 mb-6">
-          <p className="text-xs font-extrabold text-rose-600 uppercase tracking-wider mb-2">
-            Rejection Reasons
-          </p>
-          {reasons.map((r, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-rose-200 text-rose-600 flex items-center justify-center text-[10px] font-bold mt-0.5">
-                {i + 1}
-              </span>
-              <p className="text-xs text-rose-700 leading-snug">{r}</p>
-            </div>
-          ))}
+        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 mb-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-2"></div>
+
+          {/* Reason Text */}
+          <p className="text-sm text-rose-700 leading-relaxed">{reason}</p>
         </div>
 
         <button
@@ -435,14 +430,15 @@ export function AdminLayout() {
     }
   };
 
+  async function getStatus() {
+    let result = await getStatusApi("NEW");
+    setVerification(result.data);
+    console.log("result of status fetch : ", result);
+  }
+
   useEffect(() => {
-    async function getStatus() {
-      let result = await getStatusApi("NEW");
-      setVerification(result.data);
-      console.log(result);
-    }
     getStatus();
-  }, [showForm]);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col bg-slate-50">
@@ -479,6 +475,7 @@ export function AdminLayout() {
                   setStatus("unverified");
                   setShowForm(true);
                 }}
+                reason={verification?.adminNote ?? ""}
               />
             )}
           </div>

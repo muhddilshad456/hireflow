@@ -8,6 +8,8 @@ import ResetPassword from "../../../features/user/auth/pages/ResetPassword";
 import { GoogleSuccess } from "../../../features/user/auth/pages/GoogleSuccess";
 import ProtectedRoute from "../../../routes/ProtectedRoute";
 import PublicRoute from "../../../routes/PublicRoute";
+import { Jobs } from "../../../features/user/job/pages/Jobs";
+import Job from "../../../features/user/job/pages/Job";
 
 const UserRoutes = () => {
   return (
@@ -19,6 +21,8 @@ const UserRoutes = () => {
           }
         >
           <Route path="/" element={<Home />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/job" element={<Job />} />
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

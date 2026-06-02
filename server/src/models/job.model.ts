@@ -31,6 +31,8 @@ export interface IJob extends Document {
 
   applicantsCount: number;
 
+  isActive: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -116,6 +118,10 @@ const jobSchema = new Schema<IJob>(
     applicantsCount: {
       type: Number,
       default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true },

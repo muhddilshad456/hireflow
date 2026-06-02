@@ -3,4 +3,6 @@ export const JOB_MESSAGES = {
   JOB_UPDATED: "Job updated successfully",
   JOB_DELETED: "Job deleted successfully",
   JOB_NOT_FOUND: "Job not found",
+  JOBS_FETCHED: "Jobs fetched successfully",
+  JOB_FETCHED: "Job fetched successfully",
 };

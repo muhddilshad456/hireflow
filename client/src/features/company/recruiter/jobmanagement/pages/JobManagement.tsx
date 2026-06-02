@@ -1,19 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CreateJobModal, { type FormData } from "../components/jobCreateModal";
 import toast from "react-hot-toast";
 import { createJobApi } from "../services/jobServices";
+import { getJobsApi } from "../../../../shared/services/jobService";
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type JobStatus = "ACTIVE" | "ON HOLD" | "CLOSED";
-type JobCategory =
-  | "Design"
-  | "Engineering"
-  | "People & Ops"
-  | "Marketing"
-  | "Finance";
+type JobStatus = "OPEN" | "CLOSED" | "FILLED";
+type JobCategory = "IT" | "MARKETING" | "FINANCE" | "HR" | "SALES" | "OTHER";
 
 interface Job {
-  id: number;
+  _id: string;
   title: string;
   status: JobStatus;
   postedLabel: string;
@@ -25,51 +21,6 @@ interface Job {
   hiredCount: number;
   icon: "design" | "engineering" | "recruiter";
 }
-
-// ── Static Data ───────────────────────────────────────────────────────────────
-const JOBS: Job[] = [
-  {
-    id: 1,
-    title: "Product Designer (L3)",
-    status: "ACTIVE",
-    postedLabel: "Posted 1 week ago",
-    category: "Design",
-    location: "San Francisco, CA",
-    phase: "Interviewing Phase",
-    totalApplied: 89,
-    activeCandidates: 12,
-    hiredCount: 0,
-    icon: "design",
-  },
-  {
-    id: 2,
-    title: "Senior Software Engineer",
-    status: "ACTIVE",
-    postedLabel: "Posted 2 days ago",
-    category: "Engineering",
-    location: "Remote / New York",
-    phase: "CV Submission Phase",
-    totalApplied: 124,
-    activeCandidates: 42,
-    hiredCount: 2,
-    icon: "engineering",
-  },
-  {
-    id: 3,
-    title: "Technical Recruiter",
-    status: "ON HOLD",
-    postedLabel: "Updated 3 hours ago",
-    category: "People & Ops",
-    location: "London, UK",
-    phase: "Reviewing Applicants",
-    totalApplied: 210,
-    activeCandidates: 56,
-    hiredCount: 1,
-    icon: "recruiter",
-  },
-];
-
-const NAV_LINKS = ["Dashboard", "Jobs", "Candidates", "Messages", "Reports"];
 
 // ── Icon Components ───────────────────────────────────────────────────────────
 const DesignIcon = () => (
@@ -157,8 +108,8 @@ interface BadgeProps {
 
 const Badge = ({ status }: BadgeProps) => {
   const styles: Record<JobStatus, string> = {
-    ACTIVE: "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    "ON HOLD": "bg-amber-100 text-amber-700 border border-amber-200",
+    OPEN: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    FILLED: "bg-amber-100 text-amber-700 border border-amber-200",
     CLOSED: "bg-slate-100 text-slate-500 border border-slate-200",
   };
   return (
@@ -197,7 +148,7 @@ interface PhaseLabelProps {
 }
 
 const PhaseLabel = ({ phase, status }: PhaseLabelProps) => {
-  const color = status === "ON HOLD" ? "text-amber-500" : "text-emerald-500";
+  const color = status === "FILLED" ? "text-amber-500" : "text-emerald-500";
   return <span className={`text-sm font-medium ${color}`}>{phase}</span>;
 };
 
@@ -207,7 +158,7 @@ interface JobCardProps {
 }
 
 const JobCard = ({ job }: JobCardProps) => {
-  const IconComp = iconMap[job.icon];
+  const IconComp = iconMap[job.icon] || EngineeringIcon;
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
@@ -348,9 +299,9 @@ const FilterBar = ({
       className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
     >
       <option value="">Job Status</option>
-      <option value="ACTIVE">Active</option>
-      <option value="ON HOLD">On Hold</option>
-      <option value="CLOSED">Closed</option>
+      <option value="OPEN">OPEN</option>
+      <option value="CLOSED">CLOSED</option>
+      <option value="FILLED">FILLED</option>
     </select>
 
     {/* Category dropdown */}
@@ -360,10 +311,12 @@ const FilterBar = ({
       className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
     >
       <option value="">Job Category</option>
-      <option value="Design">Design</option>
-      <option value="Engineering">Engineering</option>
-      <option value="People & Ops">People &amp; Ops</option>
-      <option value="Marketing">Marketing</option>
+      <option value="IT">IT</option>
+      <option value="MARKETING">MARKETING</option>
+      <option value="FINANCE">FINANCE</option>
+      <option value="HR">HR</option>
+      <option value="SALES">SALES</option>
+      <option value="OTHER">OTHER</option>
     </select>
 
     {/* Add button */}
@@ -459,23 +412,12 @@ const Pagination = ({ current, total, onChange }: PaginationProps) => {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function JobManagement() {
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [jobModalOpen, setJobModalOpen] = useState(false);
-
-  const filtered = JOBS.filter((job) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      job.title.toLowerCase().includes(q) ||
-      job.category.toLowerCase().includes(q) ||
-      job.location.toLowerCase().includes(q);
-    const matchesStatus = !statusFilter || job.status === statusFilter;
-    const matchesCategory = !categoryFilter || job.category === categoryFilter;
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
 
   const handleCreateJob = async (formData: FormData) => {
     try {
@@ -491,8 +433,30 @@ export default function JobManagement() {
     }
   };
 
+  const getJobs = async () => {
+    try {
+      const result = await getJobsApi({
+        search,
+        status: statusFilter,
+        category: categoryFilter,
+      });
+      console.log(result);
+      setJobs(result.data.data.data);
+    } catch (error: any) {
+      console.log(error?.response?.data);
+    }
+  };
+
+  // console.log(search);
+  // console.log(statusFilter);
+  // console.log(categoryFilter);
+
   const openJobModal = () => setJobModalOpen(true);
   const closeJobModal = () => setJobModalOpen(false);
+
+  useEffect(() => {
+    getJobs();
+  }, [categoryFilter, statusFilter, search]);
 
   return (
     <>
@@ -521,8 +485,8 @@ export default function JobManagement() {
 
       {/* Job list */}
       <div className="space-y-4">
-        {filtered.length > 0 ? (
-          filtered.map((job) => <JobCard key={job.id} job={job} />)
+        {jobs.length > 0 ? (
+          jobs.map((job) => <JobCard key={job._id} job={job} />)
         ) : (
           <div className="text-center py-16 text-slate-400">
             <svg
@@ -541,7 +505,7 @@ export default function JobManagement() {
       </div>
 
       {/* Pagination */}
-      {filtered.length > 0 && (
+      {jobs.length > 0 && (
         <Pagination
           current={currentPage}
           total={10}
