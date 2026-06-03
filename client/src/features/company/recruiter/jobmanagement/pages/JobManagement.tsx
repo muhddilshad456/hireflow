@@ -438,7 +438,7 @@ export default function JobManagement() {
       const result = await getJobsApi({
         search,
         status: statusFilter,
-        category: categoryFilter,
+        category: categoryFilter ? [categoryFilter] : [],
       });
       console.log(result);
       setJobs(result.data.data.data);
@@ -446,10 +446,6 @@ export default function JobManagement() {
       console.log(error?.response?.data);
     }
   };
-
-  // console.log(search);
-  // console.log(statusFilter);
-  // console.log(categoryFilter);
 
   const openJobModal = () => setJobModalOpen(true);
   const closeJobModal = () => setJobModalOpen(false);

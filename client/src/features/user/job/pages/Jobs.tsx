@@ -298,7 +298,8 @@ function Pagination({ current, total, onChange }: PaginationProps) {
 const INITIAL_FILTERS: JobFilters = {
   search: "",
   location: "",
-  jobType: "",
+  jobType: [],
+  category: [],
   salaryMin: "",
   salaryMax: "",
   experienceMin: "",
@@ -315,7 +316,7 @@ export function Jobs() {
   const [totalPages, setTotalPages] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const handleChange = (key: keyof JobFilters, value: string) => {
+  const handleChange = (key: keyof JobFilters, value: string | string[]) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 

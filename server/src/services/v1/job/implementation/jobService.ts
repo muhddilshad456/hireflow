@@ -14,7 +14,6 @@ export class JobService implements IJobService {
   ) {}
   //* get all jobs
   async getJobs(filter: JobFilters, user: AuthUser): Promise<any> {
-    console.log("filter for getJobs : ", filter);
     const query: JobFilters = { ...filter };
 
     if (user?.role == "company_recruiter") {

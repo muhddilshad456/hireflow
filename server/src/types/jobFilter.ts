@@ -1,7 +1,7 @@
 export type JobFilters = {
-  jobType?: string;
+  jobType?: string[];
   location?: string;
-  category?: string;
+  category?: string[];
   salaryMin?: string;
   salaryMax?: string;
   experienceMin?: string;

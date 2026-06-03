@@ -1,10 +1,9 @@
-import type { JobFilters } from "../../../../../types/jobTypes";
+import type { JobFilters, JobType } from "../../../../../types/jobTypes";
 import { CATEGORIES } from "../../../../../types/jobTypes";
-import { ALL_SKILLS } from "../../../../../types/jobTypes";
 
 interface FilterSidebarProps {
   filters: JobFilters;
-  onChange: (key: keyof JobFilters, value: string) => void;
+  onChange: (key: keyof JobFilters, value: string | string[]) => void;
   onToggleSkill?: (skill: string) => void;
   onReset: () => void;
 }
@@ -12,7 +11,6 @@ interface FilterSidebarProps {
 export function FilterSidebar({
   filters,
   onChange,
-  onToggleSkill,
   onReset,
 }: FilterSidebarProps) {
   const labelStyle: React.CSSProperties = {
@@ -25,8 +23,8 @@ export function FilterSidebar({
     display: "block",
   };
 
-  const checkRow = (label: string, value: string, field: keyof JobFilters) => {
-    const checked = filters[field] === value;
+  const checkRow = (label: string, value: JobType) => {
+    const checked = filters?.jobType?.includes(value);
     return (
       <label
         key={value}
@@ -41,7 +39,19 @@ export function FilterSidebar({
         <input
           type="checkbox"
           checked={checked}
-          onChange={() => onChange(field, checked ? "" : value)}
+          onChange={() => {
+            let updated: JobType[];
+
+            const selected = filters.jobType || [];
+
+            if (checked) {
+              updated = selected.filter((v) => v !== value);
+            } else {
+              updated = [...selected, value];
+            }
+
+            onChange("jobType", updated);
+          }}
           style={{ accentColor: "#e84b30", width: 13, height: 13 }}
         />
         <span
@@ -101,10 +111,10 @@ export function FilterSidebar({
       {/* Job Type */}
       <div style={{ marginBottom: 18 }}>
         <span style={labelStyle}>Job-Type</span>
-        {checkRow("Full Time", "FULL_TIME", "jobType")}
-        {checkRow("Part Time", "PART_TIME", "jobType")}
-        {checkRow("Internship", "INTERNSHIP", "jobType")}
-        {checkRow("Contract", "CONTRACT", "jobType")}
+        {checkRow("Full Time", "FULL_TIME")}
+        {checkRow("Part Time", "PART_TIME")}
+        {checkRow("Internship", "INTERNSHIP")}
+        {checkRow("Contract", "CONTRACT")}
       </div>
 
       <div style={{ height: 1, background: "#f0c8c3", marginBottom: 18 }} />
@@ -113,7 +123,7 @@ export function FilterSidebar({
       <div style={{ marginBottom: 18 }}>
         <span style={labelStyle}>Category</span>
         {CATEGORIES.map((cat) => {
-          const checked = filters.category === cat;
+          const checked = filters.category?.includes(cat);
           return (
             <label
               key={cat}
@@ -128,7 +138,18 @@ export function FilterSidebar({
               <input
                 type="checkbox"
                 checked={checked}
-                onChange={() => onChange("category", checked ? "" : cat)}
+                onChange={() => {
+                  const selected = filters.category || [];
+                  let updated: string[];
+
+                  if (checked) {
+                    updated = selected.filter((c) => c !== cat);
+                  } else {
+                    updated = [...selected, cat];
+                  }
+
+                  onChange("category", updated);
+                }}
                 style={{ accentColor: "#e84b30", width: 13, height: 13 }}
               />
               <span

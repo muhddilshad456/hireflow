@@ -18,12 +18,12 @@ export type JobType =
 export interface JobFilters {
   search?: string;
   location?: string;
-  jobType?: JobType;
+  jobType?: JobType[];
   salaryMin?: string;
   salaryMax?: string;
   experienceMax?: string;
   experienceMin?: string;
-  category?: string;
+  category?: string[];
   skills?: string[];
   status?: string;
   page?: number;

@@ -17,9 +17,9 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const filters = {
-        jobType: req.query.jobType as string | undefined,
+        jobType: req.query.jobType as string[] | [],
         location: req.query.location as string | undefined,
-        category: req.query.category as string | undefined,
+        category: req.query.category as string[] | [],
         salaryMin: req.query.salaryMin as string | undefined,
         salaryMax: req.query.salaryMax as string | undefined,
         experienceMin: req.query.experienceMin as string | undefined,

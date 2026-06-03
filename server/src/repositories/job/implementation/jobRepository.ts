@@ -24,13 +24,15 @@ export class JobRepository
       query.location = { $regex: filters.location, $options: "i" };
     }
 
-    if (filters.jobType) query.jobType = filters.jobType;
-    if (filters.createdBy) query.createdBy = filters.createdBy;
-    if (filters.category) query.category = filters.category;
+    if (filters.jobType?.length) query.jobType = { $in: filters.jobType };
+
+    if (filters.category?.length) query.category = { $in: filters.category };
 
     if (filters.isActive !== undefined) {
       query.isActive = filters.isActive === "true";
     }
+
+    if (filters.createdBy) query.createdBy = filters.createdBy;
 
     if (filters.salaryMin && filters.salaryMax) {
       query.$and = [
