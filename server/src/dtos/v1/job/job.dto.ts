@@ -85,4 +85,9 @@ export class JobDto {
   @IsOptional()
   @IsDateString()
   applicationDeadline?: string;
+
+  // Stages (optional stages selected by recruiter)
+  @IsOptional()
+  @IsArray()
+  pipelineStages?: string[];
 }

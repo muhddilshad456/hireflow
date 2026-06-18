@@ -65,4 +65,9 @@ router.post(
   validateDto(AcceptInviteDto),
   authController.acceptInvite.bind(authController),
 );
+router.post(
+  "/change-password",
+  verifyAccessToken,
+  authController.changePassword.bind(authController),
+);
 export default router;

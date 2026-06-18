@@ -58,3 +58,12 @@ export const acceptInviteApi = async (data: {
     .post(`${AUTH_BASE_ROUTE}/accept-invite`, data)
     .then((res) => res.data);
 };
+
+export const changePasswordApi = async (data: {
+  currentPassword: string;
+  newPassword: string;
+}) => {
+  return api
+    .post(`${AUTH_BASE_ROUTE}/change-password`, data)
+    .then((res) => res.data);
+};

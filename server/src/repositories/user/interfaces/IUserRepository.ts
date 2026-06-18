@@ -15,6 +15,11 @@ export interface IUserRepository extends IBaseRepository<IUser> {
     search: string,
     status: string,
   ): Promise<GetUsersResponse>;
-  getAllCompanies(): Promise<any>;
+  getAllCompanies(
+    page: number,
+    limit: number,
+    search: string,
+    status: string,
+  ): Promise<any>;
   findByIdWithCompany(userId: string): Promise<IUserWithCompany | null>;
 }

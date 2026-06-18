@@ -17,4 +17,14 @@ export interface IAdminController {
     next: NextFunction,
   ): Promise<void>;
   rejectCompany(req: Request, res: Response, next: NextFunction): Promise<void>;
+  getAllCompanies(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getCompanyDetails(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

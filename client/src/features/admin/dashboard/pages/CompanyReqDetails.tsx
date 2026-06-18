@@ -5,7 +5,7 @@ import {
   approveCompanyApi,
   getCompanyReq,
   rejectCompanyApi,
-} from "../services/adminServices";
+} from "../../services/adminServices";
 import toast from "react-hot-toast";
 
 // ─── CSS Injection ─────────────────────────────────────────────────────────────

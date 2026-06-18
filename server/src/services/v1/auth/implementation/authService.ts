@@ -29,6 +29,7 @@ import { TokenPair } from "../../../../types/tokenPair.js";
 import { generateToken } from "../../../../utils/token.util.js";
 import { IInvitationRepository } from "../../../../repositories/company/interface/IInvitationRepository.js";
 import { InvitationStatus } from "../../../../models/recruiter.invitation.model.js";
+import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation.js";
 
 @injectable()
 export class AuthService implements IAuthService {
@@ -554,5 +555,33 @@ export class AuthService implements IAuthService {
       message: "Account created successfully",
       userId: user._id,
     };
+  }
+  //* change password
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<any> {
+    console.log("userId : ", userId);
+    console.log(currentPassword, newPassword);
+    if (!userId) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.ID_REQUIRED,
+      });
+      throw new UnauthorizedError(VALIDATION_MESSAGES.ID_REQUIRED);
+    }
+
+    const user = await this.userRepository.findById(userId);
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.INVALID_CURRENT_PASSWORD,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.INVALID_CURRENT_PASSWORD);
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.userRepository.update(userId, { password: hashedPassword });
   }
 }

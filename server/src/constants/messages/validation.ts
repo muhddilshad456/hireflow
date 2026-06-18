@@ -5,4 +5,6 @@ export const VALIDATION_MESSAGES = {
   ID_REQUIRED: "ID required",
   TYPE_REQUIRED: "Type required",
   INVALID_TYPE: "Invalid type",
+  INVALID_PASSWORD: "Invalid password.",
+  INVALID_CURRENT_PASSWORD: "Invalid current password.",
 };

@@ -61,14 +61,48 @@ export class UserRepository
 
     return { users, totalUsers };
   }
+  //* get all companies
+  async getAllCompanies(
+    page: number,
+    limit: number,
+    search: string,
+    status: string,
+  ): Promise<any> {
+    const skip = (page - 1) * limit;
 
-  async getAllCompanies(): Promise<any> {
-    return await UserModel.find({ role: "company_admin" });
+    const filter: QueryFilter<IUser> = {};
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    filter.role = "company_admin";
+
+    if (status === "Blocked") {
+      filter.isBlocked = true;
+    } else if (status === "Active") {
+      filter.isBlocked = false;
+    }
+
+    const companies = await UserModel.find(filter)
+      .populate("company")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalCompanies = await UserModel.countDocuments(filter);
+
+    const totalPages = Math.ceil(totalCompanies / limit);
+
+    return { companies, totalCompanies, totalPages };
   }
 
   async findByIdWithCompany(userId: string): Promise<IUserWithCompany | null> {
     return await UserModel.findById(userId)
-      .populate<{ company: ICompany }>("company") // ✅ key fix
+      .populate<{ company: ICompany }>("company")
       .lean();
   }
 }

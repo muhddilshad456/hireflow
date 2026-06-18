@@ -161,4 +161,27 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+  //* change password
+  async changePassword(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      console.log("helleo");
+      const { currentPassword, newPassword } = req.body;
+      console.log("hello 3");
+      const userId = req.user?.userId;
+      console.log("userId : ", userId);
+      console.log("passwords : ", currentPassword, newPassword);
+      const result = await this.authService.changePassword(
+        userId,
+        currentPassword,
+        newPassword,
+      );
+      ResponseHandler.success(res, "Password changed successfully.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

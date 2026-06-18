@@ -29,7 +29,11 @@ export class JobRepository
     if (filters.category?.length) query.category = { $in: filters.category };
 
     if (filters.isActive !== undefined) {
-      query.isActive = filters.isActive === "true";
+      if (filters.isActive == "Active") {
+        query.isActive = true;
+      } else if (filters.isActive == "Blocked") {
+        query.isActive = false;
+      }
     }
 
     if (filters.createdBy) query.createdBy = filters.createdBy;
@@ -69,6 +73,8 @@ export class JobRepository
     const skip = (page - 1) * limit;
 
     const jobs = await JobModel.find(query)
+      .populate("company", "companyName")
+      .populate("createdBy", "name")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -81,5 +87,16 @@ export class JobRepository
       page,
       totalPages: Math.ceil(total / limit),
     };
+  }
+  //* get a job
+  async getJobDetails(id: string): Promise<any> {
+    return await JobModel.findById(id)
+      .populate("company", "companyName")
+      .populate("createdBy", "name");
+  }
+  //* update status
+  async updateStatus(id: string, status: string): Promise<any> {
+    const isActive = status == "ACTIVE" ? true : false;
+    await JobModel.findByIdAndUpdate(id, { isActive });
   }
 }

@@ -38,6 +38,7 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  //* get company verification req
   async getCompanyVerificationReq(
     req: Request,
     res: Response,
@@ -57,6 +58,7 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  //* approve company
   async approveCompany(
     req: Request,
     res: Response,
@@ -72,6 +74,7 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  //* reject company
   async rejectCompany(
     req: Request,
     res: Response,
@@ -89,14 +92,42 @@ export class AdminController implements IAdminController {
       next(error);
     }
   }
+  //* get all companies
   async getAllCompanies(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const result = await this.adminService.getAllCompanies();
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const search = (req.query.search as string) || "";
+      const status = (req.query.status as string) || "";
+      const result = await this.adminService.getAllCompanies(
+        page,
+        limit,
+        search,
+        status,
+      );
       ResponseHandler.success(res, "Companies fetched successfully.", result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get a company details
+  async getCompanyDetails(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const id = req.query.id as string;
+      const result = await this.adminService.getCompanyDetails(id);
+      ResponseHandler.success(
+        res,
+        "Company details fetched successfully.",
+        result,
+      );
     } catch (error) {
       next(error);
     }

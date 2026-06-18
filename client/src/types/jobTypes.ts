@@ -1,10 +1,11 @@
 //* job
 export interface Job {
-  _id: number;
+  _id: string;
   title: string;
-  company: string;
+  company: { _id: string; companyName: string };
   location: string;
   salary: string;
+  isActive: boolean;
   jobType: JobType;
 }
 //* job type

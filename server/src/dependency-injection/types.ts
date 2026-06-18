@@ -19,6 +19,7 @@ export const TYPES = {
   CompanyRepository: Symbol.for("CompanyRepository"),
   InvitationRepository: Symbol.for("InvitationRepository"),
   JobRepository: Symbol.for("JobRepository"),
+  JobStageRepository: Symbol.for("JobStageRepository"),
   //other
   EmailService: Symbol.for("EmailService"),
   RedisService: Symbol.for("RedisService"),

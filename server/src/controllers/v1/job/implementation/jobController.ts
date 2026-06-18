@@ -25,7 +25,7 @@ export class JobController implements IJobController {
         experienceMin: req.query.experienceMin as string | undefined,
         experienceMax: req.query.experienceMax as string | undefined,
         search: req.query.search as string | undefined,
-        isActive: req.query.isActive as string | undefined,
+        isActive: req.query.status as string | undefined,
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
         createdBy: req.query.createdBy as string | undefined,
@@ -48,6 +48,21 @@ export class JobController implements IJobController {
       const jobId = req.params.id as string;
       const result = await this.jobService.getJob(jobId);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_FETCHED, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* update status
+  async updateStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const jobId = req.params.id as string;
+      const status = req.body.status;
+      await this.jobService.updateStatus(jobId, status);
+      ResponseHandler.success(res, JOB_MESSAGES.JOB_UPDATED);
     } catch (error) {
       next(error);
     }

@@ -1,10 +1,17 @@
-import { useState, useCallback } from "react";
-import type { KeyboardEvent, ChangeEvent } from "react";
+import { useState, useCallback, useRef } from "react";
+import type { KeyboardEvent, ChangeEvent, DragEvent } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type JobCategory = "IT" | "MARKETING" | "FINANCE" | "HR" | "SALES" | "OTHER";
 type JobType = "FULL_TIME" | "PART_TIME" | "INTERNSHIP" | "CONTRACT";
+
+type PipelineStage =
+  | "ASSESSMENT"
+  | "TECHNICAL_INTERVIEW"
+  | "HR_INTERVIEW"
+  | "FINAL_INTERVIEW"
+  | "DOCUMENT_VERIFICATION";
 
 type CreateJobModalProps = {
   onClose?: () => void;
@@ -26,6 +33,7 @@ export interface FormData {
   fresherOk: boolean;
   positions: string;
   applicationDeadline: string;
+  pipelineStages: PipelineStage[]; // ordered, optional stages only
 }
 
 interface FormErrors {
@@ -57,7 +65,26 @@ const INITIAL_FORM: FormData = {
   fresherOk: false,
   positions: "1",
   applicationDeadline: "",
+  pipelineStages: [],
 };
+
+// ─── Pipeline stage catalog ────────────────────────────────────────────────────
+
+const STAGE_LABELS: Record<PipelineStage, string> = {
+  ASSESSMENT: "Assessment",
+  TECHNICAL_INTERVIEW: "Technical Interview",
+  HR_INTERVIEW: "HR Interview",
+  FINAL_INTERVIEW: "Final Interview",
+  DOCUMENT_VERIFICATION: "Document Verification",
+};
+
+const STAGE_OPTIONS: PipelineStage[] = [
+  "ASSESSMENT",
+  "TECHNICAL_INTERVIEW",
+  "HR_INTERVIEW",
+  "FINAL_INTERVIEW",
+  "DOCUMENT_VERIFICATION",
+];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -147,6 +174,46 @@ const SectionHeader = ({
   </div>
 );
 
+// ─── Pipeline pill (shared visual for preview) ────────────────────────────────
+
+const PipelinePill = ({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: "fixed" | "stage" | "outcome";
+}) => {
+  const styles =
+    variant === "fixed"
+      ? "bg-gray-100 text-gray-500 border-gray-200"
+      : variant === "outcome"
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-green-50 text-green-700 border-green-200";
+  return (
+    <span
+      className={`inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-lg border text-xs font-semibold ${styles}`}
+    >
+      {label}
+    </span>
+  );
+};
+
+const Arrow = () => (
+  <svg
+    className="w-3.5 h-3.5 text-gray-300 shrink-0"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path
+      d="M3 8h10M9 4l4 4-4 4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function CreateJobModal({
@@ -159,6 +226,11 @@ export default function CreateJobModal({
   const [skillInput, setSkillInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Drag-and-drop state for pipeline reordering
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const touchDragIndex = useRef<number | null>(null);
 
   const set = useCallback(
     <K extends keyof FormData>(key: K, val: FormData[K]) => {
@@ -215,6 +287,57 @@ export default function CreateJobModal({
     }
   };
 
+  // ─── Hiring Pipeline handlers ──────────────────────────────────────────────
+
+  const toggleStage = (stage: PipelineStage) => {
+    const isSelected = form.pipelineStages.includes(stage);
+    const next = isSelected
+      ? form.pipelineStages.filter((s) => s !== stage)
+      : [...form.pipelineStages, stage];
+    set("pipelineStages", next);
+  };
+
+  const moveStage = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0) return;
+    const next = [...form.pipelineStages];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    set("pipelineStages", next);
+  };
+
+  const handleDragStart = (index: number) => (e: DragEvent<HTMLDivElement>) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    // Some browsers require setData to enable drag visuals
+    e.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handleDragOver = (index: number) => (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (dragOverIndex !== index) setDragOverIndex(index);
+  };
+
+  const handleDrop = (index: number) => (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (dragIndex !== null) moveStage(dragIndex, index);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Touch-friendly fallback (mobile has no native HTML5 drag events)
+  const handleTouchStart = (index: number) => () => {
+    touchDragIndex.current = index;
+  };
+
+  const stepStage = (index: number, direction: -1 | 1) => {
+    moveStage(index, index + direction);
+  };
+
   const handleSubmit = async () => {
     setTouched(true);
     const errs = validate(form);
@@ -222,9 +345,15 @@ export default function CreateJobModal({
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
+    // Only the selected optional stages, in their current order, are sent.
+    // Resume Review is mandatory/implicit and is not part of this payload.
+    const payload: FormData = {
+      ...form,
+      pipelineStages: form.pipelineStages,
+    };
     await new Promise((r) => setTimeout(r, 1400));
-    onSubmit(form);
-    console.log("✅ Job Created:", form);
+    onSubmit(payload);
+    console.log("✅ Job Created:", payload);
     setLoading(false);
     setSuccess(true);
     await new Promise((r) => setTimeout(r, 900));
@@ -582,7 +711,233 @@ export default function CreateJobModal({
 
           <Divider />
 
-          {/* SECTION 4: Additional details */}
+          {/* SECTION 4: Hiring Pipeline */}
+          <section>
+            <SectionHeader
+              title="Hiring Pipeline"
+              subtitle="Define the interview stages candidates go through"
+              icon={
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 4a1 1 0 0 1 1-1h12a1 1 0 0 1 .8 1.6L13 10l3.8 5.4A1 1 0 0 1 16 17H4a1 1 0 0 1-1-1V4Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            />
+
+            <div className="space-y-5">
+              {/* Mandatory first stage */}
+              <div>
+                <Label>Mandatory First Stage</Label>
+                <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                  <div className="w-7 h-7 rounded-lg bg-gray-200 text-gray-500 flex items-center justify-center shrink-0">
+                    <svg
+                      className="w-3.5 h-3.5"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M8 1.5a2.5 2.5 0 0 1 2.5 2.5v2H13a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 13 15H3a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 3 6h2.5V4A2.5 2.5 0 0 1 8 1.5Zm0 1.5A1 1 0 0 0 7 4v2h2V4a1 1 0 0 0-1-1Z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Resume Review
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Always runs first for every applicant — can't be removed
+                      or reordered
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold tracking-wider uppercase text-gray-400 bg-white border border-gray-200 rounded-full px-2.5 py-1 shrink-0">
+                    Locked
+                  </span>
+                </div>
+              </div>
+
+              {/* Optional stage selection */}
+              <div>
+                <Label>Optional Stages</Label>
+                <p className="text-xs text-gray-500 mb-2.5 -mt-1">
+                  Select any additional stages, then drag to set their order
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {STAGE_OPTIONS.map((stage) => {
+                    const checked = form.pipelineStages.includes(stage);
+                    return (
+                      <label
+                        key={stage}
+                        className={`flex items-center gap-2.5 cursor-pointer rounded-xl border px-3.5 py-2.5 transition-all duration-150 ${
+                          checked
+                            ? "border-green-300 bg-green-50/60"
+                            : "border-gray-200 bg-white hover:border-gray-300"
+                        }`}
+                      >
+                        <CheckBox
+                          checked={checked}
+                          onChange={() => toggleStage(stage)}
+                        />
+                        <span
+                          className={`text-sm font-medium ${checked ? "text-green-700" : "text-gray-600"}`}
+                        >
+                          {STAGE_LABELS[stage]}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drag-and-drop ordering list */}
+              {form.pipelineStages.length > 0 && (
+                <div>
+                  <Label>Stage Order</Label>
+                  <div className="space-y-2">
+                    {form.pipelineStages.map((stage, index) => (
+                      <div
+                        key={stage}
+                        draggable
+                        onDragStart={handleDragStart(index)}
+                        onDragOver={handleDragOver(index)}
+                        onDrop={handleDrop(index)}
+                        onDragEnd={handleDragEnd}
+                        onTouchStart={handleTouchStart(index)}
+                        className={`flex items-center gap-3 bg-white border rounded-xl px-3.5 py-2.5 transition-all duration-150 ${
+                          dragOverIndex === index
+                            ? "border-green-400 ring-2 ring-green-500/20"
+                            : "border-gray-200"
+                        } ${dragIndex === index ? "opacity-40" : "opacity-100"}`}
+                      >
+                        <span
+                          className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors shrink-0"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            viewBox="0 0 16 16"
+                            fill="currentColor"
+                          >
+                            <circle cx="5" cy="3.5" r="1.25" />
+                            <circle cx="11" cy="3.5" r="1.25" />
+                            <circle cx="5" cy="8" r="1.25" />
+                            <circle cx="11" cy="8" r="1.25" />
+                            <circle cx="5" cy="12.5" r="1.25" />
+                            <circle cx="11" cy="12.5" r="1.25" />
+                          </svg>
+                        </span>
+
+                        <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-[11px] font-bold flex items-center justify-center shrink-0">
+                          {index + 1}
+                        </span>
+
+                        <span className="flex-1 text-sm font-medium text-gray-800">
+                          {STAGE_LABELS[stage]}
+                        </span>
+
+                        {/* Up/down controls — keyboard & touch-friendly alternative to drag */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => stepStage(index, -1)}
+                            disabled={index === 0}
+                            aria-label={`Move ${STAGE_LABELS[stage]} up`}
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path
+                                d="M4 10l4-4 4 4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => stepStage(index, 1)}
+                            disabled={index === form.pipelineStages.length - 1}
+                            aria-label={`Move ${STAGE_LABELS[stage]} down`}
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                          >
+                            <svg
+                              className="w-3.5 h-3.5"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path
+                                d="M4 6l4 4 4-4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleStage(stage)}
+                            aria-label={`Remove ${STAGE_LABELS[stage]}`}
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <svg
+                              className="w-3 h-3"
+                              viewBox="0 0 12 12"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M1 1l10 10M11 1L1 11" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Live pipeline preview */}
+              <div>
+                <Label>Pipeline Preview</Label>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-4 overflow-x-auto">
+                  <div className="flex items-center gap-2 min-w-fit">
+                    <PipelinePill label="Applied" variant="fixed" />
+                    <Arrow />
+                    <PipelinePill label="Resume Review" variant="fixed" />
+                    {form.pipelineStages.map((stage) => (
+                      <span key={stage} className="flex items-center gap-2">
+                        <Arrow />
+                        <PipelinePill
+                          label={STAGE_LABELS[stage]}
+                          variant="stage"
+                        />
+                      </span>
+                    ))}
+                    <Arrow />
+                    <PipelinePill label="Offer" variant="fixed" />
+                    <Arrow />
+                    <PipelinePill label="Hired / Rejected" variant="outcome" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <Divider />
+
+          {/* SECTION 5: Additional details */}
           <section>
             <SectionHeader
               title="Additional Details"

@@ -481,7 +481,7 @@ export default function JobManagement() {
 
       {/* Job list */}
       <div className="space-y-4">
-        {jobs.length > 0 ? (
+        {jobs?.length > 0 ? (
           jobs.map((job) => <JobCard key={job._id} job={job} />)
         ) : (
           <div className="text-center py-16 text-slate-400">
@@ -501,7 +501,7 @@ export default function JobManagement() {
       </div>
 
       {/* Pagination */}
-      {jobs.length > 0 && (
+      {jobs?.length > 0 && (
         <Pagination
           current={currentPage}
           total={10}

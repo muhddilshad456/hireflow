@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { FilterDropdown } from "../../shared/components/Filter";
-import { getAllCompanyRequests } from "../services/adminServices";
+import { getAllCompanyRequests } from "../../services/adminServices";
 import { Ico } from "../../../../assets/icons/CompanyIcons";
 import { Pagination } from "../../shared/components/Pagination";
 import { useNavigate } from "react-router-dom";

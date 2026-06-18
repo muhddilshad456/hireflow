@@ -8,7 +8,5 @@ export interface IUserService {
     status: string,
   ): Promise<GetAllUsersResponse>;
 
-  getAllCompanies(): Promise<any>;
-
   updateStatus(id: string, status: string): Promise<void>;
 }

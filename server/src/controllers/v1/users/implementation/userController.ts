@@ -8,6 +8,7 @@ import { IUserController } from "../interface/IUserController";
 @injectable()
 export class UserController implements IUserController {
   constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+  //* get all users
   async getAllUsers(
     req: Request,
     res: Response,
@@ -31,20 +32,7 @@ export class UserController implements IUserController {
       next(error);
     }
   }
-
-  async getAllCompanies(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const result = await this.userService.getAllCompanies();
-      ResponseHandler.success(res, "Companies fetched successfully", result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
+  //* update user
   async updateUser(
     req: Request,
     res: Response,

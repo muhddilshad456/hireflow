@@ -5,4 +5,6 @@ export const JOB_MESSAGES = {
   JOB_NOT_FOUND: "Job not found",
   JOBS_FETCHED: "Jobs fetched successfully",
   JOB_FETCHED: "Job fetched successfully",
+  JOB_STATUS_REQUIRED: "Job status required",
+  JOB_ID_REQUIRED: "Job ID is required",
 };

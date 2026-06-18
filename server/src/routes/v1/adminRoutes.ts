@@ -20,7 +20,6 @@ router.get(
   roleGuard([UserRole.ADMIN]),
   userController.getAllUsers.bind(userController),
 );
-router.get("/companies", userController.getAllCompanies.bind(userController));
 router.patch(
   "/users/status/:userId",
   verifyAccessToken,
@@ -44,9 +43,13 @@ router.patch(
   validateDto(CompanyRejectDto),
   adminController.rejectCompany.bind(adminController),
 );
+router.get("/companies", adminController.getAllCompanies.bind(adminController));
+
 router.get(
-  "/getCompanies",
-  adminController.getAllCompanies.bind(adminController),
+  "/company/:id",
+  verifyAccessToken,
+  roleGuard([UserRole.ADMIN]),
+  adminController.getCompanyDetails.bind(adminController),
 );
 
 export default router;

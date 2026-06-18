@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { getProfileApi } from "../services/profileService";
 import { Building2 } from "lucide-react";
 import { VerifyForm } from "../../dashboard/components/VerifyReqForm";
@@ -7,6 +10,7 @@ import {
   getStatusApi,
   verifyRequestApi,
 } from "../../dashboard/services/comapanyServices";
+import { changePasswordApi } from "../../../../shared/services/authService";
 
 type VerificationStatus = "approved" | "pending" | "rejected" | "not_submitted";
 
@@ -67,6 +71,17 @@ const INITIAL_COMPANY: CompanyInfo = {
     "One Infinite Loop, Suite 100, Silicon Valley, San Jose, CA 95101, United States",
 };
 
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(6, "Minimum 6 characters"),
+    newPassword: z.string().min(6, "Minimum 6 characters"),
+    confirmPassword: z.string().min(6, "Minimum 6 characters"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export default function ProfilePage() {
   const [basicDetails, setBasicDetails] = useState<BasicDetails | null>(null);
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(
@@ -77,26 +92,22 @@ export default function ProfilePage() {
     useState<CompanyInfo>(INITIAL_COMPANY);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationData>({ status: "not_submitted", adminNote: "" });
-  const [rejectionReason, setRejectionReason] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [newEmail, setNewEmail] = useState("sarah.jenkins@techcorp.io");
-  const [emailDraft, setEmailDraft] = useState("sarah.jenkins@techcorp.io");
+  const [showChangePasswordModal, setChangePasswordModal] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // For demo: toggle rejection
-  const [demoMode, setDemoMode] = useState<
-    "pending" | "rejected" | "verified" | "none"
-  >("verified");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: zodResolver(passwordSchema),
+  });
 
   const handleOpenEdit = () => {
     setDraftCompany({ ...companyInfo });
     setShowEditModal(true);
-  };
-
-  const handleSaveEmail = () => {
-    setNewEmail(emailDraft);
-    setShowEmailModal(false);
   };
 
   const isEditDisabled = verificationStatus.status === "pending";
@@ -131,6 +142,20 @@ export default function ProfilePage() {
     }
   };
 
+  const onSubmit = async (data: any) => {
+    try {
+      const { currentPassword, newPassword } = data;
+      const result = await changePasswordApi({ currentPassword, newPassword });
+      console.log("result of password change : ", result);
+      toast.success("Password changed successfully.");
+      reset();
+      setChangePasswordModal(false);
+    } catch (error: any) {
+      console.log(error?.response?.data);
+      toast.error(error?.response?.data?.message);
+    }
+  };
+
   async function getStatus() {
     let result = await getStatusApi("UPDATE");
     setVerificationStatus(result.data);
@@ -142,29 +167,8 @@ export default function ProfilePage() {
     getStatus();
   }, [showEditModal]);
 
-  console.log(`profile status : ${verificationStatus}`);
-
   return (
     <>
-      {/* Demo Controls */}
-      {/* <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 bg-white border border-gray-200 rounded-xl shadow-lg p-3">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
-          Demo
-        </span>
-        <button
-          onClick={simulateRejection}
-          className="text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition"
-        >
-          Simulate Reject
-        </button>
-        <button
-          onClick={simulateApprove}
-          className="text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg px-3 py-1.5 hover:bg-green-100 transition"
-        >
-          Simulate Approve
-        </button>
-      </div> */}
-
       <div className="max-w-5xl mx-auto px-4  sm:px-6 lg:px-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Profile</h1>
 
@@ -251,7 +255,7 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto">
-                    <button
+                    {/* <button
                       onClick={() => {
                         setEmailDraft(newEmail);
                         setShowEmailModal(true);
@@ -272,8 +276,11 @@ export default function ProfilePage() {
                         />
                       </svg>
                       Edit Email
-                    </button>
-                    <button className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition">
+                    </button> */}
+                    <button
+                      onClick={() => setChangePasswordModal(true)}
+                      className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                    >
                       Change Password
                     </button>
                   </div>
@@ -561,59 +568,94 @@ export default function ProfilePage() {
       )}
 
       {/* Edit Email Modal */}
-      {showEmailModal && (
-        <Modal onClose={() => setShowEmailModal(false)}>
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">Edit Email</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Update your account email address.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowEmailModal(false)}
-              className="text-gray-400 hover:text-gray-600 transition"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+      {showChangePasswordModal && (
+        <Modal onClose={() => setChangePasswordModal(false)}>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Edit Email</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Update your account email address.
+                </p>
+              </div>
+              <button
+                onClick={() => setChangePasswordModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-          <div className="mb-5">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={emailDraft}
-              onChange={(e) => setEmailDraft(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-            />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setShowEmailModal(false)}
-              className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveEmail}
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#22c55e] text-white hover:bg-[#16a34a] transition"
-            >
-              Save Email
-            </button>
-          </div>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-5 space-y-4">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Current Password
+              </label>
+              <input
+                type="password"
+                {...register("currentPassword")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              />
+              {errors.currentPassword && (
+                <p className="text-red-500 text-xs">
+                  {errors.currentPassword.message}
+                </p>
+              )}
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                New Password
+              </label>
+              <input
+                type="password"
+                {...register("newPassword")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              />
+              {errors.newPassword && (
+                <p className="text-red-500 text-xs">
+                  {errors.newPassword.message}
+                </p>
+              )}
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                {...register("confirmPassword")}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              />
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setChangePasswordModal(false);
+                  reset();
+                }}
+                className="text-sm font-medium px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#22c55e] text-white hover:bg-[#16a34a] transition"
+              >
+                Change Password
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
       {isPreviewOpen && fileUrl && (

@@ -214,9 +214,24 @@ export class AdminService implements IAdminService {
       companyVerificationId,
     });
   }
-
-  async getAllCompanies(): Promise<any> {
-    const result = await this.companyRepository.findAll();
+  //* get all companies
+  async getAllCompanies(
+    page: number,
+    limit: number,
+    search: string,
+    status: string,
+  ): Promise<any> {
+    const result = await this.userRepository.getAllCompanies(
+      page,
+      limit,
+      search,
+      status,
+    );
     return { result };
+  }
+  //* get a company details
+  async getCompanyDetails(id: string): Promise<any> {
+    const result = await this.userRepository.findByIdWithCompany(id);
+    return result;
   }
 }

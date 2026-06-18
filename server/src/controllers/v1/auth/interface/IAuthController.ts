@@ -39,5 +39,10 @@ export interface IAuthController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
   acceptInvite(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

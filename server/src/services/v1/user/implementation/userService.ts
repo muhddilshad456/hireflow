@@ -41,13 +41,6 @@ export class UserService implements IUserService {
     };
   }
 
-  async getAllCompanies(): Promise<any> {
-    const result = await this.userRepository.getAllCompanies();
-    return {
-      companies: result,
-    };
-  }
-
   async updateStatus(id: string, status: string): Promise<void> {
     const user = await this.userRepository.findById(id);
 

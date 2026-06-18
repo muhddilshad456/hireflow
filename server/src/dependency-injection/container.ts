@@ -22,6 +22,7 @@ import { RecruiterController } from "../controllers/v1/company/recruiter/impleme
 import { JobRepository } from "../repositories/job/implementation/jobRepository";
 import { JobService } from "../services/v1/job/implementation/jobService";
 import { JobController } from "../controllers/v1/job/implementation/jobController";
+import { jobStageRepository } from "../repositories/job/implementation/jobStageRepository";
 
 const container = new Container();
 
@@ -31,6 +32,7 @@ container.bind(TYPES.CompanyVerRepository).to(CompanyVerRepository);
 container.bind(TYPES.CompanyRepository).to(CompanyRepository);
 container.bind(TYPES.InvitationRepository).to(InvitationRepository);
 container.bind(TYPES.JobRepository).to(JobRepository);
+container.bind(TYPES.JobStageRepository).to(jobStageRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.UserService).to(UserService);

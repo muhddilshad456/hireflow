@@ -55,7 +55,7 @@ export function JobCard({ job }: JobCardProps) {
             flexShrink: 0,
           }}
         >
-          {job.company.charAt(0)}
+          {job.company?.companyName?.charAt(0)}
         </div>
 
         <div style={{ minWidth: 0 }}>
@@ -71,7 +71,7 @@ export function JobCard({ job }: JobCardProps) {
             {job.title}
           </div>
           <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
-            {job.company}
+            {job.company?.companyName}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <svg

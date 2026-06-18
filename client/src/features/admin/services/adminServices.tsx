@@ -1,5 +1,5 @@
-import { ADMIN_BASE_ROUTE } from "../../../../constents/apiRoutes";
-import api from "../../../../services/api";
+import { ADMIN_BASE_ROUTE } from "../../../constents/apiRoutes";
+import api from "../../../services/api";
 
 export const getUsersApi = async (
   page: number,
@@ -45,6 +45,7 @@ export const approveCompanyApi = async (id: string) => {
     .post(`${ADMIN_BASE_ROUTE}/approve-company/${id}`)
     .then((res) => res.data);
 };
+
 export const rejectCompanyApi = async (
   id: string,
   data: { reason: string },
@@ -52,8 +53,4 @@ export const rejectCompanyApi = async (
   return api
     .patch(`${ADMIN_BASE_ROUTE}/reject-company/${id}`, data)
     .then((res) => res.data);
-};
-
-export const getAllCompaniesApi = async () => {
-  return api.get(`${ADMIN_BASE_ROUTE}/companies`).then((res) => res.data);
 };
