@@ -24,4 +24,6 @@ export interface IAuthService {
     currentPassword: string,
     newPassword: string,
   ): Promise<any>;
+  changeEmail(userId: string, newEmail: string): Promise<any>;
+  verifyEmailChange(token: string): Promise<any>;
 }

@@ -3,6 +3,7 @@ import { MapPin } from "lucide-react";
 import { Header } from "../../shared/components/Header";
 import { useLocation } from "react-router-dom";
 import { getJobApi } from "../../../shared/services/jobService";
+import { ApplyModal } from "../components/applyModal";
 
 export interface JobDetailData {
   _id: string;
@@ -291,12 +292,14 @@ export const BulletList: React.FC<BulletListProps> = ({ items }) => (
 
 export default function Job() {
   const [job, setJob] = useState(null);
+  const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+
   const location = useLocation();
   const jobId = location.state?.jobId;
   const getJob = async () => {
     try {
       const result = await getJobApi(jobId);
-      setJob(result.data.data);
+      setJob(result.data);
       console.log("result of job fetch : ", result);
     } catch (error: any) {
       console.log(error?.response?.data);
@@ -312,9 +315,15 @@ export default function Job() {
         <JobDetailCard
           job={job}
           onSave={() => alert("Job saved!")}
-          onApply={() => alert("Applied!")}
+          onApply={() => setIsApplyModalOpen(true)}
         />
       </main>
+      <ApplyModal
+        isOpen={isApplyModalOpen}
+        jobId={jobId}
+        onClose={() => setIsApplyModalOpen(false)}
+        // onApplied={() => alert("Application submitted!")}
+      />
     </div>
   );
 }

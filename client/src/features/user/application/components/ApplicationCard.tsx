@@ -1,12 +1,39 @@
 import { useNavigate } from "react-router-dom";
-import type { Job } from "../../../../../types/jobTypes";
+import type { JobApplication } from "../../../../types/applicaionTypes";
 
-interface JobCardProps {
-  job: Job;
+interface ApplicationCardProps {
+  application: JobApplication;
 }
 
-export function JobCard({ job }: JobCardProps) {
+// Maps application status -> label + color theme
+function getStatusStyle(status?: string) {
+  const normalized = (status || "").toUpperCase();
+
+  switch (normalized) {
+    case "HIRED":
+    case "ACCEPTED":
+      return { label: "Hired", color: "#16a34a" };
+    case "REJECTED":
+      return { label: "Rejected", color: "#dc2626" };
+    case "IN_REVIEW":
+    case "SHORTLISTED":
+    case "INTERVIEW":
+      return { label: "In Review", color: "#3b82f6" };
+    case "PENDING":
+    case "APPLIED":
+    default:
+      return {
+        label: normalized ? normalized.replace(/_/g, " ") : "Applied",
+        color: "#e8a13b",
+      };
+  }
+}
+
+export function ApplicationCard({ application }: ApplicationCardProps) {
   const navigate = useNavigate();
+  const job = application.job;
+  const status = getStatusStyle(application.status);
+
   return (
     <div
       style={{
@@ -55,7 +82,7 @@ export function JobCard({ job }: JobCardProps) {
             flexShrink: 0,
           }}
         >
-          {job.company?.companyName?.charAt(0)}
+          {job?.company?.companyName?.charAt(0)}
         </div>
 
         <div style={{ minWidth: 0 }}>
@@ -68,12 +95,19 @@ export function JobCard({ job }: JobCardProps) {
               marginBottom: 3,
             }}
           >
-            {job.title}
+            {job?.title}
           </div>
           <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
-            {job.company?.companyName}
+            {job?.company?.companyName}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              marginBottom: 10,
+            }}
+          >
             <svg
               width="13"
               height="13"
@@ -85,29 +119,26 @@ export function JobCard({ job }: JobCardProps) {
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            <span style={{ fontSize: 12, color: "#888" }}>{job.location}</span>
-            <span style={{ color: "#ddd", margin: "0 4px" }}>·</span>
-            <span style={{ fontSize: 11, color: "#aaa" }}>{job.salary}</span>
-            <span style={{ color: "#ddd", margin: "0 4px" }}>·</span>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                padding: "2px 8px",
-                borderRadius: 20,
-                background: job.jobType === "FULL_TIME" ? "#fff0ee" : "#f0f7ff",
-                color: job.jobType === "FULL_TIME" ? "#e84b30" : "#3b82f6",
-              }}
-            >
-              {job.jobType}
-            </span>
+            <span style={{ fontSize: 12, color: "#888" }}>{job?.location}</span>
+          </div>
+
+          {/* Status */}
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: status.color,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {status.label}
           </div>
         </div>
       </div>
 
       {/* View Details button */}
       <button
-        onClick={() => navigate("/job", { state: { jobId: job._id } })}
+        onClick={() => navigate(`/application/${application._id}`)}
         style={{
           background: "#e84b30",
           color: "#fff",

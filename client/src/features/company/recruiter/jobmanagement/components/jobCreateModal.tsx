@@ -10,7 +10,7 @@ type PipelineStage =
   | "ASSESSMENT"
   | "TECHNICAL_INTERVIEW"
   | "HR_INTERVIEW"
-  | "FINAL_INTERVIEW"
+  | "FINAL_HR_INTERVIEW"
   | "DOCUMENT_VERIFICATION";
 
 type CreateJobModalProps = {
@@ -74,7 +74,7 @@ const STAGE_LABELS: Record<PipelineStage, string> = {
   ASSESSMENT: "Assessment",
   TECHNICAL_INTERVIEW: "Technical Interview",
   HR_INTERVIEW: "HR Interview",
-  FINAL_INTERVIEW: "Final Interview",
+  FINAL_HR_INTERVIEW: "Final HR Interview",
   DOCUMENT_VERIFICATION: "Document Verification",
 };
 
@@ -82,7 +82,7 @@ const STAGE_OPTIONS: PipelineStage[] = [
   "ASSESSMENT",
   "TECHNICAL_INTERVIEW",
   "HR_INTERVIEW",
-  "FINAL_INTERVIEW",
+  "FINAL_HR_INTERVIEW",
   "DOCUMENT_VERIFICATION",
 ];
 
@@ -345,8 +345,6 @@ export default function CreateJobModal({
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
-    // Only the selected optional stages, in their current order, are sent.
-    // Resume Review is mandatory/implicit and is not part of this payload.
     const payload: FormData = {
       ...form,
       pipelineStages: form.pipelineStages,

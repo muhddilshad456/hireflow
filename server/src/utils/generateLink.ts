@@ -1,6 +1,6 @@
 export function generateLink(
   baseUrl: string,
-  type: "RESET_PASSWORD" | "INVITE",
+  type: "RESET_PASSWORD" | "INVITE" | "CHANGE_EMAIL",
   role: string,
   token: string,
   id?: string,
@@ -10,6 +10,9 @@ export function generateLink(
   if (type === "INVITE") {
     path = "/company/accept-invite";
     return `${baseUrl}${path}?token=${token}&id=${id}`;
+  } else if (type == "CHANGE_EMAIL") {
+    path = "/verify-email-change";
+    return `${baseUrl}${path}?token=${token}`;
   } else {
     switch (role) {
       case "company_admin":

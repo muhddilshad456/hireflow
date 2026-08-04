@@ -9,4 +9,15 @@ export interface IJobController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  applyJob(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
+  getJobDetails(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getStageCandidates(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

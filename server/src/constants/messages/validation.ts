@@ -7,4 +7,7 @@ export const VALIDATION_MESSAGES = {
   INVALID_TYPE: "Invalid type",
   INVALID_PASSWORD: "Invalid password.",
   INVALID_CURRENT_PASSWORD: "Invalid current password.",
+  USER_ALREADY_EXIST: "User already exist",
+  INVALIED_TOKEN: "Invalied token",
+  EXPIRED_TOKEN: "Token expired",
 };

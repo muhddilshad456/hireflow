@@ -70,4 +70,15 @@ router.post(
   verifyAccessToken,
   authController.changePassword.bind(authController),
 );
+//* change email
+router.post(
+  "/change-email",
+  verifyAccessToken,
+  authController.changeEmail.bind(authController),
+);
+router.post(
+  "/verify-email-change",
+  verifyAccessToken,
+  authController.verifyEmailChange.bind(authController),
+);
 export default router;

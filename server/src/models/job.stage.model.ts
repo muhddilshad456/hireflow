@@ -1,9 +1,21 @@
 import { Schema, Types, model, Document } from "mongoose";
 
+export const JOB_STAGE_NAMES = [
+  "resume_review",
+  "assessment",
+  "document_verification",
+  "hr_interview",
+  "technical_interview",
+  "final_hr_interview",
+  "offer",
+] as const;
+
+export type JobStageName = (typeof JOB_STAGE_NAMES)[number];
+
 export interface IJobStage extends Document {
   _id: Types.ObjectId;
   jobId: Types.ObjectId;
-  name: string;
+  name: JobStageName;
   order: number;
   isMandatory: boolean;
   isActive: boolean;
@@ -19,6 +31,7 @@ const jobStageSchema = new Schema<IJobStage>(
 
     name: {
       type: String,
+      enum: JOB_STAGE_NAMES,
       required: true,
     },
 

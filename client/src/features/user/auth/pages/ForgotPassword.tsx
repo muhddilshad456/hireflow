@@ -4,8 +4,12 @@ import ForgotPasswordForm from "../../../shared/components/ForgotPasswordForm";
 
 export default function ForgotPassword() {
   const handleForgotPassword = async (email: string) => {
-    const res = await forgotPasswordApi({ email });
-    console.log(res);
+    try {
+      const res = await forgotPasswordApi({ email });
+      console.log(res);
+    } catch (error: any) {
+      console.log(error);
+    }
   };
 
   return (

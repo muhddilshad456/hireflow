@@ -23,6 +23,15 @@ import { JobRepository } from "../repositories/job/implementation/jobRepository"
 import { JobService } from "../services/v1/job/implementation/jobService";
 import { JobController } from "../controllers/v1/job/implementation/jobController";
 import { jobStageRepository } from "../repositories/job/implementation/jobStageRepository";
+import { ProfileController } from "../controllers/v1/profile/implementation/profileController";
+import { ProfileService } from "../services/v1/profile/implementation/profileService";
+import { UserProfileRepository } from "../repositories/profile/implementation/userProfileRepository";
+import { JobApplicationRepository } from "../repositories/job-application/implementation/jobApplicationRepository";
+import { JobApplicationStageRepository } from "../repositories/job-application/implementation/jobApplicationStageRepository";
+import { UploadService } from "../services/v1/upload/implementation/uploadService";
+import { UploadController } from "../controllers/v1/upload/implementation/uploadController";
+import { JobApplicationService } from "../services/v1/job application/implementation/jobApplicationService";
+import { JobApplicationController } from "../controllers/v1/job application/implementation/jobApplicationController";
 
 const container = new Container();
 
@@ -33,6 +42,11 @@ container.bind(TYPES.CompanyRepository).to(CompanyRepository);
 container.bind(TYPES.InvitationRepository).to(InvitationRepository);
 container.bind(TYPES.JobRepository).to(JobRepository);
 container.bind(TYPES.JobStageRepository).to(jobStageRepository);
+container.bind(TYPES.UserProfileRepository).to(UserProfileRepository);
+container.bind(TYPES.JobApplicationRepository).to(JobApplicationRepository);
+container
+  .bind(TYPES.JobApplicationStageRepository)
+  .to(JobApplicationStageRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.UserService).to(UserService);
@@ -40,6 +54,10 @@ container.bind(TYPES.CompanyService).to(CompanyService);
 container.bind(TYPES.AdminService).to(AdminService);
 container.bind(TYPES.RecruiterService).to(RecruiterService);
 container.bind(TYPES.JobService).to(JobService);
+container.bind(TYPES.ProfileService).to(ProfileService);
+container.bind(TYPES.UploadService).to(UploadService);
+container.bind(TYPES.JobApplicationService).to(JobApplicationService);
+///////////////////
 container.bind(TYPES.EmailService).to(EmailService);
 container.bind(TYPES.RedisService).to(RedisService);
 container.bind(TYPES.CloudinaryService).to(CloudinaryService);
@@ -51,5 +69,8 @@ container.bind(TYPES.CompanyController).to(CompanyController);
 container.bind(TYPES.AdminController).to(AdminController);
 container.bind(TYPES.RecruiterController).to(RecruiterController);
 container.bind(TYPES.JobController).to(JobController);
+container.bind(TYPES.ProfileController).to(ProfileController);
+container.bind(TYPES.UploadController).to(UploadController);
+container.bind(TYPES.JobApplicationController).to(JobApplicationController);
 
 export { container };

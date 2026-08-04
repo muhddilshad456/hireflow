@@ -45,4 +45,10 @@ export interface IAuthController {
     next: NextFunction,
   ): Promise<void>;
   acceptInvite(req: Request, res: Response, next: NextFunction): Promise<void>;
+  changeEmail(req: Request, res: Response, next: NextFunction): Promise<void>;
+  verifyEmailChange(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

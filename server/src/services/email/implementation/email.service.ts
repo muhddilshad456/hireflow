@@ -52,4 +52,20 @@ export class EmailService implements IEmailService {
 
     await this.sendEmail(email, subject, html);
   }
+
+  async sendEmailChangeVerification(
+    email: string,
+    link: string,
+  ): Promise<void> {
+    const subject = "Confirm Your New Email";
+
+    const html = `
+    <h2>Confirm Email Change</h2>
+    <p>Click the link below to verify your new email address:</p>
+    <a href="${link}">Verify Email</a>
+    <p>This link will expire in 10 minutes.</p>
+  `;
+
+    await this.sendEmail(email, subject, html);
+  }
 }

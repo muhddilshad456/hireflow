@@ -1,4 +1,4 @@
-import { COMPANY_BASE_ROUTE } from "../../../../../constents/apiRoutes";
+import { COMPANY_BASE_ROUTE } from "../../../../../constents/routes/apiRoutes";
 import api from "../../../../../services/api";
 
 export const verifyRequestApi = (data: FormData, type: string) => {

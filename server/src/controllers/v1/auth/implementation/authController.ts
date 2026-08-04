@@ -6,6 +6,7 @@ import { injectable, inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { IAuthController } from "../interface/IAuthController.js";
+import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
 
 @injectable()
 export class AuthController implements IAuthController {
@@ -168,18 +169,52 @@ export class AuthController implements IAuthController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      console.log("helleo");
       const { currentPassword, newPassword } = req.body;
-      console.log("hello 3");
       const userId = req.user?.userId;
-      console.log("userId : ", userId);
-      console.log("passwords : ", currentPassword, newPassword);
       const result = await this.authService.changePassword(
         userId,
         currentPassword,
         newPassword,
       );
-      ResponseHandler.success(res, "Password changed successfully.", result);
+      ResponseHandler.success(
+        res,
+        AUTH_MESSAGES.PASSWORD_CHANGE_SUCCESS,
+        result,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* change email
+  async changeEmail(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { newEmail } = req.body;
+      console.log(req.user);
+      const userId = req.user?.userId;
+      const result = await this.authService.changeEmail(userId, newEmail);
+      ResponseHandler.success(
+        res,
+        AUTH_MESSAGES.EMAIL_VERIFICATION_SENT,
+        result,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* verify change email
+  async verifyEmailChange(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { token } = req.body;
+      const result = await this.authService.verifyEmailChange(token);
+      ResponseHandler.success(res, AUTH_MESSAGES.EMAIL_CHANGE_SUCCESS, result);
     } catch (error) {
       next(error);
     }

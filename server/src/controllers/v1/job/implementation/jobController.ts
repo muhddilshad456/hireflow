@@ -67,4 +67,57 @@ export class JobController implements IJobController {
       next(error);
     }
   }
+  //* apply job
+  async applyJob(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      const jobId = req.params.jobId as string;
+      const data = req.body.data;
+      const result = await this.jobService.applyJob(userId, jobId, data);
+      ResponseHandler.success(res, JOB_MESSAGES.JOB_APPLIED_SUCCESS, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get a job with full datails
+  async getJobDetails(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const jobId = req.params.jobId as string;
+      const data = await this.jobService.getJobWithDetails(jobId);
+      ResponseHandler.success(res, JOB_MESSAGES.JOB_FETCHED, data);
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get candidates in each stages of the job
+  async getStageCandidates(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const jobId = req.params.jobId as string;
+      const stageId = req.params.stageId as string;
+      const { search, status, page = "1", limit = "6" } = req.query;
+
+      const data = await this.jobService.getStageCandidates(jobId, stageId, {
+        search: search as string | undefined,
+        status: status as string | undefined,
+        page: Number(page),
+        limit: Number(limit),
+      });
+
+      ResponseHandler.success(res, JOB_MESSAGES.STAGE_CANDIDATES_FETCHED, data);
+    } catch (error) {
+      next(error);
+    }
+  }
 }

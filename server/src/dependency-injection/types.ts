@@ -6,6 +6,9 @@ export const TYPES = {
   AdminController: Symbol.for("AdminController"),
   RecruiterController: Symbol.for("RecruiterController"),
   JobController: Symbol.for("JobController"),
+  JobApplicationController: Symbol.for("JobApplicationController"),
+  ProfileController: Symbol.for("ProfileController"),
+  UploadController: Symbol.for("UploadController"),
   //service
   CompanyService: Symbol.for("CompanyService"),
   AuthService: Symbol.for("AuthService"),
@@ -13,6 +16,9 @@ export const TYPES = {
   AdminService: Symbol.for("AdminService"),
   RecruiterService: Symbol.for("RecruiterService"),
   JobService: Symbol.for("JobService"),
+  JobApplicationService: Symbol.for("JobApplicationService"),
+  ProfileService: Symbol.for("ProfileService"),
+  UploadService: Symbol.for("UploadService"),
   //repository
   UserRepository: Symbol.for("UserRepository"),
   CompanyVerRepository: Symbol.for("CompanyVerRepository"),
@@ -20,6 +26,9 @@ export const TYPES = {
   InvitationRepository: Symbol.for("InvitationRepository"),
   JobRepository: Symbol.for("JobRepository"),
   JobStageRepository: Symbol.for("JobStageRepository"),
+  UserProfileRepository: Symbol.for("UserProfileRepository"),
+  JobApplicationRepository: Symbol.for("JobApplicationRepository"),
+  JobApplicationStageRepository: Symbol.for("JobApplicationStageRepository"),
   //other
   EmailService: Symbol.for("EmailService"),
   RedisService: Symbol.for("RedisService"),

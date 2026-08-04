@@ -6,6 +6,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  profilePicture?: string;
   isVerified: boolean;
   isBlocked: boolean;
   role: UserRole;
@@ -13,6 +14,9 @@ export interface IUser extends Document {
   emailLinkToken: string | null;
   emailLinkTokenExpiry: Date | null;
   refreshToken: string;
+  pendingEmail?: string | null;
+  emailChangeToken?: string | null;
+  emailChangeTokenExpiry?: Date | null;
   company?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -29,6 +33,7 @@ const userSchema = new Schema<IUser>(
       trim: true,
     },
     password: { type: String, required: true },
+    profilePicture: { type: String },
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     role: {
@@ -48,6 +53,17 @@ const userSchema = new Schema<IUser>(
     },
     refreshToken: {
       type: String,
+    },
+    pendingEmail: {
+      type: String,
+    },
+
+    emailChangeToken: {
+      type: String,
+    },
+
+    emailChangeTokenExpiry: {
+      type: Date,
     },
     company: {
       type: Schema.Types.ObjectId,

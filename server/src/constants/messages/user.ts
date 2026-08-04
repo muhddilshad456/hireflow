@@ -4,4 +4,5 @@ export const USER_MESSAGES = {
   USER_DELETED: "User deleted successfully",
   USER_NOT_FOUND: "User not found",
   USER_ALREADY_EXISTS: "User already exists",
+  USER_ID_MISSING: "User id is missing",
 };

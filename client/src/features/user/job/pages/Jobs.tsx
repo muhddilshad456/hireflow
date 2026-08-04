@@ -3,9 +3,9 @@ import { Header } from "../../shared/components/Header";
 import { getJobsApi } from "../../../shared/services/jobService";
 import toast from "react-hot-toast";
 import type { JobFilters } from "../../../../types/jobTypes";
-import { JobCard } from "./components/jobCard";
+import { JobCard } from "../components/jobCard";
 import type { Job } from "../../../../types/jobTypes";
-import { FilterSidebar } from "./components/filterSidebar";
+import { FilterSidebar } from "../components/filterSidebar";
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -339,8 +339,8 @@ export function Jobs() {
         const res = await getJobsApi(filters);
         console.log("filter for get jobs : ", filters);
         console.log("result of job fetch : ", res);
-        setJobs(res.data.data.data);
-        setTotalPages(res.data.data.totalPages);
+        setJobs(res?.data?.data);
+        setTotalPages(res.data.totalPages);
       } catch (error: any) {
         console.error(error?.response?.data);
         toast.error(error?.response?.data?.message);
@@ -446,8 +446,8 @@ export function Jobs() {
               }}
             >
               <span style={{ fontSize: 12, color: "#999" }}>
-                Showing <strong style={{ color: "#333" }}>{jobs.length}</strong>{" "}
-                jobs
+                Showing{" "}
+                <strong style={{ color: "#333" }}>{jobs?.length}</strong> jobs
               </span>
             </div>
 
@@ -459,14 +459,14 @@ export function Jobs() {
                   <JobCardSkeleton key={i} />
                 ))}
               </div>
-            ) : jobs.length === 0 ? (
+            ) : jobs?.length === 0 ? (
               <EmptyState />
             ) : (
               <>
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 12 }}
                 >
-                  {jobs.map((job) => (
+                  {jobs?.map((job) => (
                     <JobCard key={job._id} job={job} />
                   ))}
                 </div>

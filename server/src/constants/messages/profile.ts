@@ -1,4 +1,8 @@
 export const PROFILE_MESSAGES = {
+  // ✅  Profile
+  PROFILE_NOT_FOUND: "Profile not found",
+  // ✅  Complete Profile
+  COMPLETE_PROFILE: "Complete your profile before applying",
   // ✅ Fetch Profile
   FETCH_SUCCESS: "Profile fetched successfully",
   FETCH_FAILED: "Failed to fetch profile",
@@ -15,10 +19,20 @@ export const PROFILE_MESSAGES = {
   COMPANY_UPDATE_SUCCESS: "Company profile updated successfully",
   COMPANY_UPDATE_FAILED: "Failed to update company profile",
 
+  // ✅ General Profile Update (NEW)
+  PROFILE_UPDATE_SUCCESS: "Profile updated successfully",
+  PROFILE_UPDATE_FAILED: "Failed to update profile",
+  PROFILE_PARTIAL_UPDATE: "Profile partially updated",
+  PROFILE_NO_CHANGES: "No changes were made to the profile",
+
   // ✅ Validation
   INVALID_PROFILE_DATA: "Invalid profile data provided",
   REQUIRED_PROFILE_FIELDS: "Required profile fields are missing",
 
   // ✅ Authorization
   UNAUTHORIZED_PROFILE_ACCESS: "You are not authorized to access this profile",
+
+  // ✅ Skills
+  SKILL_REQUIRED: "Skill required",
+  SKILL_NOT_FOUND: "Skill not found",
 } as const;

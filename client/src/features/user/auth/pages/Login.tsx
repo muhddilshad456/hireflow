@@ -310,6 +310,7 @@ const Login = () => {
         email: form.email,
         password: form.password,
       });
+      console.log("login response : ", res);
       const token = res.accessToken;
       dispatch(
         setCredentials({

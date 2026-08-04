@@ -10,6 +10,12 @@ import ProtectedRoute from "../../../routes/ProtectedRoute";
 import PublicRoute from "../../../routes/PublicRoute";
 import { Jobs } from "../../../features/user/job/pages/Jobs";
 import Job from "../../../features/user/job/pages/Job";
+import { Profile } from "../../../features/user/profile/pages/Profile";
+import { EmailVerificationPage } from "../../../features/shared/pages/VerifyEmail";
+import { EmailVerificationResultPage } from "../../../features/shared/pages/VerifyResult";
+import { AppliedJobs } from "../../../features/user/job/pages/AppliedJobs";
+import { AppliedJobPage } from "../../../features/user/application/pages/ApplicationLayout";
+import { StageRenderer } from "../../../features/user/application/components/StageRenderer";
 
 const UserRoutes = () => {
   return (
@@ -21,8 +27,21 @@ const UserRoutes = () => {
           }
         >
           <Route path="/" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route
+            path="/verify-email-change"
+            element={<EmailVerificationResultPage />}
+          />
           <Route path="/jobs" element={<Jobs />} />
           <Route path="/job" element={<Job />} />
+          <Route path="/applied-jobs" element={<AppliedJobs />} />
+          <Route
+            path="/application/:applicationId"
+            element={<AppliedJobPage />}
+          >
+            <Route path="stage/:stageId" element={<StageRenderer />} />
+          </Route>
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

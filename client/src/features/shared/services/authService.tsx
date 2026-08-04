@@ -1,4 +1,4 @@
-import { AUTH_BASE_ROUTE } from "../../../constents/apiRoutes";
+import { AUTH_BASE_ROUTE } from "../../../constents/routes/apiRoutes";
 import api from "../../../services/api";
 
 export const signUpApi = async (data: {
@@ -65,5 +65,17 @@ export const changePasswordApi = async (data: {
 }) => {
   return api
     .post(`${AUTH_BASE_ROUTE}/change-password`, data)
+    .then((res) => res.data);
+};
+
+export const changeEmail = async (data: { newEmail: string }) => {
+  return api
+    .post(`${AUTH_BASE_ROUTE}/change-email`, data)
+    .then((res) => res.data);
+};
+
+export const verifyChangeEmail = async (data: { token: string }) => {
+  return api
+    .post(`${AUTH_BASE_ROUTE}/verify-email-change`, data)
     .then((res) => res.data);
 };

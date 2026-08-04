@@ -15,6 +15,13 @@ export type JobType =
   | "INTERNSHIP"
   | "CONTRACT"
   | "";
+//* job stage candidates type
+export interface GetStageCandidatesParams {
+  search?: string;
+  status?: string;
+  page: number;
+  limit: number;
+}
 //* job filter type
 export interface JobFilters {
   search?: string;

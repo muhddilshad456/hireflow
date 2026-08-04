@@ -6,7 +6,7 @@ import { logger } from "../utils/logger.util";
 export const validateDto =
   (dtoClass: any) =>
   async (req: Request, res: Response, next: NextFunction) => {
-    const dtoObject = plainToInstance(dtoClass, req.body);
+    const dtoObject = plainToInstance(dtoClass, req.body || {});
     const errors = await validate(dtoObject, {
       whitelist: true,
       forbidNonWhitelisted: true,

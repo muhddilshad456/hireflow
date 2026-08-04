@@ -1,4 +1,4 @@
-import { ADMIN_BASE_ROUTE } from "../../../../constents/apiRoutes";
+import { ADMIN_BASE_ROUTE } from "../../../../constents/routes/apiRoutes";
 import api from "../../../../services/api";
 
 export const getAllCompaniesApi = async (

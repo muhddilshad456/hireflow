@@ -10,6 +10,10 @@ import { BadRequestError } from "../../../../../errors/bad-request.error";
 import { InternalServerError } from "../../../../../errors/internal-server.error";
 import { Logger } from "pino";
 import { IJobStageRepository } from "../../../../../repositories/job/interface/IJobStageRepository";
+import {
+  JOB_STAGE_NAMES,
+  JobStageName,
+} from "../../../../../models/job.stage.model";
 
 @injectable()
 export class RecruiterService implements IRecruiterService {
@@ -66,7 +70,6 @@ export class RecruiterService implements IRecruiterService {
       data: selectedStages,
     });
 
-    // 🔹 Normalize stages
     const normalizedStages = selectedStages.map((stage) => stage.toLowerCase());
 
     this.logger.info({
@@ -74,21 +77,36 @@ export class RecruiterService implements IRecruiterService {
       data: normalizedStages,
     });
 
-    // 🔹 Add mandatory stage
-    const fullStages = ["resume_review", ...normalizedStages];
+    const invalidStages = normalizedStages.filter(
+      (stage) => !JOB_STAGE_NAMES.includes(stage as JobStageName),
+    );
+    if (invalidStages.length) {
+      throw new BadRequestError(
+        `Invalid pipeline stage(s): ${invalidStages.join(", ")}`,
+      );
+    }
+
+    const middleStages = (normalizedStages as JobStageName[]).filter(
+      (stage) => stage !== "resume_review" && stage !== "offer",
+    );
+
+    const fullStages: JobStageName[] = [
+      "resume_review",
+      ...middleStages,
+      "offer",
+    ];
 
     this.logger.info({
       event: "Final pipeline stages prepared (with mandatory stage)",
       data: fullStages,
     });
 
-    // 🔹 Create DB documents
     const stageDocs = fullStages.map((stage, index) => ({
       jobId: result._id,
       type: stage,
       name: stage,
       order: index + 1,
-      isMandatory: stage === "resume_review",
+      isMandatory: stage === "resume_review" || stage === "offer",
     }));
 
     this.logger.info({

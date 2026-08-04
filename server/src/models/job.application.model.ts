@@ -1,6 +1,6 @@
-import { Schema, Types, model } from "mongoose";
+import { Schema, Document, Types, model } from "mongoose";
 
-export interface IApplication {
+export interface IJobApplication extends Document {
   _id: Types.ObjectId;
 
   jobId: Types.ObjectId;
@@ -9,18 +9,13 @@ export interface IApplication {
   resumeUrl: string;
   coverLetter: string;
 
-  status:
-    | "APPLIED"
-    | "IN_PROGRESS"
-    | "REJECTED"
-    | "SELECTED"
-    | "OFFER_SENT"
-    | "ACCEPTED"
-    | "DECLINED";
+  status: "IN_PROGRESS" | "REJECTED" | "SELECTED" | "OFFER_SENT" | "WITHDRAWN";
 
   currentStageId?: Types.ObjectId;
 
   appliedAt: Date;
+
+  finalizedAt?: Date;
 
   offerDetails?: {
     salary?: number;
@@ -29,7 +24,7 @@ export interface IApplication {
   };
 }
 
-const applicationSchema = new Schema<IApplication>(
+const jobApplicationSchema = new Schema<IJobApplication>(
   {
     jobId: {
       type: Schema.Types.ObjectId,
@@ -55,7 +50,6 @@ const applicationSchema = new Schema<IApplication>(
     status: {
       type: String,
       enum: [
-        "APPLIED",
         "IN_PROGRESS",
         "REJECTED",
         "SELECTED",
@@ -63,7 +57,7 @@ const applicationSchema = new Schema<IApplication>(
         "ACCEPTED",
         "DECLINED",
       ],
-      default: "APPLIED",
+      default: "IN_PROGRESS",
     },
 
     currentStageId: {
@@ -76,6 +70,10 @@ const applicationSchema = new Schema<IApplication>(
       default: Date.now,
     },
 
+    finalizedAt: {
+      type: Date,
+    },
+
     offerDetails: {
       salary: Number,
       joiningDate: Date,
@@ -85,7 +83,7 @@ const applicationSchema = new Schema<IApplication>(
   { timestamps: true },
 );
 
-export const ApplicationModel = model<IApplication>(
-  "Application",
-  applicationSchema,
+export const JobApplicationModel = model<IJobApplication>(
+  "JobApplication",
+  jobApplicationSchema,
 );

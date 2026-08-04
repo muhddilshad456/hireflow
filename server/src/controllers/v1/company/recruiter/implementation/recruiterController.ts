@@ -10,18 +10,15 @@ export class RecruiterController implements IRecruiterController {
   constructor(
     @inject(TYPES.RecruiterService) private recruiterService: IRecruiterService,
   ) {}
+  //* create job
   async createJob(
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      console.log("jiklsjdfk");
       const dto = req.body;
-      console.log("dto for job creation : ", dto);
       const recruiterId = req.user?.userId;
-      console.log("req.user:", req.user);
-      console.log("Recruiter ID:", recruiterId);
       const result = await this.recruiterService.createJob(dto, recruiterId);
       ResponseHandler.success(res, "Job created successfully.", result);
     } catch (error) {

@@ -3,6 +3,7 @@ import CreateJobModal, { type FormData } from "../components/jobCreateModal";
 import toast from "react-hot-toast";
 import { createJobApi } from "../services/jobServices";
 import { getJobsApi } from "../../../../shared/services/jobService";
+import { useNavigate } from "react-router-dom";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type JobStatus = "OPEN" | "CLOSED" | "FILLED";
@@ -159,6 +160,11 @@ interface JobCardProps {
 
 const JobCard = ({ job }: JobCardProps) => {
   const IconComp = iconMap[job.icon] || EngineeringIcon;
+  const navigate = useNavigate();
+
+  const handleViewJob = () => {
+    navigate(`/company/recruiter/job/${job._id}`);
+  };
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
@@ -210,7 +216,10 @@ const JobCard = ({ job }: JobCardProps) => {
           </div>
 
           {/* CTA */}
-          <button className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-sm font-semibold px-4 py-2 rounded-full transition-all duration-150">
+          <button
+            onClick={handleViewJob}
+            className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white text-sm font-semibold px-4 py-2 rounded-full transition-all duration-150"
+          >
             View Job
             <svg
               className="w-4 h-4"
@@ -345,7 +354,7 @@ interface PaginationProps {
 }
 
 const Pagination = ({ current, total, onChange }: PaginationProps) => {
-  const pages = [1, 2, 3];
+  const pages = Array.from({ length: total }, (_, i) => i + 1);
   return (
     <div className="flex items-center justify-center gap-1 mt-8">
       <button
@@ -380,13 +389,7 @@ const Pagination = ({ current, total, onChange }: PaginationProps) => {
           {p}
         </button>
       ))}
-      <span className="text-slate-400 text-sm px-1">…</span>
-      <button
-        onClick={() => onChange(total)}
-        className="w-8 h-8 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition"
-      >
-        {total}
-      </button>
+
       <button
         onClick={() => onChange(Math.min(total, current + 1))}
         disabled={current === total}
@@ -417,17 +420,16 @@ export default function JobManagement() {
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [jobModalOpen, setJobModalOpen] = useState(false);
 
   const handleCreateJob = async (formData: FormData) => {
     try {
-      console.log("DATA FROM MODAL:", formData);
       const result = await createJobApi(formData);
-      console.log("job created : ", result);
+      console.log("result of job creation : ", result);
       toast.success("Job created");
       setJobModalOpen(false);
     } catch (error: any) {
-      console.log("catch segment");
       console.log(error?.response?.data);
       toast.error(error?.response?.data?.message);
     }
@@ -439,9 +441,12 @@ export default function JobManagement() {
         search,
         status: statusFilter,
         category: categoryFilter ? [categoryFilter] : [],
+        page: currentPage,
+        limit: 2,
       });
       console.log(result);
-      setJobs(result.data.data.data);
+      setJobs(result.data.data);
+      setTotalPages(result.data.totalPages);
     } catch (error: any) {
       console.log(error?.response?.data);
     }
@@ -451,8 +456,13 @@ export default function JobManagement() {
   const closeJobModal = () => setJobModalOpen(false);
 
   useEffect(() => {
+    setCurrentPage(1);
     getJobs();
   }, [categoryFilter, statusFilter, search]);
+
+  useEffect(() => {
+    getJobs();
+  }, [currentPage]);
 
   return (
     <>
@@ -504,7 +514,7 @@ export default function JobManagement() {
       {jobs?.length > 0 && (
         <Pagination
           current={currentPage}
-          total={10}
+          total={totalPages}
           onChange={setCurrentPage}
         />
       )}

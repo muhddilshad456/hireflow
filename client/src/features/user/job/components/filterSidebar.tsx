@@ -1,5 +1,5 @@
-import type { JobFilters, JobType } from "../../../../../types/jobTypes";
-import { CATEGORIES } from "../../../../../types/jobTypes";
+import type { JobFilters, JobType } from "../../../../types/jobTypes";
+import { CATEGORIES } from "../../../../types/jobTypes";
 
 interface FilterSidebarProps {
   filters: JobFilters;

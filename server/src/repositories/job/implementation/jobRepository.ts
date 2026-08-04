@@ -91,8 +91,9 @@ export class JobRepository
   //* get a job
   async getJobDetails(id: string): Promise<any> {
     return await JobModel.findById(id)
-      .populate("company", "companyName")
-      .populate("createdBy", "name");
+      .populate("company", "name logo location")
+      .populate("createdBy", "name email")
+      .lean();
   }
   //* update status
   async updateStatus(id: string, status: string): Promise<any> {
