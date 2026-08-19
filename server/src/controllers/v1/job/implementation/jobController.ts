@@ -120,4 +120,32 @@ export class JobController implements IJobController {
       next(error);
     }
   }
+  //* add assesement stage task
+  async addAssesmentTask(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const jobId = req.params.jobId as string;
+      const stageId = req.params.stageId as string;
+      const description = req.body.description;
+      const file = req.file;
+
+      const data = await this.jobService.addAssesmentTask(
+        jobId,
+        stageId,
+        description,
+        file,
+      );
+
+      ResponseHandler.success(
+        res,
+        JOB_MESSAGES.ASSESMENT_TASK_ADDED_SUCCESSFULLY,
+        data,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }

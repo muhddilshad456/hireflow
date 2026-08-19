@@ -1,12 +1,10 @@
 import { useOutletContext } from "react-router-dom";
 import { CheckCircle2, Circle } from "lucide-react";
-import type {
-  ApiJobStage,
-  JobLayoutOutletContext,
-} from "../../pages/JobDetailsLayout";
+import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
+import type { StageDetail } from "../StageRenderer";
 
 interface StageComponentProps {
-  stage: ApiJobStage;
+  stage: StageDetail;
 }
 
 const toTitleCase = (raw: string) =>

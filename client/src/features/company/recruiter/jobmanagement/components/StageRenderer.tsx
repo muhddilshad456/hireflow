@@ -1,11 +1,7 @@
 import { useParams, useOutletContext } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import type {
-  ApiJobStage,
-  StageDetail,
-  JobLayoutOutletContext,
-} from "../pages/JobDetailsLayout";
+import type { JobLayoutOutletContext } from "../pages/JobDetailsLayout";
 import {
   HRRoundStage,
   TechnicalRoundStage,
@@ -15,11 +11,51 @@ import { ResumeReviewStage } from "./stages/ResumeReviewStage";
 import { AssessmentStage } from "./stages/AssessmentStage";
 import { DocumentVerificationStage } from "./stages/DocumentVerificationStage";
 import { getStageCandidates } from "../services/jobServices";
+import type { JobStageName } from "../../../../../constents/jobStages";
 
-// Stage components now take the FULL stage shape (with candidates),
-// which StageRenderer fetches per-stage. Update the prop type in each
-// stage component file from `ApiJobStage` to `StageDetail` — the field
-// names are unchanged, so no other logic in those files needs to move.
+export interface ApiStageCandidate {
+  applicationStageId: string;
+  status: "PENDING" | "IN_PROGRESS" | "PASSED" | "FAILED";
+  feedback?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  interviewRequestedAt?: string;
+  interviewerId?: string;
+  scheduledAt?: string;
+  interviewerFeedback?: string;
+  interviewerSubmittedAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  application: {
+    _id: string;
+    userId: { _id: string; name: string; email: string } | null;
+    resumeUrl: string;
+    coverLetter: string;
+    status:
+      | "IN_PROGRESS"
+      | "REJECTED"
+      | "SELECTED"
+      | "OFFER_SENT"
+      | "WITHDRAWN";
+    appliedAt: string;
+    currentStageId?: string;
+  } | null;
+}
+
+export interface StageDetail {
+  _id: string;
+  name: JobStageName;
+  order: number;
+  isMandatory: boolean;
+  isActive: boolean;
+  assessmentTaskDescription?: string;
+  assessmentTaskAttachmentUrl?: string;
+  candidates: ApiStageCandidate[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 interface StageComponentProps {
   stage: StageDetail;
 }
@@ -32,16 +68,15 @@ const toTitleCase = (raw: string) =>
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 
-const STAGE_REGISTRY: Record<
-  string,
-  React.ComponentType<StageComponentProps>
+const STAGE_REGISTRY: Partial<
+  Record<JobStageName, React.ComponentType<StageComponentProps>>
 > = {
   resume_review: ResumeReviewStage,
   assessment: AssessmentStage,
   document_verification: DocumentVerificationStage,
-  hr_round: HRRoundStage,
-  technical_round: TechnicalRoundStage,
-  final_hr: FinalHRStage,
+  hr_interview: HRRoundStage,
+  technical_interview: TechnicalRoundStage,
+  final_hr_interview: FinalHRStage,
 };
 
 /* -------------------------- application status -------------------------- */
@@ -87,6 +122,7 @@ export function StageRenderer() {
 
   // Reset to page 1 whenever the stage, search, or status filter changes.
   useEffect(() => {
+    console.log("stage in render : ", stages);
     setPage(1);
   }, [stageId, debouncedSearch, statusFilter]);
 
@@ -99,6 +135,7 @@ export function StageRenderer() {
     const requestId = ++requestIdRef.current;
 
     const fetchCandidates = async () => {
+      if (!stageMeta) return;
       try {
         setLoading(true);
         setError(null);
@@ -116,11 +153,13 @@ export function StageRenderer() {
 
         setStageDetail({
           _id: stageId,
-          name: stageMeta?.name ?? "",
-          order: stageMeta?.order ?? 0,
-          isMandatory: stageMeta?.isMandatory ?? false,
-          isActive: stageMeta?.isActive ?? true,
-          candidatesCount: data.total ?? 0,
+          name: stageMeta.name,
+          order: stageMeta.order,
+          isMandatory: stageMeta.isMandatory,
+          isActive: stageMeta.isActive,
+          assessmentTaskDescription: stageMeta.assessmentTaskDescription ?? "",
+          assessmentTaskAttachmentUrl:
+            stageMeta.assessmentTaskAttachmentUrl ?? "",
           candidates: data.candidates ?? [],
           total: data.total ?? 0,
           page: data.page ?? page,
@@ -230,7 +269,7 @@ export function StageRenderer() {
       )}
 
       {/* ----------------------------- Pagination ----------------------------- */}
-      {stageDetail && stageDetail.total > PAGE_SIZE && (
+      {stageDetail && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-xs text-gray-500">
             Showing {(stageDetail.page - 1) * PAGE_SIZE + 1}

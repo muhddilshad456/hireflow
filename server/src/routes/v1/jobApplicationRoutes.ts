@@ -7,6 +7,7 @@ import { validateDto } from "../../middlewares/validate.middleware";
 import { MoveToNextStageDto } from "../../dtos/v1/application/move-to-next-stage-dto";
 import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
+import { MoveMultipleToNextStageDto } from "../../dtos/v1/application/move-to-next-stage-bulk-dto";
 
 const router = Router();
 
@@ -34,5 +35,15 @@ router.patch(
   verifyAccessToken,
   roleGuard([UserRole.COMPANY_RECRUITER]),
   jobApplicationController.moveToNextStage.bind(jobApplicationController),
+);
+//* bulk move to next stage
+router.patch(
+  "/stage/next/bulk",
+  validateDto(MoveMultipleToNextStageDto),
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_RECRUITER]),
+  jobApplicationController.moveMultipleToNextStage.bind(
+    jobApplicationController,
+  ),
 );
 export default router;

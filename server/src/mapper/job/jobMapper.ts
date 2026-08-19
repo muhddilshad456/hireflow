@@ -33,4 +33,27 @@ export class JobMapper {
       applicantsCount: 0,
     };
   }
+  static toJobUpdateEntity(dto: JobDto) {
+    return {
+      title: dto.title,
+      description: dto.description,
+      location: dto.location,
+      jobType: dto.jobType,
+
+      salaryMin: dto.minSalary,
+      salaryMax: dto.maxSalary,
+
+      skills: dto.skills,
+
+      experienceMin: dto.minExperience,
+      experienceMax: dto.maxExperience,
+
+      category: dto.category,
+
+      applicationDeadline: dto.applicationDeadline
+        ? new Date(dto.applicationDeadline)
+        : undefined,
+      positions: dto.positions ?? 1,
+    };
+  }
 }

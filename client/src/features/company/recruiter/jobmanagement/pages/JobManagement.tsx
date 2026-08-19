@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import CreateJobModal, { type FormData } from "../components/jobCreateModal";
+import CreateJobModal from "../components/jobCreateModal";
+import type { JobFormData } from "../../../../../types/job/job/jobForm";
 import toast from "react-hot-toast";
 import { createJobApi } from "../services/jobServices";
 import { getJobsApi } from "../../../../shared/services/jobService";
@@ -423,9 +424,9 @@ export default function JobManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [jobModalOpen, setJobModalOpen] = useState(false);
 
-  const handleCreateJob = async (formData: FormData) => {
+  const handleCreateJob = async (jobFormData: JobFormData) => {
     try {
-      const result = await createJobApi(formData);
+      const result = await createJobApi(jobFormData);
       console.log("result of job creation : ", result);
       toast.success("Job created");
       setJobModalOpen(false);

@@ -12,4 +12,9 @@ export interface IBaseRepository<T> {
   findOne(filter: QueryFilter<T>, session?: ClientSession): Promise<T | null>;
   addToSet(filter: any, field: keyof T, value: string): Promise<T | null>;
   pullFromArray(filter: any, field: keyof T, value: string): Promise<any>;
+  deleteMany(
+    filter: QueryFilter<T>,
+    session?: ClientSession,
+  ): Promise<{ deletedCount: number }>;
+  find(data: QueryFilter<T>): Promise<T[]>;
 }

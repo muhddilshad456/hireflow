@@ -17,6 +17,9 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   async findById(id: string, session?: ClientSession): Promise<T | null> {
     return this.model.findById(id).session(session ?? null);
   }
+  async find(data: QueryFilter<T>): Promise<T[]> {
+    return this.model.find(data);
+  }
   async findAll(): Promise<T[]> {
     return this.model.find();
   }
@@ -62,5 +65,12 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
     } as any;
 
     return this.model.updateOne(filter, update);
+  }
+  async deleteMany(
+    filter: QueryFilter<T>,
+    session?: ClientSession,
+  ): Promise<{ deletedCount: number }> {
+    const result = await this.model.deleteMany(filter, { session });
+    return { deletedCount: result.deletedCount ?? 0 };
   }
 }

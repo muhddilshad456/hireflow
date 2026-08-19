@@ -9,7 +9,12 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-import { jobDetails } from "../services/jobServices";
+import { jobDetails, updateJobApi } from "../services/jobServices";
+import { EditJobModal } from "../components/jobEditModal";
+import type { JobStageName } from "../../../../../constents/jobStages";
+import toast from "react-hot-toast";
+import type { JobFormData } from "../../../../../types/job/job/jobForm";
+import AiFilterConfirmModal from "../components/AiConfirmationModal";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -36,59 +41,26 @@ export interface JobSummary {
   salaryMin?: number;
   salaryMax?: number;
   positions: number;
+  skills: string[];
+  description: string;
   applicantsCount: number;
   applicationDeadline?: string;
 }
 
-export interface StageDetail extends ApiJobStage {
-  candidates: ApiStageCandidate[];
-  candidatesCount: number;
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-export interface ApiStageCandidate {
-  applicationStageId: string;
-  status: "PENDING" | "IN_PROGRESS" | "PASSED" | "FAILED";
-  feedback?: string;
-  interviewer?: { _id: string; name: string; email: string } | null;
-  startedAt?: string;
-  completedAt?: string;
-  interviewRequestedAt?: string;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  interviewerCompletedAt?: string;
-  application: {
-    _id: string;
-    userId: { _id: string; name: string; email: string } | null;
-    resumeUrl: string;
-    coverLetter: string;
-    status:
-      | "IN_PROGRESS"
-      | "REJECTED"
-      | "SELECTED"
-      | "OFFER_SENT"
-      | "WITHDRAWN";
-    appliedAt: string;
-    currentStageId?: string;
-  } | null;
-}
-
 export interface ApiJobStage {
   _id: string;
-  name: string; // e.g. "resume_review" — snake_case from the DB
+  name: JobStageName;
   order: number;
+  assessmentTaskDescription?: string;
+  assessmentTaskAttachmentUrl?: string;
   isMandatory: boolean;
   isActive: boolean;
-  candidates: ApiStageCandidate[];
 }
 
 /** The stage row is fully data-driven — length & labels vary per job */
 export interface TimelineStage {
   id: string;
   name: string;
-  state: "COMPLETED" | "CURRENT" | "LOCKED";
 }
 
 /** Shape handed to <Outlet context={...}/> and read by StageRenderer via useOutletContext */
@@ -146,34 +118,17 @@ const toTitleCase = (raw: string) =>
  * after it is LOCKED. If no stage has any candidates yet, the first
  * active stage is CURRENT and the rest are LOCKED.
  */
-export const deriveTimelineFromApiStages = (
+// change to
+export const buildTimelineStages = (
   apiStages: ApiJobStage[],
-): TimelineStage[] => {
-  const activeStages = apiStages
+): TimelineStage[] =>
+  apiStages
     .filter((s) => s.isActive)
-    .sort((a, b) => a.order - b.order);
-
-  if (!activeStages.length) return [];
-
-  const stagesWithCandidates = activeStages.filter(
-    (s) => s.candidates.length > 0,
-  );
-
-  const currentOrder = stagesWithCandidates.length
-    ? Math.max(...stagesWithCandidates.map((s) => s.order))
-    : activeStages[0].order;
-
-  return activeStages.map((stage) => ({
-    id: stage._id,
-    name: toTitleCase(stage.name),
-    state:
-      stage.order < currentOrder
-        ? "COMPLETED"
-        : stage.order === currentOrder
-          ? "CURRENT"
-          : "LOCKED",
-  }));
-};
+    .sort((a, b) => a.order - b.order)
+    .map((stage) => ({
+      id: stage._id,
+      name: toTitleCase(stage.name),
+    }));
 
 const StageTimeline: React.FC<{
   stages: TimelineStage[];
@@ -229,6 +184,8 @@ export const JobLayout: React.FC = () => {
   const [job, setJob] = useState<JobSummary | null>(null);
   const [apiStages, setApiStages] = useState<ApiJobStage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openEditJobModal, setOpenEditJobModal] = useState(false);
+  const [showAiConfirm, setShowAiConfirm] = useState(false);
 
   const getJobDetails = async () => {
     if (!jobId) {
@@ -264,7 +221,8 @@ export const JobLayout: React.FC = () => {
     getJobDetails();
   }, [jobId, stageId]);
 
-  const timeline = deriveTimelineFromApiStages(apiStages);
+  // change to
+  const timeline = buildTimelineStages(apiStages);
   const selectedStageId = stageId ?? timeline[0]?.id ?? "";
 
   const handleStageSelect = (id: string) => {
@@ -272,11 +230,22 @@ export const JobLayout: React.FC = () => {
   };
 
   const handleEditJob = () => {
-    navigate(`/company/recruiter/job/${jobId}/edit`);
+    setOpenEditJobModal(true);
+  };
+
+  const handleEditJobSubmit = async (data: JobFormData) => {
+    if (!jobId) {
+      console.log("Job id missing.");
+      throw new Error("Job id missing.");
+    }
+    const result = await updateJobApi(jobId, data);
+    toast.success("Job updated.");
+    await getJobDetails();
   };
 
   const handleRunAutoSelect = () => {
-    // TODO: wire to your auto-select API call
+    setShowAiConfirm(false);
+    navigate(`/company/recruiter/job/${jobId}/ai-filter-results`);
   };
 
   if (loading && !job) {
@@ -422,7 +391,7 @@ export const JobLayout: React.FC = () => {
             Job Details &amp; Hiring Flow Management
           </h1>
           <button
-            onClick={handleRunAutoSelect}
+            onClick={() => setShowAiConfirm(true)}
             className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
           >
             <Sparkles className="h-4 w-4" />
@@ -523,6 +492,22 @@ export const JobLayout: React.FC = () => {
           />
         </div>
       </div>
+      {openEditJobModal && (
+        <EditJobModal
+          job={job}
+          stages={apiStages}
+          onSubmit={handleEditJobSubmit}
+          onClose={() => setOpenEditJobModal(false)}
+        />
+      )}
+      {showAiConfirm && (
+        <AiFilterConfirmModal
+          jobTitle={job.title}
+          applicantsCount={job.applicantsCount}
+          onCancel={() => setShowAiConfirm(false)}
+          onConfirm={handleRunAutoSelect}
+        />
+      )}
     </main>
   );
 };

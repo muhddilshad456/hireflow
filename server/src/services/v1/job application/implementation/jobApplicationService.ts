@@ -241,8 +241,8 @@ export class JobApplicationService implements IJobApplicationService {
 
     return application;
   }
-  //* move to next round
-  async moveToNextStage(
+  //* helper (stage move)
+  private async moveApplicationToNextStage(
     applicationId: string,
     feedback?: string,
   ): Promise<any> {
@@ -281,9 +281,6 @@ export class JobApplicationService implements IJobApplicationService {
       throw new BadRequestError(APPLICATION_MESSAGES.STAGE_MISMATCH);
     }
 
-    // currentStageId points to a JobApplicationStage record, not a JobStage.
-    // Fetch that record first, then use its jobStageId to locate position
-    // in the ordered jobStages list.
     const currentAppStage = await this.jobApplicationStageRepository.findById(
       application.currentStageId.toString(),
     );
@@ -321,7 +318,6 @@ export class JobApplicationService implements IJobApplicationService {
 
     const nextStage = jobStages[currentIndex + 1];
 
-    // No more stages -> finalize application
     if (!nextStage) {
       application.status = "SELECTED";
       application.currentStageId = undefined;
@@ -335,8 +331,6 @@ export class JobApplicationService implements IJobApplicationService {
       };
     }
 
-    // Guard against double-advancement: check if an application-stage
-    // record already exists for the next job stage.
     const existingNextStage = await this.jobApplicationStageRepository.findOne({
       applicationId: application._id,
       jobStageId: nextStage._id,
@@ -353,8 +347,6 @@ export class JobApplicationService implements IJobApplicationService {
       startedAt: new Date(),
     });
 
-    // currentStageId now points to the JobApplicationStage record,
-    // not the JobStage itself.
     application.currentStageId = nextAppStage._id;
     application.status = "IN_PROGRESS";
     await this.jobApplicationRepository.save(application);
@@ -365,5 +357,40 @@ export class JobApplicationService implements IJobApplicationService {
       nextStage,
       stageRecord: nextAppStage,
     };
+  }
+  //* move to next round
+  async moveToNextStage(
+    applicationId: string,
+    feedback?: string,
+  ): Promise<any> {
+    return this.moveApplicationToNextStage(applicationId, feedback);
+  }
+  //* move to next round (bulk)
+  async moveMultipleToNextStage(
+    applicationIds: string[],
+    feedback?: string,
+  ): Promise<{
+    succeeded: { applicationId: string; nextStage: any }[];
+    failed: { applicationId: string; reason: string }[];
+  }> {
+    const succeeded: { applicationId: string; nextStage: any }[] = [];
+    const failed: { applicationId: string; reason: string }[] = [];
+
+    for (const applicationId of applicationIds) {
+      try {
+        const result = await this.moveApplicationToNextStage(
+          applicationId,
+          feedback,
+        );
+        succeeded.push({ applicationId, nextStage: result.nextStage });
+      } catch (error: any) {
+        failed.push({
+          applicationId,
+          reason: error?.message ?? "Failed to move application",
+        });
+      }
+    }
+
+    return { succeeded, failed };
   }
 }

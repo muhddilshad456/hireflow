@@ -3,6 +3,7 @@ import { TYPES } from "../../dependency-injection/types";
 import { container } from "../../dependency-injection/container";
 import { IJobController } from "../../controllers/v1/job/interface/IJobController";
 import { verifyAccessToken } from "../../middlewares/auth.middleware";
+import { upload } from "../../config/multer";
 
 const router = Router();
 
@@ -29,5 +30,11 @@ router.post(
 router.get(
   "/:jobId/stages/:stageId/candidates",
   jobController.getStageCandidates.bind(jobController),
+);
+//* add assesment stage task
+router.post(
+  "/:jobId/stages/:stageId/assessment",
+  upload.single("file"),
+  jobController.addAssesmentTask.bind(jobController),
 );
 export default router;

@@ -20,6 +20,10 @@ import mongoose from "mongoose";
 import { IJobStageRepository } from "../../../../repositories/job/interface/IJobStageRepository";
 import { IJobApplicationStageRepository } from "../../../../repositories/job-application/interface/IJobApplicationStageRepository";
 import app from "../../../../app";
+import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinaryService";
+import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
+import { InternalServerError } from "../../../../errors/internal-server.error";
+import { IJobStage } from "../../../../models/job.stage.model";
 
 @injectable()
 export class JobService implements IJobService {
@@ -34,6 +38,8 @@ export class JobService implements IJobService {
     private jobStageRepository: IJobStageRepository,
     @inject(TYPES.JobApplicationStageRepository)
     private jobApplicationStageRepository: IJobApplicationStageRepository,
+    @inject(TYPES.CloudinaryService)
+    private cloudinaryService: ICloudinaryService,
     @inject(TYPES.Logger) private logger: Logger,
   ) {}
   //* get all jobs
@@ -196,13 +202,14 @@ export class JobService implements IJobService {
 
     return {
       job,
-      stages: stages.map((s: any) => ({
+      stages: stages.map((s: IJobStage) => ({
         _id: s._id,
         name: s.name,
         order: s.order,
         isMandatory: s.isMandatory,
         isActive: s.isActive,
-        candidatesCount: s.candidatesCount,
+        assessmentTaskDescription: s.assessmentTaskDescription ?? null,
+        assessmentTaskAttachmentUrl: s.assessmentTaskAttachmentUrl ?? null,
       })),
     };
   }
@@ -232,11 +239,9 @@ export class JobService implements IJobService {
       throw new NotFoundError(JOB_MESSAGES.STAGE_NOT_FOUND);
     }
 
-    console.log(`stageId : ${stageId} , jobId : ${jobId}`);
-
     const { data, total } =
       await this.jobApplicationStageRepository.findByStageIdPaginated(
-        stage._id.toString(),
+        stage._id,
         params,
       );
 
@@ -246,5 +251,72 @@ export class JobService implements IJobService {
       page: params.page,
       totalPages: Math.max(1, Math.ceil(total / params.limit)),
     };
+  }
+  //* add assesment task
+  async addAssesmentTask(
+    jobId: string,
+    stageId: string,
+    description?: string,
+    file?: Express.Multer.File,
+  ): Promise<boolean> {
+    if (!jobId || !stageId) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.ID_REQUIRED,
+        jobId,
+        stageId,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
+    }
+    if (!description && !file) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.REQUIRED_FIELDS,
+        jobId,
+        stageId,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.REQUIRED_FIELDS);
+    }
+
+    let stage = await this.jobStageRepository.findById(stageId);
+    if (!stage || stage?.jobId.toString() !== jobId) {
+      this.logger.warn({
+        event: JOB_MESSAGES.STAGE_NOT_FOUND,
+        jobId,
+        stageId,
+      });
+      throw new BadRequestError(JOB_MESSAGES.JOB_STAGE_NOT_FOUND);
+    }
+
+    const data: {
+      assessmentTaskDescription?: string;
+      assessmentTaskAttachmentUrl?: string;
+    } = {};
+
+    if (description) data.assessmentTaskDescription = description;
+
+    if (file) {
+      try {
+        const uploaded = await this.cloudinaryService.uploadFile(file);
+        data.assessmentTaskAttachmentUrl = uploaded;
+      } catch (error) {
+        this.logger.error({
+          event: CLOUDINARY_MESSAGES.UPLOAD_FAILED,
+          error,
+        });
+        throw new InternalServerError(CLOUDINARY_MESSAGES.UPLOAD_FAILED);
+      }
+    }
+
+    const updated = await this.jobStageRepository.findOneAndUpdate(
+      {
+        _id: stageId,
+        jobId: jobId,
+      },
+      data,
+    );
+
+    if (!updated) {
+      throw new BadRequestError(JOB_MESSAGES.JOB_STAGE_NOT_FOUND);
+    }
+    return true;
   }
 }

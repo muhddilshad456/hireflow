@@ -12,4 +12,10 @@ export interface IJobService {
     stageId: string,
     params: { search?: string; status?: string; page: number; limit: number },
   ): Promise<any>;
+  addAssesmentTask(
+    jobId: string,
+    stageId: string,
+    description?: string,
+    file?: Express.Multer.File,
+  ): Promise<boolean>;
 }

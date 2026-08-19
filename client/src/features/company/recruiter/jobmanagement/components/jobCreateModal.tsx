@@ -1,40 +1,16 @@
 import { useState, useCallback, useRef } from "react";
 import type { KeyboardEvent, ChangeEvent, DragEvent } from "react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type JobCategory = "IT" | "MARKETING" | "FINANCE" | "HR" | "SALES" | "OTHER";
-type JobType = "FULL_TIME" | "PART_TIME" | "INTERNSHIP" | "CONTRACT";
-
-type PipelineStage =
-  | "ASSESSMENT"
-  | "TECHNICAL_INTERVIEW"
-  | "HR_INTERVIEW"
-  | "FINAL_HR_INTERVIEW"
-  | "DOCUMENT_VERIFICATION";
+import {
+  OPTIONAL_STAGE_NAMES,
+  STAGE_LABELS,
+} from "../../../../../constents/jobStages";
+import type { JobStageName } from "../../../../../constents/jobStages";
+import type { JobFormData } from "../../../../../types/job/job/jobForm";
 
 type CreateJobModalProps = {
   onClose?: () => void;
-  onSubmit: (data: FormData) => void; // 👈 ADD THIS
+  onSubmit: (data: JobFormData) => void;
 };
-
-export interface FormData {
-  title: string;
-  category: JobCategory | "";
-  jobType: JobType | "";
-  location: string;
-  description: string;
-  minSalary: string; // Split into Min/Max
-  maxSalary: string;
-  salaryNotDisclosed: boolean;
-  skills: string[];
-  minExperience: string; // Split into Min/Max
-  maxExperience: string;
-  fresherOk: boolean;
-  positions: string;
-  applicationDeadline: string;
-  pipelineStages: PipelineStage[]; // ordered, optional stages only
-}
 
 interface FormErrors {
   title?: string;
@@ -50,7 +26,7 @@ interface FormErrors {
   positions?: string;
 }
 
-const INITIAL_FORM: FormData = {
+const INITIAL_FORM: JobFormData = {
   title: "",
   category: "",
   jobType: "",
@@ -67,28 +43,9 @@ const INITIAL_FORM: FormData = {
   applicationDeadline: "",
   pipelineStages: [],
 };
-
-// ─── Pipeline stage catalog ────────────────────────────────────────────────────
-
-const STAGE_LABELS: Record<PipelineStage, string> = {
-  ASSESSMENT: "Assessment",
-  TECHNICAL_INTERVIEW: "Technical Interview",
-  HR_INTERVIEW: "HR Interview",
-  FINAL_HR_INTERVIEW: "Final HR Interview",
-  DOCUMENT_VERIFICATION: "Document Verification",
-};
-
-const STAGE_OPTIONS: PipelineStage[] = [
-  "ASSESSMENT",
-  "TECHNICAL_INTERVIEW",
-  "HR_INTERVIEW",
-  "FINAL_HR_INTERVIEW",
-  "DOCUMENT_VERIFICATION",
-];
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const validate = (form: FormData): FormErrors => {
+const validate = (form: JobFormData): FormErrors => {
   const e: FormErrors = {};
 
   // Existing validations...
@@ -220,7 +177,7 @@ export default function CreateJobModal({
   onClose,
   onSubmit,
 }: CreateJobModalProps) {
-  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [form, setForm] = useState<JobFormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState(false);
   const [skillInput, setSkillInput] = useState("");
@@ -233,7 +190,7 @@ export default function CreateJobModal({
   const touchDragIndex = useRef<number | null>(null);
 
   const set = useCallback(
-    <K extends keyof FormData>(key: K, val: FormData[K]) => {
+    <K extends keyof JobFormData>(key: K, val: JobFormData[K]) => {
       setForm((f) => ({ ...f, [key]: val }));
       if (touched) setErrors((prev) => validate({ ...form, [key]: val }));
     },
@@ -244,12 +201,12 @@ export default function CreateJobModal({
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    set(name as keyof FormData, value as never);
+    set(name as keyof JobFormData, value as never);
   };
 
   const handleCheck = (key: "salaryNotDisclosed" | "fresherOk") => {
     const next = !form[key];
-    const patch: Partial<FormData> = { [key]: next };
+    const patch: Partial<JobFormData> = { [key]: next };
 
     if (key === "fresherOk" && next) {
       patch.minExperience = "";
@@ -289,7 +246,7 @@ export default function CreateJobModal({
 
   // ─── Hiring Pipeline handlers ──────────────────────────────────────────────
 
-  const toggleStage = (stage: PipelineStage) => {
+  const toggleStage = (stage: JobStageName) => {
     const isSelected = form.pipelineStages.includes(stage);
     const next = isSelected
       ? form.pipelineStages.filter((s) => s !== stage)
@@ -345,7 +302,7 @@ export default function CreateJobModal({
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
-    const payload: FormData = {
+    const payload: JobFormData = {
       ...form,
       pipelineStages: form.pipelineStages,
     };
@@ -767,7 +724,7 @@ export default function CreateJobModal({
                   Select any additional stages, then drag to set their order
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {STAGE_OPTIONS.map((stage) => {
+                  {OPTIONAL_STAGE_NAMES.map((stage) => {
                     const checked = form.pipelineStages.includes(stage);
                     return (
                       <label

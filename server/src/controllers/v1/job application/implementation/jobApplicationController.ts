@@ -82,4 +82,30 @@ export class JobApplicationController implements IJobApplicationController {
       next(error);
     }
   }
+  //* move to next stage (bulk)
+  async moveMultipleToNextStage(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { applicationIds, feedback } = req.body as {
+        applicationIds: string[];
+        feedback?: string;
+      };
+
+      const result = await this.jobApplicationService.moveMultipleToNextStage(
+        applicationIds,
+        feedback,
+      );
+
+      ResponseHandler.success(
+        res,
+        APPLICATION_MESSAGES.STAGE_UPDATE_SUCCESSFULLY,
+        result,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -20,4 +20,9 @@ export interface IJobController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  addAssesmentTask(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

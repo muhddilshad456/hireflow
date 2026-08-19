@@ -19,6 +19,9 @@ export interface IJobStage extends Document {
   order: number;
   isMandatory: boolean;
   isActive: boolean;
+  //-----Assesment stage only-----
+  assessmentTaskDescription?: string;
+  assessmentTaskAttachmentUrl?: string;
 }
 
 const jobStageSchema = new Schema<IJobStage>(
@@ -45,6 +48,13 @@ const jobStageSchema = new Schema<IJobStage>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    //-----Assesment stage only-----
+    assessmentTaskDescription: {
+      type: String,
+    },
+    assessmentTaskAttachmentUrl: {
+      type: String,
     },
   },
   { timestamps: true },

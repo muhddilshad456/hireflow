@@ -17,4 +17,9 @@ export interface IJobApplicationController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  moveMultipleToNextStage(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

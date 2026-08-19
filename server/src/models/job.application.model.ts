@@ -62,7 +62,7 @@ const jobApplicationSchema = new Schema<IJobApplication>(
 
     currentStageId: {
       type: Schema.Types.ObjectId,
-      ref: "JobStage",
+      ref: "JobApplicationStage",
     },
 
     appliedAt: {
