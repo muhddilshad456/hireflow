@@ -6,7 +6,6 @@ import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
 import { IEmailController } from "../interface/IEmailController.js";
 import { IAuthEmailService } from "../../../../services/v1/auth/interface/IAuthEmailService.js";
 import { TYPES } from "../../../../dependency-injection/types.js";
-import { FEDERATION_BETA_HEADER } from "@anthropic-ai/sdk/lib/credentials/types.js";
 
 @injectable()
 export class EmailController implements IEmailController {
