@@ -10,4 +10,6 @@ export const VALIDATION_MESSAGES = {
   USER_ALREADY_EXIST: "User already exist",
   INVALIED_TOKEN: "Invalied token",
   EXPIRED_TOKEN: "Token expired",
+  UNAUTHORIZED: "Unauthorized",
+  APPLICATION_DEADLINE_REQUIRED: "Application deadline is required",
 };

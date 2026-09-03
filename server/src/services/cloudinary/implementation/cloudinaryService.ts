@@ -4,12 +4,12 @@ import { ICloudinaryService } from "../interface/ICloudinaryService";
 
 @injectable()
 export class CloudinaryService implements ICloudinaryService {
-  async uploadFile(file: Express.Multer.File): Promise<string> {
+  async uploadFile(file: Express.Multer.File, folder: string): Promise<string> {
     return new Promise((resolve, reject) => {
       cloudinaryInstance.uploader
         .upload_stream(
           {
-            folder: "verification-docs",
+            folder,
             resource_type: "auto",
             public_id: Date.now().toString(),
           },

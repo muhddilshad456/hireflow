@@ -16,6 +16,7 @@ import { EmailVerificationResultPage } from "../../../features/shared/pages/Veri
 import { AppliedJobs } from "../../../features/user/job/pages/AppliedJobs";
 import { AppliedJobPage } from "../../../features/user/application/pages/ApplicationLayout";
 import { StageRenderer } from "../../../features/user/application/components/StageRenderer";
+import { ChatPage } from "../../../features/user/chat/pages/chat";
 
 const UserRoutes = () => {
   return (
@@ -42,6 +43,10 @@ const UserRoutes = () => {
           >
             <Route path="stage/:stageId" element={<StageRenderer />} />
           </Route>
+          <Route
+            path="/application/:applicationId/chat"
+            element={<ChatPage />}
+          />
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

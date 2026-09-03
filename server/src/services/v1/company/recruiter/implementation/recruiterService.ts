@@ -28,6 +28,10 @@ import { gemini, LLM_MODEL } from "../../../../../config/gemini";
 import { AiMatchResponseSchema } from "../../../../../validators/ai-filter/aiMatchResult.schema";
 import { IJobApplicationStageRepository } from "../../../../../repositories/job-application/interface/IJobApplicationStageRepository";
 import { AI_MATCH_RESPONSE_SCHEMA } from "../../../../../schemas/geminiResponseSchema";
+import { VALIDATION_MESSAGES } from "../../../../../constants/messages/validation";
+import { JOB_MESSAGES } from "../../../../../constants/messages/jobs";
+import app from "../../../../../app";
+import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application";
 
 @injectable()
 export class RecruiterService implements IRecruiterService {
@@ -213,16 +217,47 @@ Evaluate every candidate above against the job requirement and return the JSON a
   //* create a job
   async createJob(dto: JobDto, recruiterId: string): Promise<any> {
     this.logger.info({
-      event: "Job creation started",
+      event: JOB_MESSAGES.JOB_CREATION_STARTED,
     });
+
+    if (!dto.applicationDeadline) {
+      throw new BadRequestError(
+        VALIDATION_MESSAGES.APPLICATION_DEADLINE_REQUIRED,
+      );
+    }
+
+    const applicationDeadline = new Date(dto.applicationDeadline);
+
+    if (isNaN(applicationDeadline.getTime())) {
+      throw new BadRequestError(
+        APPLICATION_MESSAGES.INVALID_APPLICATION_DEADLINE,
+      );
+    }
+
+    applicationDeadline.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    if (applicationDeadline < today) {
+      this.logger.warn({
+        event: APPLICATION_MESSAGES.INVALID_APPLICATION_DEADLINE,
+        applicationDeadline: dto.applicationDeadline,
+      });
+
+      throw new BadRequestError(
+        APPLICATION_MESSAGES.INVALID_APPLICATION_DEADLINE,
+      );
+    }
 
     const recruiter = await this.userRepository.findById(recruiterId);
 
     if (!recruiter) {
       this.logger.warn({
-        event: "Recruiter not found",
+        event: RECRUITER_MESSAGES.RECRUITER_NOT_FOUND,
       });
-      throw new NotFoundError("Recruiter not found");
+      throw new NotFoundError(RECRUITER_MESSAGES.RECRUITER_NOT_FOUND);
     }
 
     if (!recruiter.company) {

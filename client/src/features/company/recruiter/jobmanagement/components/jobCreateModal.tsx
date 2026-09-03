@@ -9,7 +9,7 @@ import type { JobFormData } from "../../../../../types/job/job/jobForm";
 
 type CreateJobModalProps = {
   onClose?: () => void;
-  onSubmit: (data: JobFormData) => void;
+  onSubmit: (jobFormData: JobFormData) => Promise<boolean>;
 };
 
 interface FormErrors {
@@ -297,26 +297,37 @@ export default function CreateJobModal({
 
   const handleSubmit = async () => {
     setTouched(true);
+
     const errs = validate(form);
     setErrors(errs);
+
     if (Object.keys(errs).length > 0) return;
 
     setLoading(true);
+
     const payload: JobFormData = {
       ...form,
       pipelineStages: form.pipelineStages,
     };
-    await new Promise((r) => setTimeout(r, 1400));
-    onSubmit(payload);
-    console.log("✅ Job Created:", payload);
-    setLoading(false);
-    setSuccess(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setForm(INITIAL_FORM);
-    setErrors({});
-    setTouched(false);
-    setSuccess(false);
-    onClose?.();
+
+    try {
+      const isSuccess = await onSubmit(payload);
+
+      if (!isSuccess) {
+        return;
+      }
+
+      setSuccess(true);
+
+      await new Promise((r) => setTimeout(r, 900));
+
+      setForm(INITIAL_FORM);
+      setErrors({});
+      setTouched(false);
+      setSuccess(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const charCount = form.description.length;

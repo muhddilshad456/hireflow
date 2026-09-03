@@ -15,6 +15,7 @@ import type { JobStageName } from "../../../../../constents/jobStages";
 import toast from "react-hot-toast";
 import type { JobFormData } from "../../../../../types/job/job/jobForm";
 import AiFilterConfirmModal from "../components/AiConfirmationModal";
+import ChatButton from "../components/chatButton";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -418,13 +419,17 @@ export const JobLayout: React.FC = () => {
                 </span>
               </p>
 
-              <button
-                onClick={handleEditJob}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-              >
-                Edit Job
-                <Pencil className="h-3 w-3" />
-              </button>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  onClick={handleEditJob}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                >
+                  Edit Job
+                  <Pencil className="h-3 w-3" />
+                </button>
+
+                <ChatButton jobId={jobId!} />
+              </div>
 
               <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 text-xs text-gray-500 sm:grid-cols-2">
                 <div className="flex items-center gap-2">

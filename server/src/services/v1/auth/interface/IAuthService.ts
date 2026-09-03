@@ -13,17 +13,8 @@ export interface IAuthService {
   resendOtp(email: string): Promise<void>;
   refreshToken(token: string): Promise<{ accessToken: string }>;
   logout(userId: string): Promise<void>;
-  forgotPassword(email: string): Promise<void>;
-  resetPassword(tdo: ResetPasswordDto): Promise<void>;
   getCurrentUser(userId: string): Promise<Partial<IUser>>;
   getGoogleAuthUrl(): Promise<string>;
   handleGoogleCallback(code: string): Promise<TokenPair>;
   acceptInvite(id: string, token: string, password: string): Promise<any>;
-  changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<any>;
-  changeEmail(userId: string, newEmail: string): Promise<any>;
-  verifyEmailChange(token: string): Promise<any>;
 }

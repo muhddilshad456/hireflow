@@ -6,6 +6,8 @@ import JobManagement from "../../../../features/company/recruiter/jobmanagement/
 import { JobLayout } from "../../../../features/company/recruiter/jobmanagement/pages/JobDetailsLayout";
 import { StageRenderer } from "../../../../features/company/recruiter/jobmanagement/components/StageRenderer";
 import { AiFilterResultsPage } from "../../../../features/company/recruiter/ai-filter/pages/AiFilter";
+import { MessagesPage } from "../../../../features/company/recruiter/chat/pages/conversations";
+import { ChatPage } from "../../../../features/company/recruiter/chat/pages/Chat";
 
 const RecruiterRoutes = () => {
   return (
@@ -24,6 +26,11 @@ const RecruiterRoutes = () => {
           <Route
             path="job/:jobId/ai-filter-results"
             element={<AiFilterResultsPage />}
+          />
+          <Route path="message/job/:jobId" element={<MessagesPage />} />
+          <Route
+            path="message/application/:applicationId"
+            element={<ChatPage />}
           />
           <Route path="job/:jobId" element={<JobLayout />}>
             <Route index element={<Navigate to="stage/first" replace />} />

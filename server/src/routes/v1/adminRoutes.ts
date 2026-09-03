@@ -28,22 +28,30 @@ router.patch(
 );
 router.get(
   "/company-verification-requests",
+  verifyAccessToken,
   adminController.getAllCompanyVerificationReq.bind(adminController),
 );
 router.get(
   "/company-verification-request/:id",
+  verifyAccessToken,
   adminController.getCompanyVerificationReq.bind(adminController),
 );
 router.post(
   "/approve-company/:id",
+  verifyAccessToken,
   adminController.approveCompany.bind(adminController),
 );
 router.patch(
   "/reject-company/:id",
+  verifyAccessToken,
   validateDto(CompanyRejectDto),
   adminController.rejectCompany.bind(adminController),
 );
-router.get("/companies", adminController.getAllCompanies.bind(adminController));
+router.get(
+  "/companies",
+  verifyAccessToken,
+  adminController.getAllCompanies.bind(adminController),
+);
 
 router.get(
   "/company/:id",

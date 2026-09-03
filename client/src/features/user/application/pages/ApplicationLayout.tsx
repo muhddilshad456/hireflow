@@ -129,6 +129,38 @@ const IconAlert: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
+const IconChat: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <path
+      d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const IconLock: React.FC<{ className?: string }> = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className}>
+    <rect
+      x="5"
+      y="10.5"
+      width="14"
+      height="9.5"
+      rx="2"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    />
+    <path
+      d="M8 10.5V7.5a4 4 0 0 1 8 0v3"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 /* --------------------------- JobDetailRow --------------------------- */
 
 const JobDetailRow: React.FC<JobDetail> = ({ label, value }) => (
@@ -332,6 +364,57 @@ const StageFlow: React.FC<{
     ))}
   </div>
 );
+
+/* --------------------------- ChatEntryCard --------------------------- */
+
+const ChatEntryCard: React.FC<{
+  stages: Stage[];
+  onOpenChat: () => void;
+}> = ({ stages, onOpenChat }) => {
+  // "resume_review" must match the JobStageName value from your backend enum
+  const resumeStage = stages.find((s) => s.name === "resume_review");
+  const canChat = resumeStage ? resumeStage.status === "completed" : false;
+
+  return (
+    <div className="mt-4 rounded-2xl border-2 border-orange-200 bg-white p-5">
+      <div className="flex items-center gap-3">
+        <span
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+            canChat
+              ? "bg-orange-500 text-white"
+              : "bg-orange-100 text-orange-400"
+          }`}
+        >
+          {canChat ? (
+            <IconChat className="h-5 w-5" />
+          ) : (
+            <IconLock className="h-4.5 w-4.5" />
+          )}
+        </span>
+
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-slate-900">
+            Message the Recruiter
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {canChat
+              ? "You can chat directly with the recruiter for this role."
+              : "Unlocks once your application clears resume review."}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenChat}
+          className="shrink-0 rounded-full bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-600"
+        >
+          Open Chat
+        </button>
+      </div>
+    </div>
+  );
+};
+
 /* --------------------------- Loading / Error states --------------------------- */
 
 const PageSkeleton: React.FC = () => (
@@ -526,6 +609,11 @@ export const AppliedJobPage = () => {
     if (stage.href) navigate(stage.href);
   };
 
+  const handleOpenChat = () => {
+    if (!applicationId) return;
+    navigate(`/application/${applicationId}/chat`);
+  };
+
   return (
     <div className="min-h-screen w-full bg-white">
       <Header />
@@ -558,7 +646,13 @@ export const AppliedJobPage = () => {
               />
               <Outlet context={{ application: data }} />
             </div>
-            <StageFlow stages={data.stages} onNavigate={handleStageNavigate} />
+            <div>
+              <StageFlow
+                stages={data.stages}
+                onNavigate={handleStageNavigate}
+              />
+              <ChatEntryCard stages={data.stages} onOpenChat={handleOpenChat} />
+            </div>
           </div>
         </main>
       )}

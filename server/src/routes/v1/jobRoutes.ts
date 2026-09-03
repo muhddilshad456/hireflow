@@ -37,4 +37,9 @@ router.post(
   upload.single("file"),
   jobController.addAssesmentTask.bind(jobController),
 );
+router.get(
+  "/:jobId/application-status",
+  verifyAccessToken,
+  jobController.applicationStatus.bind(jobController),
+);
 export default router;

@@ -1,6 +1,7 @@
 export const APPLICATION_MESSAGES = {
   APPLICATION_SUBMITTED: "Application submitted successfully",
   APPLICATION_FAILED: "Failed to submit application",
+  APPLICATION_STATUS: "Application status fetched successfully",
 
   APPLICATION_NOT_FOUND: "Application not found",
   APPLICATION_ALREADY_EXISTS: "You have already applied for this job",
@@ -13,6 +14,7 @@ export const APPLICATION_MESSAGES = {
   APPLICATION_DECLINED: "Offer declined",
 
   INVALID_APPLICATION_ID: "Invalid application ID",
+  INVALID_APPLICATION_DEADLINE: "Invalid application deadline",
   JOB_ID_REQUIRED: "Job ID is required",
   RESUME_REQUIRED: "Resume is required to apply",
   COVER_LETTER_REQUIRED: "Cover letter is required",

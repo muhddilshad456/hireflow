@@ -14,14 +14,6 @@ export interface IAuthController {
 
   logout(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
 
-  forgotPassword(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void>;
-
-  resetPassword(req: Request, res: Response, next: NextFunction): Promise<void>;
-
   getCurrentUser(
     req: AuthRequest,
     res: Response,
@@ -39,16 +31,6 @@ export interface IAuthController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
-  changePassword(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void>;
+
   acceptInvite(req: Request, res: Response, next: NextFunction): Promise<void>;
-  changeEmail(req: Request, res: Response, next: NextFunction): Promise<void>;
-  verifyEmailChange(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void>;
 }

@@ -18,4 +18,8 @@ export interface IJobService {
     description?: string,
     file?: Express.Multer.File,
   ): Promise<boolean>;
+  applicationStatus(
+    jobId: string,
+    userId: string,
+  ): Promise<{ isApplied: boolean }>;
 }

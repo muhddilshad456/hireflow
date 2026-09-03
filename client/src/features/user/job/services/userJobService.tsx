@@ -25,3 +25,11 @@ export const getMyApplications = async (filter: any) => {
     )
     .then((res) => res.data);
 };
+//* get application status
+export const checkApplicationStatus = async (jobId: string) => {
+  return api
+    .get(
+      `/${JOB_BASE_ROUTE}/${jobId}/${APPLICATION_ACTIONS.APPLICATIONS_STATUS}`,
+    )
+    .then((res) => res.data);
+};

@@ -1,10 +1,11 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { AuthRequest } from "../../../../middlewares/auth.middleware.js";
 import { injectable, inject } from "inversify";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
 import { IEmailController } from "../interface/IEmailController.js";
 import { IAuthEmailService } from "../../../../services/v1/auth/interface/IAuthEmailService.js";
+import { TYPES } from "../../../../dependency-injection/types.js";
 
 @injectable()
 export class EmailController implements IEmailController {
