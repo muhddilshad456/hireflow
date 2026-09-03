@@ -108,7 +108,7 @@ export class ProfileController implements IProfileController {
       next(error);
     }
   }
-  //* resume
+  //* add resume
   async addResume(
     req: AuthRequest,
     res: Response,
@@ -127,6 +127,7 @@ export class ProfileController implements IProfileController {
       next(error);
     }
   }
+  //* remore resume
   async removeResume(
     req: AuthRequest,
     res: Response,
@@ -145,7 +146,7 @@ export class ProfileController implements IProfileController {
       next(error);
     }
   }
-  //* profile item
+  //* add profile item
   async addProfileItem(
     req: AuthRequest,
     res: Response,
@@ -171,6 +172,7 @@ export class ProfileController implements IProfileController {
       next(error);
     }
   }
+  //* update profile item
   async updateProfileItem(
     req: AuthRequest,
     res: Response,
@@ -198,6 +200,7 @@ export class ProfileController implements IProfileController {
       next(error);
     }
   }
+  //* remove profile item
   async removeProfileItem(
     req: AuthRequest,
     res: Response,

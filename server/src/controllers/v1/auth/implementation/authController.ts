@@ -11,6 +11,7 @@ import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
 @injectable()
 export class AuthController implements IAuthController {
   constructor(@inject(TYPES.AuthService) private authService: IAuthService) {}
+  //* signup
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
@@ -22,7 +23,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* login
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
@@ -42,7 +43,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* verify otp
   async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
@@ -52,7 +53,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* resend otp
   async resendOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto: ResendOtpDto = req.body;
@@ -62,7 +63,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* refresh token
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.cookies.refreshToken;
@@ -72,7 +73,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* logout
   async logout(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user.userId;
@@ -83,27 +84,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
-  async forgotPassword(req: Request, res: Response, next: NextFunction) {
-    try {
-      const email = req.body.email;
-      await this.authService.forgotPassword(email);
-      res.json({ message: "Reset link sent to email" });
-    } catch (error: unknown) {
-      next(error);
-    }
-  }
-
-  async resetPassword(req: Request, res: Response, next: NextFunction) {
-    try {
-      const tdo = req.body;
-      const result = await this.authService.resetPassword(tdo);
-      ResponseHandler.success(res, "Password changed successfully..", result);
-    } catch (error) {
-      next(error);
-    }
-  }
-
+  //* get current user
   async getCurrentUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.userId;
@@ -114,7 +95,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* google auth url
   async getGoogleAuthUrl(req: Request, res: Response, next: NextFunction) {
     try {
       const url = await this.authService.getGoogleAuthUrl();
@@ -123,7 +104,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
-
+  //* handle google callback
   async handleGoogleCallback(req: Request, res: Response, next: NextFunction) {
     try {
       const code = req.query.code as string;
@@ -149,6 +130,7 @@ export class AuthController implements IAuthController {
       next(error);
     }
   }
+  //* accept invite
   async acceptInvite(
     req: Request,
     res: Response,
@@ -158,63 +140,6 @@ export class AuthController implements IAuthController {
       const { id, token, password } = req.body;
       const result = await this.authService.acceptInvite(id, token, password);
       ResponseHandler.success(res, "account created successfull.", result);
-    } catch (error) {
-      next(error);
-    }
-  }
-  //* change password
-  async changePassword(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const { currentPassword, newPassword } = req.body;
-      const userId = req.user?.userId;
-      const result = await this.authService.changePassword(
-        userId,
-        currentPassword,
-        newPassword,
-      );
-      ResponseHandler.success(
-        res,
-        AUTH_MESSAGES.PASSWORD_CHANGE_SUCCESS,
-        result,
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-  //* change email
-  async changeEmail(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const { newEmail } = req.body;
-      console.log(req.user);
-      const userId = req.user?.userId;
-      const result = await this.authService.changeEmail(userId, newEmail);
-      ResponseHandler.success(
-        res,
-        AUTH_MESSAGES.EMAIL_VERIFICATION_SENT,
-        result,
-      );
-    } catch (error) {
-      next(error);
-    }
-  }
-  //* verify change email
-  async verifyEmailChange(
-    req: AuthRequest,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> {
-    try {
-      const { token } = req.body;
-      const result = await this.authService.verifyEmailChange(token);
-      ResponseHandler.success(res, AUTH_MESSAGES.EMAIL_CHANGE_SUCCESS, result);
     } catch (error) {
       next(error);
     }

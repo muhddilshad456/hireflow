@@ -1,6 +1,7 @@
 import { useOutletContext } from "react-router-dom";
-import { FileText, MessageCircle, User as UserIcon } from "lucide-react";
+import { FileText, User as UserIcon } from "lucide-react";
 import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
+import { CandidateChatButton } from "./CandidateChatButton";
 import type { StageDetail } from "../StageRenderer";
 
 interface StageComponentProps {
@@ -61,6 +62,9 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
 
       <div className="mt-2">
         {stage.candidates.map((c) => {
+          if (!c.application) {
+            return null;
+          }
           const name = c.application?.userId?.name ?? "Unknown candidate";
           return (
             <div
@@ -85,9 +89,7 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
                   >
                     <FileText className="h-3.5 w-3.5" /> View CV
                   </button>
-                  <button className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
-                    <MessageCircle className="h-3.5 w-3.5" /> Chat
-                  </button>
+                  <CandidateChatButton applicationId={c?.application?._id} />
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-2">

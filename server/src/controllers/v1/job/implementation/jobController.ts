@@ -6,6 +6,7 @@ import { JOB_MESSAGES } from "../../../../constants/messages/jobs";
 import { inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types";
 import { IJobService } from "../../../../services/v1/job/interface/IJobService";
+import { APPLICATION_MESSAGES } from "../../../../constants/messages/application";
 
 export class JobController implements IJobController {
   constructor(@inject(TYPES.JobService) private jobService: IJobService) {}
@@ -142,6 +143,27 @@ export class JobController implements IJobController {
       ResponseHandler.success(
         res,
         JOB_MESSAGES.ASSESMENT_TASK_ADDED_SUCCESSFULLY,
+        data,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* is applied
+  async applicationStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const jobId = req.params.jobId as string;
+      const userId = req.user.userId;
+
+      const data = await this.jobService.applicationStatus(jobId, userId);
+
+      ResponseHandler.success(
+        res,
+        APPLICATION_MESSAGES.APPLICATION_STATUS,
         data,
       );
     } catch (error) {

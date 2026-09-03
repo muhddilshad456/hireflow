@@ -430,9 +430,11 @@ export default function JobManagement() {
       console.log("result of job creation : ", result);
       toast.success("Job created");
       setJobModalOpen(false);
+      return true;
     } catch (error: any) {
       console.log(error?.response?.data);
       toast.error(error?.response?.data?.message);
+      return false;
     }
   };
 

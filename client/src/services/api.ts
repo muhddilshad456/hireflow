@@ -50,7 +50,9 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const res = await api.get<{ accessToken: string }>("/refresh-token");
+        const res = await api.post<{ accessToken: string }>(
+          "/auth/refresh-token",
+        );
 
         const newAccessToken = res.data.accessToken;
 

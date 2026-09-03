@@ -10,10 +10,16 @@ import { container } from "../../dependency-injection/container";
 import { TYPES } from "../../dependency-injection/types";
 import { ResetPasswordDto } from "../../dtos/v1/auth/reset-password.dto";
 import { AcceptInviteDto } from "../../dtos/v1/company/admin/request-dtos/acceptInvitationDto";
+import { IEmailController } from "../../controllers/v1/auth/interface/IEmailController";
+import { IPasswordController } from "../../controllers/v1/auth/interface/IPasswordController";
 
 const router = Router();
 
 const authController = container.get<IAuthController>(TYPES.AuthController);
+const emailController = container.get<IEmailController>(TYPES.EmailController);
+const passwordController = container.get<IPasswordController>(
+  TYPES.PasswordController,
+);
 
 router.post(
   "/signup",
@@ -35,20 +41,11 @@ router.post(
   validateDto(ResendOtpDto),
   authController.resendOtp.bind(authController),
 );
-router.post("/refresh", authController.refreshToken.bind(authController));
+router.post("/refresh-token", authController.refreshToken.bind(authController));
 router.post(
   "/logout",
   verifyAccessToken,
   authController.logout.bind(authController),
-);
-router.post(
-  "/forgot-password",
-  authController.forgotPassword.bind(authController),
-);
-router.post(
-  "/reset-password",
-  validateDto(ResetPasswordDto),
-  authController.resetPassword.bind(authController),
 );
 router.get(
   "/check-token",
@@ -65,20 +62,30 @@ router.post(
   validateDto(AcceptInviteDto),
   authController.acceptInvite.bind(authController),
 );
+//* password
 router.post(
   "/change-password",
   verifyAccessToken,
-  authController.changePassword.bind(authController),
+  passwordController.changePassword.bind(passwordController),
 );
-//* change email
+router.post(
+  "/forgot-password",
+  passwordController.forgotPassword.bind(passwordController),
+);
+router.post(
+  "/reset-password",
+  validateDto(ResetPasswordDto),
+  passwordController.resetPassword.bind(passwordController),
+);
+//* email
 router.post(
   "/change-email",
   verifyAccessToken,
-  authController.changeEmail.bind(authController),
+  emailController.changeEmail.bind(emailController),
 );
 router.post(
   "/verify-email-change",
   verifyAccessToken,
-  authController.verifyEmailChange.bind(authController),
+  emailController.verifyEmailChange.bind(emailController),
 );
 export default router;

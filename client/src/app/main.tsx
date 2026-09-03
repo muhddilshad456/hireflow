@@ -6,14 +6,17 @@ import { BrowserRouter } from "react-router-dom";
 import { Provider } from "react-redux";
 import { persistor, store } from "../redux/store/store.ts";
 import { PersistGate } from "redux-persist/integration/react";
+import { SocketProvider } from "../context/SocketContext.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <StrictMode>
       <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
-          <App />
-        </PersistGate>
+        <SocketProvider>
+          <PersistGate loading={null} persistor={persistor}>
+            <App />
+          </PersistGate>
+        </SocketProvider>
       </Provider>
     </StrictMode>
   </BrowserRouter>,

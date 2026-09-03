@@ -1,6 +1,8 @@
 export const TYPES = {
   //controller
   AuthController: Symbol.for("AuthController"),
+  EmailController: Symbol.for("EmailController"),
+  PasswordController: Symbol.for("PasswordController"),
   UserController: Symbol.for("UserController"),
   CompanyController: Symbol.for("CompanyController"),
   AdminController: Symbol.for("AdminController"),
@@ -9,9 +11,13 @@ export const TYPES = {
   JobApplicationController: Symbol.for("JobApplicationController"),
   ProfileController: Symbol.for("ProfileController"),
   UploadController: Symbol.for("UploadController"),
+  MessageController: Symbol.for("MessageController"),
+  ConversationController: Symbol.for("ConversationController"),
   //service
   CompanyService: Symbol.for("CompanyService"),
   AuthService: Symbol.for("AuthService"),
+  AuthEmailService: Symbol.for("AuthEmailService"),
+  PasswordService: Symbol.for("PasswordService"),
   UserService: Symbol.for("UserService"),
   AdminService: Symbol.for("AdminService"),
   RecruiterService: Symbol.for("RecruiterService"),
@@ -19,6 +25,9 @@ export const TYPES = {
   JobApplicationService: Symbol.for("JobApplicationService"),
   ProfileService: Symbol.for("ProfileService"),
   UploadService: Symbol.for("UploadService"),
+  MessageService: Symbol.for("MessageService"),
+  ChatPermissionService: Symbol.for("ChatPermissionService"),
+  ConversationService: Symbol.for("ConversationService"),
   //repository
   UserRepository: Symbol.for("UserRepository"),
   CompanyVerRepository: Symbol.for("CompanyVerRepository"),
@@ -29,9 +38,13 @@ export const TYPES = {
   UserProfileRepository: Symbol.for("UserProfileRepository"),
   JobApplicationRepository: Symbol.for("JobApplicationRepository"),
   JobApplicationStageRepository: Symbol.for("JobApplicationStageRepository"),
+  ConversationRepository: Symbol.for("ConversationRepository"),
+  MessageRepository: Symbol.for("MessageRepository"),
   //other
   EmailService: Symbol.for("EmailService"),
   RedisService: Symbol.for("RedisService"),
   CloudinaryService: Symbol.for("CloudinaryService"),
   Logger: Symbol.for("Logger"),
+  SocketIO: Symbol.for("SocketIO"),
+  ChatEventPublisher: Symbol.for("ChatEventPublisher"),
 };

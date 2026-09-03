@@ -35,4 +35,6 @@ export const PROFILE_MESSAGES = {
   // ✅ Skills
   SKILL_REQUIRED: "Skill required",
   SKILL_NOT_FOUND: "Skill not found",
+  // ✅ Resume
+  RESUME_REQUIRED: "Resume file required",
 } as const;

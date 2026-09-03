@@ -13,17 +13,16 @@ import { IUserRepository } from "../../../../repositories/user/interfaces/IUserR
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { USER_MESSAGES } from "../../../../constants/messages/user";
 import { IUserProfileRepository } from "../../../../repositories/profile/interface/IUserProfileRepository";
-import { PROFILE_MESSAGES } from "../../../../constants/messages/profile";
 import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 import { ConflictError } from "../../../../errors/conflict.error";
 import mongoose from "mongoose";
 import { IJobStageRepository } from "../../../../repositories/job/interface/IJobStageRepository";
 import { IJobApplicationStageRepository } from "../../../../repositories/job-application/interface/IJobApplicationStageRepository";
-import app from "../../../../app";
 import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinaryService";
 import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
 import { InternalServerError } from "../../../../errors/internal-server.error";
 import { IJobStage } from "../../../../models/job.stage.model";
+import app from "../../../../app";
 
 @injectable()
 export class JobService implements IJobService {
@@ -295,7 +294,10 @@ export class JobService implements IJobService {
 
     if (file) {
       try {
-        const uploaded = await this.cloudinaryService.uploadFile(file);
+        const uploaded = await this.cloudinaryService.uploadFile(
+          file,
+          "assessment-task",
+        );
         data.assessmentTaskAttachmentUrl = uploaded;
       } catch (error) {
         this.logger.error({
@@ -318,5 +320,37 @@ export class JobService implements IJobService {
       throw new BadRequestError(JOB_MESSAGES.JOB_STAGE_NOT_FOUND);
     }
     return true;
+  }
+  //* application status
+  async applicationStatus(
+    jobId: string,
+    userId: string,
+  ): Promise<{ isApplied: boolean }> {
+    if (!jobId || !userId) {
+      this.logger.warn({
+        event: VALIDATION_MESSAGES.ID_REQUIRED,
+        jobId,
+        userId,
+      });
+
+      throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
+    }
+
+    const application = await this.jobApplicationRepository.findOne({
+      userId,
+      jobId,
+    });
+
+    if (!application) {
+      this.logger.info({
+        event: JOB_MESSAGES.APPLICATION_NOT_FOUND,
+        jobId,
+        userId,
+      });
+
+      return { isApplied: false };
+    }
+
+    return { isApplied: true };
   }
 }

@@ -18,6 +18,7 @@ import e from "express";
 import mongoose from "mongoose";
 import { ProfileMapper } from "../../../../mapper/profile/profileMapper";
 import { ProfileArrayField } from "../../../../constants/profile/profile.constents";
+import { UPLOAD_MESSAGES } from "../../../../constants/messages/upload";
 
 @injectable()
 export class ProfileService implements IProfileService {
@@ -106,7 +107,10 @@ export class ProfileService implements IProfileService {
 
     if (file) {
       try {
-        const uploaded = await this.cloudinaryService.uploadFile(file);
+        const uploaded = await this.cloudinaryService.uploadFile(
+          file,
+          "profile-picture",
+        );
         updateData.profilePicture = uploaded;
       } catch (error) {
         this.logger.error({
@@ -272,24 +276,24 @@ export class ProfileService implements IProfileService {
   //* resume
   async addResume(userId: string, file: Express.Multer.File): Promise<any> {
     if (!userId) {
-      throw new UnauthorizedError("User ID required");
+      throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
     }
 
     if (!file) {
-      throw new BadRequestError("Resume file required");
+      throw new BadRequestError(PROFILE_MESSAGES.RESUME_REQUIRED);
     }
 
     let uploaded;
 
     try {
-      uploaded = await this.cloudinaryService.uploadFile(file);
+      uploaded = await this.cloudinaryService.uploadFile(file, "resume");
     } catch (error) {
-      throw new InternalServerError("Upload failed");
+      throw new InternalServerError(UPLOAD_MESSAGES.UPLOAD_FAILED);
     }
 
     const resumeData = ProfileMapper.toResumeEntity(file, uploaded);
