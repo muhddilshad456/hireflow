@@ -1,5 +1,5 @@
 import { injectable } from "inversify";
-import { IJobStage, JobStageModel } from "../../../models/job.stage.model";
+import { IJobStage, JobStageModel } from "../../../models/job/job.stage.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { IJobStageRepository } from "../interface/IJobStageRepository";
 import { ClientSession, Types } from "mongoose";

@@ -59,9 +59,6 @@ function AssessmentModal({
   const { jobId } = useOutletContext<JobLayoutOutletContext>();
 
   const handleSubmit = async () => {
-    console.log("file : ", file);
-    console.log("description : ", description);
-    console.log("refetch  : ", onCreated);
     if (!description.trim() && !file && !initialAttachmentUrl) {
       setError("Please add a description or file.");
       return;

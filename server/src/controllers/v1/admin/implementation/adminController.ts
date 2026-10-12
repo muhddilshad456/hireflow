@@ -4,7 +4,7 @@ import { IAdminService } from "../../../../services/v1/admin/interface/IAdminSer
 import { inject } from "inversify";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { IAdminController } from "../interface/IAdminController";
-import { VerificationType } from "../../../../models/company.verification.model";
+import { VerificationType } from "../../../../models/company/company.verification.model";
 
 export class AdminController implements IAdminController {
   constructor(

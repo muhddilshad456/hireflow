@@ -3,6 +3,8 @@ import { FileText, User as UserIcon } from "lucide-react";
 import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
 import { CandidateChatButton } from "./CandidateChatButton";
 import type { StageDetail } from "../StageRenderer";
+import { updateJobApplicationStage } from "../../services/jobServices";
+import toast from "react-hot-toast";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -36,21 +38,27 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
     }
   };
 
-  const handleAccept = async (applicationStageId: string) => {
+  const handleAccept = async (applicationStageId: string | null) => {
+    if (!applicationStageId) return;
     try {
-      // await acceptResumeReview(jobId, applicationStageId);
+      await updateJobApplicationStage(applicationStageId, "PASSED");
+      toast.success("Candidate Moved To Next Round.");
       await refetchJob();
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
+      console.log(err.response);
     }
   };
 
-  const handleReject = async (applicationStageId: string) => {
+  const handleReject = async (applicationStageId: string | null) => {
+    if (!applicationStageId) return;
     try {
-      // await rejectResumeReview(jobId, applicationStageId);
+      await updateJobApplicationStage(applicationStageId, "FAILED");
+      toast.success("Candidate CV Rejected.");
       await refetchJob();
-    } catch (err) {
-      console.log(err);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message);
+      console.log(err.response);
     }
   };
 
@@ -94,13 +102,13 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    onClick={() => handleAccept(c.applicationStageId)}
+                    onClick={() => handleAccept(c?.applicationStageId ?? null)}
                     className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
                   >
                     Accept CV
                   </button>
                   <button
-                    onClick={() => handleReject(c.applicationStageId)}
+                    onClick={() => handleReject(c?.applicationStageId ?? null)}
                     className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
                   >
                     Reject CV

@@ -23,6 +23,8 @@ export const JOB_MESSAGES = {
   JOB_STAGE_NOT_FOUND: "Job stage not found",
   STAGE_CANDIDATES_FETCHED: "Stage candidates fetched.",
   STAGE_NOT_FOUND: "Stage not found",
+  STAGE_NOT_BELONG_TO_APPLICATION:
+    "The selected stage does not belong to this application",
   // assesement
   ASSESMENT_TASK_ADDED_SUCCESSFULLY: "Assesment task added successfully.",
 };

@@ -12,12 +12,22 @@ export interface IJobApplicationController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
-  moveToNextStage(
+  updateApplicationStage(
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void>;
   moveMultipleToNextStage(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getJobApplicationStageDetails(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  addOrEditAssessmentResponse(
     req: AuthRequest,
     res: Response,
     next: NextFunction,

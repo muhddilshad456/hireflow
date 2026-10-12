@@ -1,5 +1,5 @@
-import { ICompanyVerification } from "../../../models/company.verification.model";
-import { ICompany } from "../../../models/company.model";
+import { ICompanyVerification } from "../../../models/company/company.verification.model";
+import { ICompany } from "../../../models/company/company.model";
 import { ProfileResponseDto } from "../../../dtos/v1/company/admin/response-dto/companyProfileDto";
 import { IUserWithCompany } from "../../../types/userWithCompany";
 

@@ -1,11 +1,13 @@
 import { COMMON_ACTIONS } from "../../../../../constents/actions/commonActions";
 import {
+  APPLICATION_BASE_ROUTE,
   JOB_BASE_ROUTE,
   RECRUITER_BASE_ROUTE,
 } from "../../../../../constents/routes/apiRoutes";
 import api from "../../../../../services/api";
 import type { GetStageCandidatesParams } from "../../../../../types/jobTypes";
 import type { JobFormData } from "../../../../../types/job/job/jobForm";
+import type { Decision } from "../../../../../types/applicaionTypes";
 
 export const createJobApi = (data: JobFormData) => {
   return api
@@ -47,6 +49,18 @@ export const updateAssessmentTask = (
       `/${JOB_BASE_ROUTE}/${jobId}/stages/${stageId}/assessment`,
       formData,
       { headers: { "Content-Type": "multipart/form-data" } },
+    )
+    .then((res) => res.data);
+};
+
+export const updateJobApplicationStage = (
+  applicationStageId: string,
+  decision: Decision,
+) => {
+  return api
+    .patch(
+      `/${APPLICATION_BASE_ROUTE}/application-stages/${applicationStageId}/decision`,
+      { decision },
     )
     .then((res) => res.data);
 };

@@ -9,3 +9,6 @@ export const UPLOAD_BASE_ROUTE = "upload";
 export const APPLICATION_BASE_ROUTE = "application";
 export const NOTIF_BASE_ROUTE = "notification";
 export const CHAT_BASE_ROUTE = "chat";
+export const INTERVIEW_BASE_ROUTE = "interviews";
+export const INTERVIEWER_BASE_ROUTE = "interviewer";
+export const SUBSCRIPTION_BASE_ROUTE = "subscription";

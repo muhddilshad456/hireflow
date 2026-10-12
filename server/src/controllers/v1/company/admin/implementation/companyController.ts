@@ -6,7 +6,8 @@ import { ICompanyService } from "../../../../../services/v1/company/admin/interf
 import { ResponseHandler } from "../../../../../utils/responseHandler";
 import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 import { PROFILE_MESSAGES } from "../../../../../constants/messages/profile";
-import { VerificationType } from "../../../../../models/company.verification.model";
+import { VerificationType } from "../../../../../models/company/company.verification.model";
+import { SUBSCRIPTION_MESSAGES } from "../../../../../constants/messages/subscription";
 
 @injectable()
 export class CompanyController implements ICompanyController {

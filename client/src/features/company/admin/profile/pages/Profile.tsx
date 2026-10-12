@@ -4,13 +4,19 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getProfileApi } from "../services/profileService";
-import { Building2 } from "lucide-react";
+import { Building2, Palette } from "lucide-react";
 import { VerifyForm } from "../../dashboard/components/VerifyReqForm";
 import {
   getStatusApi,
   verifyRequestApi,
 } from "../../dashboard/services/comapanyServices";
 import { changePasswordApi } from "../../../../shared/services/authService";
+import SubscriptionConfirmModal from "../../subscription/components/SubscriptionConfirmModal";
+import {
+  getSubscriptionStatus,
+  type SubscriptionStatusData,
+} from "../../../shared/servicces/SubscriptionServices";
+import CurrentPlanCard from "../components/PlanCard";
 
 type VerificationStatus = "approved" | "pending" | "rejected" | "not_submitted";
 
@@ -95,6 +101,11 @@ export default function ProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showChangePasswordModal, setChangePasswordModal] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [subConfirmOpen, setSubConfrimOpen] = useState(false);
+  const [subscription, setSubscription] =
+    useState<SubscriptionStatusData | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planErr, setPlanErr] = useState(false);
 
   const {
     register,
@@ -161,6 +172,22 @@ export default function ProfilePage() {
     setVerificationStatus(result.data);
     console.log("result of status fetch : ", result);
   }
+
+  useEffect(() => {
+    async function fetchSubscriptionStatus() {
+      setPlanLoading(true);
+      try {
+        const result = await getSubscriptionStatus();
+        setSubscription(result?.data);
+      } catch (error: any) {
+        console.log(error?.response);
+        setPlanErr(true);
+      } finally {
+        setPlanLoading(false);
+      }
+    }
+    fetchSubscriptionStatus();
+  }, []);
 
   useEffect(() => {
     getProfile();
@@ -489,68 +516,13 @@ export default function ProfilePage() {
           </div>
 
           {/* Right column: Plan */}
-          <div className="flex flex-col gap-5">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
-                Current Plan
-              </p>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Free Plan
-              </h3>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                Premium Benefits
-              </p>
-              <ul className="flex flex-col gap-2.5 mb-5">
-                {[
-                  "Unlimited Jobs",
-                  "Unlimited Recruiters",
-                  "Advanced Analytics",
-                  "Priority Support",
-                ].map((benefit) => (
-                  <li
-                    key={benefit}
-                    className="flex items-center gap-2 text-sm text-gray-700"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                      <svg
-                        className="w-3 h-3 text-green-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </span>
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-              <button className="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold text-sm py-3 rounded-xl transition flex items-center justify-center gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                Upgrade to Premium
-              </button>
-              <p className="text-xs text-gray-400 text-center mt-2">
-                Cancel or change your plan at any time. Billed monthly.
-              </p>
-            </div>
-          </div>
+          <CurrentPlanCard
+            subscription={subscription}
+            loading={planLoading}
+            error={planErr}
+            onUpgrade={() => setSubConfrimOpen(true)}
+            onRetry={() => setSubConfrimOpen(true)}
+          />
         </div>
       </div>
 
@@ -700,6 +672,10 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      <SubscriptionConfirmModal
+        open={subConfirmOpen}
+        onClose={() => setSubConfrimOpen(false)}
+      />
     </>
   );
 }

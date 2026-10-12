@@ -2,7 +2,7 @@ import { injectable } from "inversify";
 import {
   IUserProfile,
   UserProfileModel,
-} from "../../../models/user.profile.model";
+} from "../../../models/profiles/user.profile.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { IUserProfileRepository } from "../interface/IUserProfileRepository";
 

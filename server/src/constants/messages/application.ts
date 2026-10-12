@@ -22,6 +22,7 @@ export const APPLICATION_MESSAGES = {
   STAGE_NOT_FOUND: "Application stage not found",
   STAGE_UPDATE_FAILED: "Failed to update application stage",
   STAGE_UPDATE_SUCCESSFULLY: "Application stage updated successfully.",
+  STAGE_ALREADY_PASSED: "The candidate already passed this stage.",
   APPLICATION_ALREADY_FINALIZED: "Application has already been finalized",
   NO_STAGES_CONFIGURED: "No active stages configured for this job",
   STAGE_MISMATCH: "Current stage not found in job's active stage list",
@@ -33,4 +34,24 @@ export const APPLICATION_MESSAGES = {
   MOVED_TO_NEXT_STAGE: "Candidate moved to next stage",
   CURRENT_STAGE_RECORD_MISSING:
     "Current application stage record not found — data integrity issue",
+  APPLICATION_STAGE_UPDATED: "Application stage updated successfully..",
+  DECISION_REQUIRED: "decision is required",
+  INVALID_DECISION: "decision must be either PASSED or FAILED",
+  STAGE_ALREADY_ACTIONED:
+    "This stage has already been actioned. Please refresh.",
+  APPLICATION_NOT_IN_PROGRESS:
+    "Cannot update stage, application is not in progress",
+  STAGE_OUT_OF_SYNC: "Stage is out of sync with application. Please refresh.",
+  JOB_NOT_FOUND: "Job not found",
+  NOT_AUTHORIZED: "You are not authorized to manage this job's applications",
+  JOB_STAGE_NOT_FOUND: "Job stage definition not found",
+  OFFER_STAGE_NOT_ALLOWED: "Use the dedicated offer endpoints for this stage",
+  APPLICATION_STAGE_FETCH_SUCCESS:
+    "Application stage details fetched successfully..",
+  RESPONSE_REQUIRED: "Please provide a text response or upload a file",
+  RESPONSE_SAVED_SUCCESS: "Assessment response saved successfully..",
+  NOT_ASSESSMENT_STAGE: "This is not an assessment stage",
+  TASK_NOT_ADDED: "Assessment task has not been added by the recruiter yet",
+  STAGE_NOT_EDITABLE:
+    "This stage has already been reviewed and can no longer be edited",
 };

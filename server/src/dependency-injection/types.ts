@@ -13,6 +13,10 @@ export const TYPES = {
   UploadController: Symbol.for("UploadController"),
   MessageController: Symbol.for("MessageController"),
   ConversationController: Symbol.for("ConversationController"),
+  InterviewController: Symbol.for("InterviewController"),
+  InterviewerController: Symbol.for("InterviewerController"),
+  SubscriptionController: Symbol.for("SubscriptionController"),
+  SubscriptionwebhookController: Symbol.for("SubscriptionwebhookController"),
   //service
   CompanyService: Symbol.for("CompanyService"),
   AuthService: Symbol.for("AuthService"),
@@ -28,6 +32,9 @@ export const TYPES = {
   MessageService: Symbol.for("MessageService"),
   ChatPermissionService: Symbol.for("ChatPermissionService"),
   ConversationService: Symbol.for("ConversationService"),
+  InterviewService: Symbol.for("InterviewService"),
+  InterviewerService: Symbol.for("InterviewerService"),
+  SubscriptionService: Symbol.for("SubscriptionService"),
   //repository
   UserRepository: Symbol.for("UserRepository"),
   CompanyVerRepository: Symbol.for("CompanyVerRepository"),
@@ -40,6 +47,10 @@ export const TYPES = {
   JobApplicationStageRepository: Symbol.for("JobApplicationStageRepository"),
   ConversationRepository: Symbol.for("ConversationRepository"),
   MessageRepository: Symbol.for("MessageRepository"),
+  InterviewRepository: Symbol.for("InterviewRepository"),
+  InterviewRequestRepository: Symbol.for("InterviewRequestRepository"),
+  InterviewerProfileRepository: Symbol.for("InterviewerProfileRepository"),
+  SubscriptionRepository: Symbol.for("SubscriptionRepository"),
   //other
   EmailService: Symbol.for("EmailService"),
   RedisService: Symbol.for("RedisService"),

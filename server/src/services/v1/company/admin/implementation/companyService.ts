@@ -6,11 +6,10 @@ import { VerifyReqDto } from "../../../../../dtos/v1/company/admin/request-dtos/
 import { ICloudinaryService } from "../../../../cloudinary/interface/ICloudinaryService";
 import { NotFoundError } from "../../../../../errors/not-found.error";
 import { VerificationStatus } from "../../../../../constants/companyStatus";
-import mongoose from "mongoose";
 import {
   ICompanyVerification,
   VerificationType,
-} from "../../../../../models/company.verification.model";
+} from "../../../../../models/company/company.verification.model";
 import { Logger } from "pino";
 import { BadRequestError } from "../../../../../errors/bad-request.error";
 import { IUserRepository } from "../../../../../repositories/user/interfaces/IUserRepository";
@@ -26,21 +25,23 @@ import { CompanyMapper } from "../../../../../mapper/company/admin/companyMapper
 import { USER_MESSAGES } from "../../../../../constants/messages/user";
 import { ProfileResponseDto } from "../../../../../dtos/v1/company/admin/response-dto/companyProfileDto";
 import { CompanyVerificationMapper } from "../../../../../mapper/company/admin/verificationMapper";
+import { ICompanyRepository } from "../../../../../repositories/company/interface/ICompanyRepository";
+import { ISubscriptionRepository } from "../../../../../repositories/subscription/interface/ISubscriptionRepository";
 
 @injectable()
 export class CompanyService implements ICompanyService {
   constructor(
     @inject(TYPES.CompanyVerRepository)
-    private companyVerRepository: ICompanyVerRepository,
+    private _companyVerRepository: ICompanyVerRepository,
     @inject(TYPES.CloudinaryService)
-    private cloudinaryService: ICloudinaryService,
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    private _cloudinaryService: ICloudinaryService,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
     @inject(TYPES.InvitationRepository)
-    private invitationRepository: IInvitationRepository,
+    private _invitationRepository: IInvitationRepository,
     @inject(TYPES.CompanyRepository)
-    private companyRepository: ICompanyVerRepository,
-    @inject(TYPES.EmailService) private emailService: IEmailService,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _companyRepository: ICompanyRepository,
+    @inject(TYPES.EmailService) private _emailService: IEmailService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* create verify request
   async createVerifyRequest(
@@ -58,12 +59,18 @@ export class CompanyService implements ICompanyService {
       throw new NotFoundError("Document is required");
     }
 
-    const documentUrl = await this.cloudinaryService.uploadFile(documentFile);
+    const documentUrl = await this._cloudinaryService.uploadFile(
+      documentFile,
+      "company-documents",
+    );
 
     let profilePictureUrl: string | null = null;
 
     if (profileFile) {
-      profilePictureUrl = await this.cloudinaryService.uploadFile(profileFile);
+      profilePictureUrl = await this._cloudinaryService.uploadFile(
+        profileFile,
+        "company-profile-picture",
+      );
     }
 
     const data = CompanyVerificationMapper.toVerificationEntity(
@@ -73,10 +80,10 @@ export class CompanyService implements ICompanyService {
       profilePictureUrl,
     );
 
-    const result = await this.companyVerRepository.create(data);
+    const result = await this._companyVerRepository.create(data);
 
     if (!result) {
-      this.logger.warn({
+      this._logger.warn({
         event: "Failed to create verification request",
       });
       throw new InternalServerError("Failed to create verification request");
@@ -90,7 +97,7 @@ export class CompanyService implements ICompanyService {
     type: VerificationType,
   ): Promise<Partial<ICompanyVerification>> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: "USERID_MISSING",
         userId,
       });
@@ -99,7 +106,7 @@ export class CompanyService implements ICompanyService {
     }
 
     if (!type) {
-      this.logger.warn({
+      this._logger.warn({
         event: "TYPE_MISSING",
         userId,
       });
@@ -107,7 +114,7 @@ export class CompanyService implements ICompanyService {
       throw new BadRequestError("type missing");
     }
 
-    const result = await this.companyVerRepository.findLatestVerificationReq(
+    const result = await this._companyVerRepository.findLatestVerificationReq(
       userId,
       type,
     );
@@ -130,20 +137,20 @@ export class CompanyService implements ICompanyService {
     role: UserRole,
     companyAdminId: string,
   ): Promise<any> {
-    const existingUser = await this.userRepository.findByEmail(email);
+    const existingUser = await this._userRepository.findByEmail(email);
     if (existingUser) {
-      this.logger.warn({
+      this._logger.warn({
         event: "USER_ALREADY_EXISTS",
       });
       throw new ConflictError("User already exists");
     }
 
-    const company = await this.companyRepository.findOne({
+    const company = await this._companyRepository.findOne({
       adminId: companyAdminId,
     });
 
     if (!company) {
-      this.logger.warn({
+      this._logger.warn({
         event: "COMPANY_NOT_FOUND",
       });
       throw new NotFoundError("Company not found");
@@ -153,7 +160,7 @@ export class CompanyService implements ICompanyService {
 
     const hashedToken = await bcrypt.hash(token, 10);
 
-    const result = await this.invitationRepository.create({
+    const result = await this._invitationRepository.create({
       name,
       email,
       companyId: company._id,
@@ -163,7 +170,7 @@ export class CompanyService implements ICompanyService {
     });
 
     if (!result) {
-      this.logger.warn({
+      this._logger.warn({
         event: "RESULT_MISSING",
       });
       throw new InternalServerError("Failed to create invitation");
@@ -179,22 +186,22 @@ export class CompanyService implements ICompanyService {
       result._id.toString(),
     );
 
-    this.logger.info({
+    this._logger.info({
       EVENT: "Invitation link created..",
       Link: inviteLink,
     });
 
     try {
-      await this.emailService.sendInviteEmail(email, inviteLink, role);
-      this.logger.info({ email }, "Invite email sent");
+      await this._emailService.sendInviteEmail(email, inviteLink, role);
+      this._logger.info({ email }, "Invite email sent");
     } catch (err) {
-      this.logger.error({ err }, "Failed to send invite email");
+      this._logger.error({ err }, "Failed to send invite email");
     }
   }
   //* get company profile
   async getCompanyProfile(companyAdminId: string): Promise<ProfileResponseDto> {
     if (!companyAdminId) {
-      this.logger.error({
+      this._logger.error({
         level: "error",
         message: "Company admin ID is required",
         userId: companyAdminId,
@@ -202,17 +209,17 @@ export class CompanyService implements ICompanyService {
       throw new BadRequestError("Company admin ID is required");
     }
 
-    this.logger.info({
+    this._logger.info({
       level: "info",
       message: "Fetching company profile",
       userId: companyAdminId,
     });
 
     const companyAdmin =
-      await this.userRepository.findByIdWithCompany(companyAdminId);
+      await this._userRepository.findByIdWithCompany(companyAdminId);
 
     if (!companyAdmin) {
-      this.logger.warn({
+      this._logger.warn({
         level: "warn",
         message: USER_MESSAGES.USER_NOT_FOUND,
         userId: companyAdminId,
@@ -222,7 +229,7 @@ export class CompanyService implements ICompanyService {
     }
 
     if (!companyAdmin.company) {
-      this.logger.warn({
+      this._logger.warn({
         level: "info",
         message: "User has no company linked",
         userId: companyAdminId,
@@ -233,7 +240,7 @@ export class CompanyService implements ICompanyService {
       companyAdmin?.company,
     );
 
-    this.logger.info({
+    this._logger.info({
       level: "info",
       message: "Profile response created successfully",
       userId: companyAdminId,

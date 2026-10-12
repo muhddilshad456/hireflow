@@ -4,7 +4,7 @@ import {
   CompanyVerificationModel,
   ICompanyVerification,
   VerificationType,
-} from "../../../models/company.verification.model";
+} from "../../../models/company/company.verification.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { ICompanyVerRepository } from "../interface/ICompanyVerRepository";
 

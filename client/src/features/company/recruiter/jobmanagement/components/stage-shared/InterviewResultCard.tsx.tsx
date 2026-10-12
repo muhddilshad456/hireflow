@@ -1,14 +1,12 @@
-// components/stage-shared/InterviewResultCard.tsx
 import React, { useState } from "react";
-import type { ApiStageCandidate } from "../../pages/JobDetailsLayout";
 import {
   CandidateAvatarBlock,
   FeedbackBox,
   PassFailToggle,
   PillButton,
 } from "./InterviewPrimitives";
+import type { ApiStageCandidate } from "../../../../../../types/applicaionTypes";
 
-/** Card shown once the interviewer has submitted their side — recruiter reviews and finalizes. */
 export const InterviewResultCard: React.FC<{
   candidate: ApiStageCandidate;
   title?: string;
@@ -16,8 +14,9 @@ export const InterviewResultCard: React.FC<{
   onSubmitResult: (result: "PASS" | "FAIL", feedback: string) => Promise<void>;
 }> = ({ candidate, title, feedbackLabel, onSubmitResult }) => {
   const name = candidate.application?.userId?.name ?? "Unknown candidate";
+  const progress = candidate.interviewProgress;
   const [result, setResult] = useState<"PASS" | "FAIL" | null>(null);
-  const [feedback, setFeedback] = useState(candidate.feedback ?? "");
+  const [feedback, setFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
@@ -51,6 +50,24 @@ export const InterviewResultCard: React.FC<{
         <CandidateAvatarBlock className="h-20 w-32" />
       </div>
 
+      {/* ---- Interviewer's own submission, read-only ---- */}
+      <div className="mt-4 rounded-xl bg-gray-50 p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-500">
+            {progress?.interviewer?.name ?? "Interviewer"}'s assessment
+          </span>
+          {typeof progress?.score === "number" && (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+              Score: {progress.score}/100
+            </span>
+          )}
+        </div>
+        <p className="mt-2 text-sm text-gray-700">
+          {progress?.feedback || "No written feedback provided."}
+        </p>
+      </div>
+
+      {/* ---- Recruiter's own review ---- */}
       <FeedbackBox
         label={feedbackLabel}
         value={feedback}

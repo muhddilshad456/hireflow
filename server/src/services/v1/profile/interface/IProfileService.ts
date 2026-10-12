@@ -1,5 +1,5 @@
 import { ProfileArrayField } from "../../../../constants/profile/profile.constents";
-import { IUserProfile } from "../../../../models/user.profile.model";
+import { IUserProfile } from "../../../../models/profiles/user.profile.model";
 
 export interface IProfileService {
   getProfile(userId: string): Promise<any>;

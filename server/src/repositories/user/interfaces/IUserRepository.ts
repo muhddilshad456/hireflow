@@ -1,3 +1,4 @@
+import { UserBasicInfo } from "../../../interfaces/interview/interview.js";
 import { IUser } from "../../../models/user.model.js";
 import { GetUsersResponse } from "../../../types/userRepo.js";
 import { IUserWithCompany } from "../../../types/userWithCompany.js";
@@ -22,4 +23,5 @@ export interface IUserRepository extends IBaseRepository<IUser> {
     status: string,
   ): Promise<any>;
   findByIdWithCompany(userId: string): Promise<IUserWithCompany | null>;
+  findByIdSelect(id: string, fields: string): Promise<UserBasicInfo | null>;
 }

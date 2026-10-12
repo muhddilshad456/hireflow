@@ -1,4 +1,4 @@
-import { VerificationType } from "../../../../models/company.verification.model";
+import { VerificationType } from "../../../../models/company/company.verification.model";
 
 export interface IAdminService {
   getAllCompanyVerificationReq(

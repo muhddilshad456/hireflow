@@ -1,55 +1,124 @@
-import React, { useState } from "react";
-import type { ApiStageCandidate } from "../../pages/JobDetailsLayout";
+import React, { useState, useCallback } from "react";
 import {
   CandidateAvatarBlock,
   CandidateHeader,
-  PillButton,
   ScheduleForm,
 } from "./InterviewPrimitives";
+import type { ApiStageCandidate } from "../../../../../../types/applicaionTypes";
+import type { InterviewerInfo } from "../../../../../../types/interview/interview";
+import { InterviewerPickerModal } from "../interviewerPickerModal";
 
-/** Card shown before the interview has happened — request + schedule. */
 export const InterviewCandidateCard: React.FC<{
   candidate: ApiStageCandidate;
   interviewLabel: string;
   scheduleButtonLabel: string;
-  onRequestInterview: () => Promise<void>;
-  onSubmitSchedule: (date: string, time: string) => Promise<void>;
+  onRequestInterview: (
+    date: string,
+    time: string,
+    interviewerId: string,
+  ) => Promise<void>;
+  fetchInterviewers: () => Promise<InterviewerInfo[]>;
   onChat?: () => void;
 }> = ({
   candidate,
   interviewLabel,
   scheduleButtonLabel,
   onRequestInterview,
-  onSubmitSchedule,
+  fetchInterviewers,
   onChat,
 }) => {
   const name = candidate.application?.userId?.name ?? "Unknown candidate";
-  const [date, setDate] = useState(candidate.scheduledDate ?? "");
-  const [time, setTime] = useState(candidate.scheduledTime ?? "");
-  const [requesting, setRequesting] = useState(false);
+  const progress = candidate.interviewProgress;
+  const status = progress?.status ?? "NOT_REQUESTED";
+
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const isScheduled = Boolean(
-    candidate.scheduledDate && candidate.scheduledTime,
+  const handleScheduleClick = () => setPickerOpen(true);
+
+  const handleSelectInterviewer = useCallback(
+    async (interviewer: InterviewerInfo) => {
+      setSubmitting(true);
+      try {
+        await onRequestInterview(date, time, interviewer._id);
+        setPickerOpen(false);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [date, time, onRequestInterview],
   );
 
-  const handleRequest = async () => {
-    setRequesting(true);
-    try {
-      await onRequestInterview();
-    } finally {
-      setRequesting(false);
-    }
-  };
+  const scheduleSection = (
+    <>
+      <ScheduleForm
+        interviewLabel={interviewLabel}
+        submitLabel={scheduleButtonLabel}
+        date={date}
+        time={time}
+        onDateChange={setDate}
+        onTimeChange={setTime}
+        onSubmit={handleScheduleClick}
+        submitting={submitting}
+      />
+      <InterviewerPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleSelectInterviewer}
+        fetchInterviewers={fetchInterviewers}
+      />
+    </>
+  );
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      await onSubmitSchedule(date, time);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  let body: React.ReactNode;
+
+  switch (status) {
+    case "REJECTED":
+      body = (
+        <>
+          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+            Request rejected by {progress?.interviewer?.name ?? "interviewer"}
+            {progress?.rejectionReason ? `: ${progress.rejectionReason}` : "."}
+          </div>
+          <p className="mt-3 text-xs text-gray-500">
+            Reschedule to send a new request.
+          </p>
+          {scheduleSection}
+        </>
+      );
+      break;
+
+    case "REQUESTED":
+      body = (
+        <p className="mt-3 text-xs text-amber-600">
+          Requested{" "}
+          {progress?.interviewer?.name ? `to ${progress.interviewer.name}` : ""}{" "}
+          for{" "}
+          {progress?.scheduledAt
+            ? new Date(progress.scheduledAt).toLocaleString()
+            : "—"}{" "}
+          — waiting for interviewer to accept
+        </p>
+      );
+      break;
+
+    case "WAITING_FOR_RESULT":
+      body = (
+        <p className="mt-3 text-xs text-blue-600">
+          Scheduled with {progress?.interviewer?.name ?? "interviewer"} on{" "}
+          {progress?.scheduledAt
+            ? new Date(progress.scheduledAt).toLocaleString()
+            : "—"}{" "}
+          — waiting for interview result
+        </p>
+      );
+      break;
+
+    default: // NOT_REQUESTED
+      body = <div className="mt-3">{scheduleSection}</div>;
+  }
 
   return (
     <div className="flex flex-col gap-4 border-b border-gray-100 py-6 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
@@ -59,35 +128,8 @@ export const InterviewCandidateCard: React.FC<{
           resumeUrl={candidate.application?.resumeUrl}
           onChat={onChat}
         />
-
-        {!candidate.interviewRequestedAt ? (
-          <div className="mt-3">
-            <PillButton onClick={handleRequest} disabled={requesting}>
-              Request for interview
-            </PillButton>
-          </div>
-        ) : isScheduled ? (
-          <p className="mt-3 text-xs text-gray-500">
-            Scheduled for {candidate.scheduledDate} at {candidate.scheduledTime}{" "}
-            — awaiting interview result
-          </p>
-        ) : (
-          <>
-            <p className="mt-2 text-xs text-emerald-600">Interview requested</p>
-            <ScheduleForm
-              interviewLabel={interviewLabel}
-              submitLabel={scheduleButtonLabel}
-              date={date}
-              time={time}
-              onDateChange={setDate}
-              onTimeChange={setTime}
-              onSubmit={handleSubmit}
-              submitting={submitting}
-            />
-          </>
-        )}
+        {body}
       </div>
-
       <CandidateAvatarBlock />
     </div>
   );

@@ -1,6 +1,5 @@
 import { Container } from "inversify";
 import { TYPES } from "./types";
-
 import { AuthController } from "../controllers/v1/auth/implementation/authController";
 import { UserRepository } from "../repositories/user/implementations/user.repository";
 import { AuthService } from "../services/v1/auth/implementation/authService";
@@ -44,6 +43,17 @@ import { PasswordController } from "../controllers/v1/auth/implementation/passwo
 import { EmailController } from "../controllers/v1/auth/implementation/emailController";
 import { AuthEmailService } from "../services/v1/auth/implementation/authEmailService";
 import { PasswordService } from "../services/v1/auth/implementation/passwordService";
+import { InterviewRepository } from "../repositories/interview/implementation/interviewRepository";
+import { InterviewRequestRepository } from "../repositories/interview-request/implementation/interviewRequestRepository";
+import { InterviewService } from "../services/v1/interview/implementation/interviewService";
+import { InterviewController } from "../controllers/v1/interview/implementation/interviewController";
+import { InterviewerProfileRepository } from "../repositories/profile/implementation/interviewerProfileRepository";
+import { InterviewerService } from "../services/v1/company/interviewer/implementation/interviewerService";
+import { InterviewerController } from "../controllers/v1/company/interviewer/implementation/interviewerController";
+import { SubscriptionRepository } from "../repositories/subscription/implementation/subscriptionRepository";
+import { SubscriptionService } from "../services/v1/subscription/implementation/subscriptionService";
+import { SubscriptionwebhookController } from "../controllers/v1/stripe/implementation/subscriptionwebhookController";
+import { SubscriptionController } from "../controllers/v1/subscription/implementation/subscriptionController";
 
 const container = new Container();
 
@@ -61,6 +71,12 @@ container
   .to(JobApplicationStageRepository);
 container.bind(TYPES.MessageRepository).to(MessageRepository);
 container.bind(TYPES.ConversationRepository).to(ConversationRepository);
+container.bind(TYPES.InterviewRepository).to(InterviewRepository);
+container.bind(TYPES.InterviewRequestRepository).to(InterviewRequestRepository);
+container
+  .bind(TYPES.InterviewerProfileRepository)
+  .to(InterviewerProfileRepository);
+container.bind(TYPES.SubscriptionRepository).to(SubscriptionRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.AuthEmailService).to(AuthEmailService);
@@ -75,6 +91,9 @@ container.bind(TYPES.UploadService).to(UploadService);
 container.bind(TYPES.JobApplicationService).to(JobApplicationService);
 container.bind(TYPES.ConversationService).to(ConversationService);
 container.bind(TYPES.ChatPermissionService).to(ChatPermissionService);
+container.bind(TYPES.InterviewService).to(InterviewService);
+container.bind(TYPES.InterviewerService).to(InterviewerService);
+container.bind(TYPES.SubscriptionService).to(SubscriptionService);
 ///////////////////
 container.bind(TYPES.EmailService).to(EmailService);
 container.bind(TYPES.RedisService).to(RedisService);
@@ -93,6 +112,12 @@ container.bind(TYPES.ProfileController).to(ProfileController);
 container.bind(TYPES.UploadController).to(UploadController);
 container.bind(TYPES.JobApplicationController).to(JobApplicationController);
 container.bind(TYPES.ConversationController).to(ConversationController);
+container.bind(TYPES.InterviewController).to(InterviewController);
+container.bind(TYPES.InterviewerController).to(InterviewerController);
+container.bind(TYPES.SubscriptionController).to(SubscriptionController);
+container
+  .bind(TYPES.SubscriptionwebhookController)
+  .to(SubscriptionwebhookController);
 
 export function bindSocketDependencies(io: import("socket.io").Server) {
   container.bind(TYPES.SocketIO).toConstantValue(io);

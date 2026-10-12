@@ -7,7 +7,11 @@ export interface IBaseRepository<T> {
   findById(id: string, session?: ClientSession): Promise<T | null>;
   findAll(): Promise<T[]>;
   update(id: string, data: Partial<T>): Promise<T | null>;
-  findOneAndUpdate(filter: any, data: any): Promise<T | null>;
+  findOneAndUpdate(
+    filter: any,
+    data: any,
+    session?: ClientSession,
+  ): Promise<T | null>;
   delete(id: string): Promise<T | null>;
   findOne(filter: QueryFilter<T>, session?: ClientSession): Promise<T | null>;
   addToSet(filter: any, field: keyof T, value: string): Promise<T | null>;

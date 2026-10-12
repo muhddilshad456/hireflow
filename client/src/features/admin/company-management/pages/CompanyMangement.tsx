@@ -6,6 +6,7 @@ import { updateStatusApi } from "../../services/adminServices";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { getAllCompaniesApi } from "../services/adminCompanyServices";
+import { ConfirmationModal } from "../../shared/components/ConfirmationModal";
 
 type CompanyFilterType = "All" | "Active" | "Blocked";
 
@@ -24,6 +25,9 @@ export function CompanyManagement() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState<CompanyFilterType>("All");
+  const [confirmCompany, setConfirmCompany] = useState<CompanyItem | null>(
+    null,
+  );
 
   const navigate = useNavigate();
 
@@ -49,12 +53,14 @@ export function CompanyManagement() {
     }
   };
 
-  const toggle = async (id: string, status: string) => {
+  const updateCompanyStatus = async () => {
+    if (!confirmCompany) return;
     try {
-      const result = await updateStatusApi(id, status);
+      const newStatus = confirmCompany.isBlocked ? "ACTIVE" : "BLOCKED";
+      await updateStatusApi(confirmCompany._id, newStatus);
       fetchCompanies();
       toast.success("status updated successfully.");
-      console.log(result);
+      setConfirmCompany(null);
     } catch (error: any) {
       console.log(error?.response?.data);
     }
@@ -90,118 +96,126 @@ export function CompanyManagement() {
         />
       </div>
 
-      <>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px] min-w-[680px]">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
-                    Company Name
-                  </th>
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
-                    Email Address
-                  </th>
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
-                    Verification Status
-                  </th>
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
-                    Account Status
-                  </th>
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
-                    Details
-                  </th>
-                  <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {companies?.map((c, i) => (
-                  <tr
-                    key={c._id}
-                    className={`hover:bg-violet-50/20 transition-colors ${i < companies.length - 1 ? "border-b border-gray-100" : ""}`}
-                  >
-                    <td className="px-4 md:px-5 py-4 font-semibold text-gray-800 leading-tight">
-                      {c.name}
-                    </td>
-                    <td className="px-4 md:px-5 py-4 text-gray-500 text-[12px]">
-                      {c.email}
-                    </td>
-                    <td className="px-4 md:px-5 py-4">
-                      <span
-                        className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[11px] font-semibold min-w-[100px]
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px] min-w-[680px]">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/60">
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
+                  Company Name
+                </th>
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
+                  Email Address
+                </th>
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
+                  Verification Status
+                </th>
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-gray-500">
+                  Account Status
+                </th>
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
+                  Details
+                </th>
+                <th className="text-left px-4 md:px-5 py-3.5 text-[11px] md:text-[12px] font-semibold text-violet-500">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {companies?.map((c, i) => (
+                <tr
+                  key={c._id}
+                  className={`hover:bg-violet-50/20 transition-colors ${i < companies.length - 1 ? "border-b border-gray-100" : ""}`}
+                >
+                  <td className="px-4 md:px-5 py-4 font-semibold text-gray-800 leading-tight">
+                    {c.name}
+                  </td>
+                  <td className="px-4 md:px-5 py-4 text-gray-500 text-[12px]">
+                    {c.email}
+                  </td>
+                  <td className="px-4 md:px-5 py-4">
+                    <span
+                      className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[11px] font-semibold min-w-[100px]
                             ${
                               c.company
                                 ? "bg-violet-500 text-white"
                                 : "bg-violet-100 text-violet-700 border border-violet-200"
                             }`}
-                      >
-                        {c.company ? "Verified" : "Not Verified"}
-                      </span>
-                    </td>
-                    <td className="px-4 md:px-5 py-4">
-                      <span
-                        className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[11px] font-semibold min-w-[70px]
-                            ${c.isBlocked != true ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
-                      >
-                        {c.isBlocked ? "Blocked" : "Active"}
-                      </span>
-                    </td>
-                    <td className="px-4 md:px-5 py-4">
-                      {c.company ? (
-                        <button
-                          onClick={() => showDetails(c._id)}
-                          className="text-violet-500 font-semibold hover:text-violet-700 text-[13px] whitespace-nowrap hover:underline underline-offset-2 transition-colors"
-                        >
-                          View Details
-                        </button>
-                      ) : (
-                        <button
-                          disabled
-                          className="text-violet-300 font-semibold text-[13px] whitespace-nowrap "
-                        >
-                          View Details
-                        </button>
-                      )}
-                    </td>
-                    <td className="px-4 md:px-5 py-4">
-                      <button
-                        onClick={() =>
-                          toggle(c._id, c.isBlocked ? "ACTIVE" : "BLOCKED")
-                        }
-                        className={`font-semibold text-[13px] hover:underline underline-offset-2 transition-colors ${c.isBlocked != true ? "text-red-500 hover:text-red-700" : "text-green-600 hover:text-green-800"}`}
-                      >
-                        {c.isBlocked ? "Unblock" : "Block"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {companies.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-14 text-center text-gray-400 text-[13px]"
                     >
-                      No companies match the filter.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                      {c.company ? "Verified" : "Not Verified"}
+                    </span>
+                  </td>
+                  <td className="px-4 md:px-5 py-4">
+                    <span
+                      className={`inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[11px] font-semibold min-w-[70px]
+                            ${c.isBlocked != true ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+                    >
+                      {c.isBlocked ? "Blocked" : "Active"}
+                    </span>
+                  </td>
+                  <td className="px-4 md:px-5 py-4">
+                    {c.company ? (
+                      <button
+                        onClick={() => showDetails(c._id)}
+                        className="text-violet-500 font-semibold hover:text-violet-700 text-[13px] whitespace-nowrap hover:underline underline-offset-2 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="text-violet-300 font-semibold text-[13px] whitespace-nowrap "
+                      >
+                        View Details
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-4 md:px-5 py-4">
+                    <button
+                      onClick={() => setConfirmCompany(c)}
+                      className={`font-semibold text-[13px] hover:underline underline-offset-2 transition-colors ${c.isBlocked != true ? "text-red-500 hover:text-red-700" : "text-green-600 hover:text-green-800"}`}
+                    >
+                      {c.isBlocked ? "Unblock" : "Block"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {companies.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-14 text-center text-gray-400 text-[13px]"
+                  >
+                    No companies match the filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-        <p className="text-[12px] text-gray-400 text-right">
-          Showing <strong className="text-gray-500">{companies.length}</strong>{" "}
-          of <strong className="text-gray-500">{companies.length}</strong>{" "}
-          companies
-        </p>
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={(p) => setPage(p)}
-        />
-      </>
+      </div>
+      <p className="text-[12px] text-gray-400 text-right">
+        Showing <strong className="text-gray-500">{companies.length}</strong> of{" "}
+        <strong className="text-gray-500">{companies.length}</strong> companies
+      </p>
+      <Pagination
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={(p) => setPage(p)}
+      />
+      <ConfirmationModal
+        isOpen={!!confirmCompany}
+        title={confirmCompany?.isBlocked ? "Unblock Company" : "Block Company"}
+        message={
+          confirmCompany?.isBlocked
+            ? `Are you sure you want to unblock ${confirmCompany?.name}?`
+            : `Are you sure you want to block ${confirmCompany?.name}?`
+        }
+        confirmText={confirmCompany?.isBlocked ? "UNBLOCK" : "BLOCK"}
+        variant={confirmCompany?.isBlocked ? "success" : "danger"}
+        onConfirm={updateCompanyStatus}
+        onCancel={() => setConfirmCompany(null)}
+      />
     </div>
   );
 }

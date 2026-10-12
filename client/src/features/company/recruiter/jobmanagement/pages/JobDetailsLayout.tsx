@@ -7,6 +7,7 @@ import {
   DollarSign,
   Users,
   CalendarClock,
+  Lock,
 } from "lucide-react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { jobDetails, updateJobApi } from "../services/jobServices";
@@ -16,6 +17,7 @@ import toast from "react-hot-toast";
 import type { JobFormData } from "../../../../../types/job/job/jobForm";
 import AiFilterConfirmModal from "../components/AiConfirmationModal";
 import ChatButton from "../components/chatButton";
+import { getCompanyAccess } from "../../../shared/servicces/SubscriptionServices";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -110,16 +112,6 @@ const toTitleCase = (raw: string) =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
 
-/**
- * Derives each stage's timeline state purely from the data your API
- * already returns — no extra backend field required.
- *
- * Rule: the furthest stage that has at least one candidate in it is
- * the CURRENT stage. Every stage before it is COMPLETED. Every stage
- * after it is LOCKED. If no stage has any candidates yet, the first
- * active stage is CURRENT and the rest are LOCKED.
- */
-// change to
 export const buildTimelineStages = (
   apiStages: ApiJobStage[],
 ): TimelineStage[] =>
@@ -187,6 +179,7 @@ export const JobLayout: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [openEditJobModal, setOpenEditJobModal] = useState(false);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
+  const [isCompanySubscribed, setCompanySubscription] = useState(false);
 
   const getJobDetails = async () => {
     if (!jobId) {
@@ -196,7 +189,7 @@ export const JobLayout: React.FC = () => {
     try {
       setLoading(true);
       const result = await jobDetails(jobId);
-      const data = result?.data?.data ?? result?.data; // adjust to your axios wrapper shape
+      const data = result?.data?.data ?? result?.data;
       setJob(data.job);
       setApiStages(data.stages ?? []);
 
@@ -217,6 +210,18 @@ export const JobLayout: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    async function fetchComSubStatus() {
+      try {
+        const result = await getCompanyAccess();
+        setCompanySubscription(result?.data?.isActive);
+      } catch (err: any) {
+        console.log(err?.response);
+      }
+    }
+    fetchComSubStatus();
+  }, []);
 
   useEffect(() => {
     getJobDetails();
@@ -391,13 +396,27 @@ export const JobLayout: React.FC = () => {
           <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
             Job Details &amp; Hiring Flow Management
           </h1>
-          <button
-            onClick={() => setShowAiConfirm(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-          >
-            <Sparkles className="h-4 w-4" />
-            Run AI Auto-Select
-          </button>
+          {isCompanySubscribed === true && (
+            <button
+              onClick={() => setShowAiConfirm(true)}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+            >
+              <Sparkles className="h-4 w-4" />
+              Run AI Auto-Select
+            </button>
+          )}
+
+          {isCompanySubscribed === false && (
+            <div className="mt-4 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-100 px-4 py-3 text-sm text-blue-800">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                <span className="font-semibold">
+                  AI Auto-Select is a Premium feature.
+                </span>{" "}
+                Ask your company admin to subscribe to unlock it.
+              </p>
+            </div>
+          )}
           {/* Job summary row (title + banner) */}
           <div className="mt-6 flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
             <div>

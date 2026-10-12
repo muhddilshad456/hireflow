@@ -58,7 +58,6 @@ export class ProfileController implements IProfileController {
   ): Promise<void> {
     try {
       const userId = req.user?.userId;
-      console.log("user id : ", userId);
       const data = req.body;
       const result = await this.profileService.updateBasicProfile(userId, data);
       ResponseHandler.success(

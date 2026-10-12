@@ -10,6 +10,7 @@ import {
 import { useParams } from "react-router-dom";
 import { callAiForRanking } from "../services/aiServices";
 import { moveToNextStageBulk } from "../../shared/services/stageService";
+import toast from "react-hot-toast";
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -324,8 +325,9 @@ export function AiFilterResultsPage() {
         setStatus("success");
 
         clearInterval(msgInterval);
-      } catch (error) {
-        console.error(error);
+      } catch (error: any) {
+        console.error(error?.response);
+        toast.error(error?.response?.data?.message);
         setStatus("error");
         clearInterval(msgInterval);
       }

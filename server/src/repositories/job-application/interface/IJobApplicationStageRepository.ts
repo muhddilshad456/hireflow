@@ -1,10 +1,11 @@
 import { Types } from "mongoose";
-import { IJobApplicationStage } from "../../../models/job.application.stage.model";
+import { IJobApplicationStage } from "../../../models/job-application/job.application.stage.model";
 import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
 export interface IJobApplicationStageRepository extends IBaseRepository<IJobApplicationStage> {
   findByStageIdPaginated(
     stageId: Types.ObjectId,
+    stageName: string,
     {
       search,
       status,

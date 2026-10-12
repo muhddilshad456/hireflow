@@ -7,6 +7,22 @@ import {
 } from "../../../shared/services/applicationService";
 
 /* ----------------------------- Types ----------------------------- */
+interface ApiInterviewBasicUser {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export interface ApiStageInterview {
+  _id: string;
+  scheduledAt: string;
+  duration?: number;
+  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  feedback?: string;
+  feedbackSubmittedAt?: string;
+  interviewer: ApiInterviewBasicUser;
+  recruiter: ApiInterviewBasicUser;
+}
 
 interface ApiJobStage {
   _id: string;
@@ -15,7 +31,7 @@ interface ApiJobStage {
   isMandatory: boolean;
   status: "PENDING" | "IN_PROGRESS" | "PASSED" | "FAILED";
   feedback?: string;
-  interviewerId?: string;
+  interview: ApiStageInterview | null;
   startedAt?: string;
   completedAt?: string;
   applicationStageId?: string;
@@ -65,8 +81,9 @@ export interface Stage {
   name: string;
   label: string;
   status: StageStatus;
-  /** Where clicking this stage should take the user */
   href?: string;
+  feedback?: string;
+  interview: ApiStageInterview | null;
 }
 
 export interface JobDetail {
@@ -503,6 +520,8 @@ function mapApplicationToAppliedJobData(app: ApiApplication): AppliedJobData {
         .map((w) => w[0].toUpperCase() + w.slice(1))
         .join(" "),
       status: mapStageStatus(s.status),
+      feedback: s.feedback,
+      interview: s.interview,
       href:
         s.status !== "PENDING"
           ? `/application/${app._id}/stage/${s._id}`

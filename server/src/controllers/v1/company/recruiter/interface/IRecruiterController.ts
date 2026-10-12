@@ -9,4 +9,9 @@ export interface IRecruiterController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  getCompanyInterviewers(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

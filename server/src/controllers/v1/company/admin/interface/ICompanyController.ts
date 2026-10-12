@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 
 export interface ICompanyController {
   createVerifyRequest(

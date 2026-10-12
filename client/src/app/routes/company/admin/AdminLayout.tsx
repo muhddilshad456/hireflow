@@ -18,6 +18,7 @@ type Status = "unverified" | "form" | "pending" | "approved" | "rejected";
 type Page =
   | "dashboard"
   | "recruiter-invitations"
+  | "interviewer-invitations"
   | "recruiter"
   | "reviewer"
   | "jobs"
@@ -35,6 +36,12 @@ const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
     label: "Recruiter Invitations",
     icon: <Ico.Users />,
     path: "/company/admin/recruiter-invitations",
+  },
+  {
+    id: "interviewer-invitations",
+    label: "Interviewer Invitations",
+    icon: <Ico.Users />,
+    path: "/company/admin/interviewer-invitations",
   },
   {
     id: "recruiter",
@@ -58,7 +65,13 @@ const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
 ];
 
 /* ═══════════════════════ HEADER ════════════════════════════════════════ */
-function Header({ onMenu, status }: { onMenu: () => void; status: Status }) {
+export function Header({
+  onMenu,
+  status,
+}: {
+  onMenu?: () => void;
+  status?: Status;
+}) {
   const chip =
     status === "approved"
       ? null

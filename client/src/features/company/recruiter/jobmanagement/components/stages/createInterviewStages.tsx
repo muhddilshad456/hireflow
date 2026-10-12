@@ -1,25 +1,23 @@
 import { useOutletContext } from "react-router-dom";
-
 import { InterviewCandidateCard } from "../stage-shared/InterviewCandidateCard";
-import { InterviewResultCard } from "../stage-shared/InterviewResultCard.tsx";
-import type {
-  ApiJobStage,
-  ApiStageCandidate,
-  JobLayoutOutletContext,
-} from "../../pages/JobDetailsLayout.tsx";
-// import your real service calls, e.g.:
-// import { requestInterview, scheduleInterview, submitInterviewResult } from "../../services/interviewServices";
+import { FinalResultCard } from "../stage-shared/FinalResultCard";
+import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
+import type { ApiStageCandidate } from "../../../../../../types/applicaionTypes.ts";
+import { InterviewResultCard } from "../stage-shared/InterviewResultCard.tsx.tsx";
+import type { StageDetail } from "../StageRenderer.tsx";
+import { requestForInterview } from "../../services/interviewServices.tsx";
+import toast from "react-hot-toast";
 
 interface InterviewStageConfig {
   title: string;
-  interviewLabel: string; // "Video call interview" | "Online interview"
-  scheduleButtonLabel: string; // "Submit Schedule" | "Schedule"
-  resultTitle?: string; // e.g. "Technical Round Results" — omit to reuse `title`
-  feedbackLabel: string; // "HR Feedback" | "Feedback"
+  interviewLabel: string;
+  scheduleButtonLabel: string;
+  resultTitle?: string;
+  feedbackLabel: string;
 }
 
 export function createInterviewStage(config: InterviewStageConfig) {
-  return function InterviewStage({ stage }: { stage: ApiJobStage }) {
+  return function InterviewStage({ stage }: { stage: StageDetail }) {
     const { jobId, refetchJob } = useOutletContext<JobLayoutOutletContext>();
 
     if (stage.candidates.length === 0) {
@@ -30,25 +28,25 @@ export function createInterviewStage(config: InterviewStageConfig) {
       );
     }
 
-    const handleRequestInterview = async (c: ApiStageCandidate) => {
-      try {
-        // await requestInterview(jobId, c.applicationStageId);
-        await refetchJob();
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    const handleSubmitSchedule = async (
+    const handleRequestInterview = async (
       c: ApiStageCandidate,
       date: string,
       time: string,
+      interviewerId: string,
     ) => {
       try {
-        // await scheduleInterview(jobId, c.applicationStageId, { date, time });
+        const scheduledAt = new Date(`${date}T${time}`).toISOString();
+
+        await requestForInterview({
+          jobApplicationStageId: c.applicationStageId,
+          interviewerId,
+          scheduledAt,
+        });
+        toast.success("Interview request created successfully.");
         await refetchJob();
-      } catch (err) {
-        console.log(err);
+      } catch (err: any) {
+        console.log(err?.response);
+        toast.error(err?.response?.data?.message);
       }
     };
 
@@ -58,8 +56,11 @@ export function createInterviewStage(config: InterviewStageConfig) {
       feedback: string,
     ) => {
       try {
-        // await submitInterviewResult(jobId, c.applicationStageId, { result, feedback });
-        await refetchJob(); // candidate moves to next stage (or is rejected) on refetch
+        // await submitInterviewResult(jobId, c.applicationStageId, {
+        //   status: result === "PASS" ? "PASSED" : "FAILED",
+        //   feedback,
+        // });
+        await refetchJob();
       } catch (err) {
         console.log(err);
       }
@@ -70,32 +71,51 @@ export function createInterviewStage(config: InterviewStageConfig) {
         <h3 className="text-sm font-semibold text-gray-900">{config.title}</h3>
 
         <div className="mt-2 space-y-4">
-          {stage.candidates.map((c) =>
-            c.interviewerCompletedAt ? (
-              <InterviewResultCard
-                key={c.applicationStageId}
-                candidate={c}
-                title={config.resultTitle ?? `${config.title} Results`}
-                feedbackLabel={config.feedbackLabel}
-                onSubmitResult={(result, feedback) =>
-                  handleSubmitResult(c, result, feedback)
-                }
-              />
-            ) : (
+          {stage.candidates.map((c) => {
+            const isDecided = c.status === "PASSED" || c.status === "FAILED";
+            const progressStatus =
+              c.interviewProgress?.status ?? "NOT_REQUESTED";
+
+            if (isDecided) {
+              return (
+                <FinalResultCard key={c.applicationStageId} candidate={c} />
+              );
+            }
+
+            if (progressStatus === "COMPLETED") {
+              return (
+                <InterviewResultCard
+                  key={c.applicationStageId}
+                  candidate={c}
+                  title={config.resultTitle ?? `${config.title} Results`}
+                  feedbackLabel={config.feedbackLabel}
+                  onSubmitResult={(result, feedback) =>
+                    handleSubmitResult(c, result, feedback)
+                  }
+                />
+              );
+            }
+
+            return (
               <InterviewCandidateCard
                 key={c.applicationStageId}
                 candidate={c}
                 interviewLabel={config.interviewLabel}
                 scheduleButtonLabel={config.scheduleButtonLabel}
-                onRequestInterview={() => handleRequestInterview(c)}
-                onSubmitSchedule={(date, time) =>
-                  handleSubmitSchedule(c, date, time)
+                onRequestInterview={(date, time, interviewerId) =>
+                  handleRequestInterview(c, date, time, interviewerId)
                 }
+                fetchInterviewers={() => fetchInterviewersStub(jobId)}
               />
-            ),
-          )}
+            );
+          })}
         </div>
       </>
     );
   };
+}
+
+// placeholder until you wire the real endpoint
+async function fetchInterviewersStub(jobId: string) {
+  return [];
 }

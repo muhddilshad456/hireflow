@@ -21,7 +21,7 @@ import { IJobApplicationStageRepository } from "../../../../repositories/job-app
 import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinaryService";
 import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
 import { InternalServerError } from "../../../../errors/internal-server.error";
-import { IJobStage } from "../../../../models/job.stage.model";
+import { IJobStage } from "../../../../models/job/job.stage.model";
 import app from "../../../../app";
 
 @injectable()
@@ -241,10 +241,26 @@ export class JobService implements IJobService {
     const { data, total } =
       await this.jobApplicationStageRepository.findByStageIdPaginated(
         stage._id,
+        stage.name,
         params,
       );
 
+    const stageDetails: any = {
+      _id: stage._id,
+      name: stage.name,
+      order: stage.order,
+      isMandatory: stage.isMandatory,
+      isActive: stage.isActive,
+    };
+
+    if (stage.name === "assessment") {
+      stageDetails.assessmentTaskDescription = stage.assessmentTaskDescription;
+      stageDetails.assessmentTaskAttachmentUrl =
+        stage.assessmentTaskAttachmentUrl;
+    }
+
     return {
+      stage: stageDetails,
       candidates: data,
       total,
       page: params.page,

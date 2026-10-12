@@ -8,7 +8,6 @@ import { IChatPermissionService } from "../../chat-permission/interface/IChatPer
 import { Logger } from "pino";
 import {
   CandidateConversationView,
-  ConversationEntity,
   CreatorRole,
   RecruiterConversationView,
 } from "../../../../../interfaces/chat/conversation";

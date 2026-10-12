@@ -3,10 +3,8 @@ import { Header } from "../../shared/components/Header";
 import toast from "react-hot-toast";
 import type { JobFilters } from "../../../../types/jobTypes";
 import { getMyApplications } from "../services/userJobService";
-import type {
-  JobApplication,
-} from "../../../../types/applicaionTypes";
-import { ApplicationCard } from "../../application/components/ApplicationCard";
+import type { JobApplication } from "../../../../types/applicaionTypes";
+import { ApplicationCard } from "../components/ApplicationCard";
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 

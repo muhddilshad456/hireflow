@@ -9,6 +9,7 @@ import {
 } from "../../../shared/services/jobService";
 import type { Job } from "../../../../types/jobTypes";
 import { useNavigate } from "react-router-dom";
+import { ConfirmationModal } from "../../shared/components/ConfirmationModal";
 
 type CompanyFilterType = "All" | "Active" | "Blocked";
 type UserFilterType = "All" | "Active" | "Blocked";
@@ -20,6 +21,7 @@ export function JobManagement() {
   const [status, setStatus] = useState<UserFilterType>("All");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmJob, setConfirmJob] = useState<Job | null>(null);
 
   const navigate = useNavigate();
 
@@ -40,13 +42,14 @@ export function JobManagement() {
     }
   };
 
-  const toggle = async (id: string, status: string) => {
+  const updateJobStatus = async () => {
+    if (!confirmJob) return;
     try {
-      const newStatus = status == "Active" ? "BLOCKED" : "ACTIVE";
-      const result = await updateJobActiveStatusApi(id, newStatus);
+      const newStatus = confirmJob.isActive ? "BLOCKED" : "ACTIVE";
+      await updateJobActiveStatusApi(confirmJob?._id, newStatus);
       fetchJobs();
       toast.success("Job status updated");
-      console.log(result);
+      setConfirmJob(null);
     } catch (error) {
       console.log(error);
     }
@@ -161,9 +164,7 @@ export function JobManagement() {
 
                     <td className="px-4 md:px-6 py-4">
                       <button
-                        onClick={() =>
-                          toggle(u._id, u.isActive ? "Active" : "Blocked")
-                        }
+                        onClick={() => setConfirmJob(u)}
                         className={`font-semibold text-[13px] hover:underline underline-offset-2 transition-colors ${
                           u.isActive
                             ? "text-red-500 hover:text-red-700"
@@ -186,6 +187,20 @@ export function JobManagement() {
         currentPage={page}
         totalPages={totalPages}
         onPageChange={(p) => setPage(p)}
+      />
+      {/* confirm modal */}
+      <ConfirmationModal
+        isOpen={!!confirmJob}
+        title={confirmJob?.isActive ? "Block Job?" : "Unblock Job?"}
+        message={
+          confirmJob?.isActive
+            ? `Are you sure you want to block ${confirmJob?.title}?`
+            : `Are you sure you want to unblock ${confirmJob?.title}?`
+        }
+        confirmText={confirmJob?.isActive ? "Block" : "Unblock"}
+        variant={confirmJob?.isActive ? "danger" : "success"}
+        onConfirm={updateJobStatus}
+        onCancel={() => setConfirmJob(null)}
       />
     </div>
   );

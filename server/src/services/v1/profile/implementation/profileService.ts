@@ -13,7 +13,7 @@ import { UnauthorizedError } from "../../../../errors/unauthorized.error";
 import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation";
 import { InternalServerError } from "../../../../errors/internal-server.error";
 import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
-import { IUserProfile } from "../../../../models/user.profile.model";
+import { IUserProfile } from "../../../../models/profiles/user.profile.model";
 import e from "express";
 import mongoose from "mongoose";
 import { ProfileMapper } from "../../../../mapper/profile/profileMapper";

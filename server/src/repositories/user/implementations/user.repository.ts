@@ -5,7 +5,8 @@ import { injectable } from "inversify";
 import { QueryFilter } from "mongoose";
 import { GetUsersResponse } from "../../../types/userRepo.js";
 import { IUserWithCompany } from "../../../types/userWithCompany.js";
-import { ICompany } from "../../../models/company.model.js";
+import { ICompany } from "../../../models/company/company.model.js";
+import { UserBasicInfo } from "../../../interfaces/interview/interview.js";
 
 @injectable()
 export class UserRepository
@@ -104,5 +105,12 @@ export class UserRepository
     return await UserModel.findById(userId)
       .populate<{ company: ICompany }>("company")
       .lean();
+  }
+  //* get user basic details
+  async findByIdSelect(
+    id: string,
+    fields: string,
+  ): Promise<UserBasicInfo | null> {
+    return await UserModel.findById(id).select(fields);
   }
 }

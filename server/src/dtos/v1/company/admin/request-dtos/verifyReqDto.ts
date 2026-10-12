@@ -9,7 +9,7 @@ import {
   IsEnum,
 } from "class-validator";
 import { Transform } from "class-transformer";
-import { VerificationType } from "../../../../../models/company.verification.model";
+import { VerificationType } from "../../../../../models/company/company.verification.model";
 
 export class VerifyReqDto {
   @IsOptional()

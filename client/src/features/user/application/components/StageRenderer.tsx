@@ -1,68 +1,17 @@
 import { useParams, useOutletContext } from "react-router-dom";
 import type { AppliedJobData } from "../pages/ApplicationLayout";
-import { ResumeCard } from "./ResumeCard";
+import { ResumeReviewStage } from "./stages/ResumeReviewStage";
+import { AssessmentStage } from "./stages/AssessmentStage";
+import { DocumentVerificationStage } from "./stages/DocumentVerificationStage";
+import { InterviewStage } from "./stages/InterviewStage";
 
 /* --------------------------- Stage component registry --------------------------- */
 /* Keyed by the raw API stage name. Add one entry here per new stage type —
    this is the ONLY file that needs to change when a new stage type ships. */
 
-interface StageComponentProps {
+export interface StageComponentProps {
   stage: AppliedJobData["stages"][number];
   application: AppliedJobData;
-}
-
-function ResumeReviewStage({ application }: StageComponentProps) {
-  const { resumeFileName, resumeFileSize, resumeUrl } = application;
-
-  if (!resumeUrl) {
-    return (
-      <div className="p-4">
-        <p className="text-sm text-gray-500">No resume uploaded</p>
-      </div>
-    );
-  }
-
-  const handleView = () => {
-    window.open(resumeUrl, "_blank");
-  };
-
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = resumeUrl;
-    link.download = resumeFileName;
-    link.click();
-  };
-
-  return (
-    <ResumeCard
-      fileName={resumeFileName}
-      fileSize={resumeFileSize}
-      onView={handleView}
-      onDownload={handleDownload}
-    />
-  );
-}
-
-function AssessmentStage({ stage }: StageComponentProps) {
-  return (
-    <div className="rounded-2xl border border-slate-100 p-5">
-      <h3 className="text-sm font-bold text-slate-900">{stage.label}</h3>
-      <p className="mt-2 text-[13px] text-slate-500">
-        Assessment details for this stage will appear here.
-      </p>
-    </div>
-  );
-}
-
-function DocumentVerificationStage({ stage }: StageComponentProps) {
-  return (
-    <div className="rounded-2xl border border-slate-100 p-5">
-      <h3 className="text-sm font-bold text-slate-900">{stage.label}</h3>
-      <p className="mt-2 text-[13px] text-slate-500">
-        Document verification details for this stage will appear here.
-      </p>
-    </div>
-  );
 }
 
 const STAGE_REGISTRY: Record<
@@ -72,6 +21,7 @@ const STAGE_REGISTRY: Record<
   resume_review: ResumeReviewStage,
   assessment: AssessmentStage,
   document_verification: DocumentVerificationStage,
+  hr_interview: InterviewStage,
 };
 
 /* --------------------------- StageRenderer --------------------------- */

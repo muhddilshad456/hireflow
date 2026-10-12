@@ -8,6 +8,7 @@ import ForgotPassword from "../../../features/company/shared/auth/pages/ForgotPa
 import ResetPassword from "../../../features/company/shared/auth/pages/ResetPassword";
 import AcceptInvite from "../../../features/company/shared/auth/pages/AcceptInvite";
 import RecruiterRoutes from "./recruiter/RecruiterRoutes";
+import InterviewerRoutes from "./interviewer/InterviewerRoutes";
 
 const CompanyRoutes = () => {
   return (
@@ -24,6 +25,7 @@ const CompanyRoutes = () => {
       {/* ✅ Role-based route splitting */}
       <Route path="admin/*" element={<AdminRoutes />} />
       <Route path="recruiter/*" element={<RecruiterRoutes />} />
+      <Route path="interviewer/*" element={<InterviewerRoutes />} />
     </Routes>
   );
 };

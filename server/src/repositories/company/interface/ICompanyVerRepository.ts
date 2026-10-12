@@ -1,7 +1,7 @@
 import {
   ICompanyVerification,
   VerificationType,
-} from "../../../models/company.verification.model";
+} from "../../../models/company/company.verification.model";
 import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
 export interface ICompanyVerRepository extends IBaseRepository<ICompanyVerification> {

@@ -1,8 +1,9 @@
 import { injectable } from "inversify";
-import { IJob, JobModel } from "../../../models/job.model";
+import { IJob, JobModel } from "../../../models/job/job.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { IJobRepository } from "../interface/IJobRepository";
 import { JobFilters } from "../../../types/jobFilter";
+import { JobSubsetInfo } from "../../../interfaces/interview/interview";
 
 @injectable()
 export class JobRepository
@@ -99,5 +100,12 @@ export class JobRepository
   async updateStatus(id: string, status: string): Promise<any> {
     const isActive = status == "ACTIVE" ? true : false;
     await JobModel.findByIdAndUpdate(id, { isActive });
+  }
+  //* get job basic details
+  async findByIdSelect(
+    id: string,
+    fields: string,
+  ): Promise<JobSubsetInfo | null> {
+    return await JobModel.findById(id).select(fields);
   }
 }

@@ -13,9 +13,9 @@ import { IJobStageRepository } from "../../../../../repositories/job/interface/I
 import {
   JOB_STAGE_NAMES,
   JobStageName,
-} from "../../../../../models/job.stage.model";
+} from "../../../../../models/job/job.stage.model";
 import { Types } from "mongoose";
-import { RECRUITER_MESSAGES } from "../../../../../constants/messages/recruiter";
+import { RECRUITER_MESSAGES } from "../../../../../constants/messages/company/recruiter/recruiter";
 import { AiMatchMapper } from "../../../../../mapper/ai-filter/aiMatchMapper";
 import { RankedCandidateDto } from "../../../../../interfaces/ai-filter/ai-responce";
 import { IJobApplicationRepository } from "../../../../../repositories/job-application/interface/IJobApplicationRepository";
@@ -30,23 +30,33 @@ import { IJobApplicationStageRepository } from "../../../../../repositories/job-
 import { AI_MATCH_RESPONSE_SCHEMA } from "../../../../../schemas/geminiResponseSchema";
 import { VALIDATION_MESSAGES } from "../../../../../constants/messages/validation";
 import { JOB_MESSAGES } from "../../../../../constants/messages/jobs";
-import app from "../../../../../app";
 import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application";
+import { IInterviewerProfileRepository } from "../../../../../repositories/profile/interface/IInterviewerProfileRepository";
+import { PaginatedInterviewersResponse } from "../../../../../interfaces/interviewer/interviewer";
+import { ICompanyRepository } from "../../../../../repositories/company/interface/ICompanyRepository";
+import { ISubscriptionRepository } from "../../../../../repositories/subscription/interface/ISubscriptionRepository";
+import { SUBSCRIPTION_MESSAGES } from "../../../../../constants/messages/subscription";
 
 @injectable()
 export class RecruiterService implements IRecruiterService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
-    @inject(TYPES.JobRepository) private jobRepository: IJobRepository,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
+    @inject(TYPES.JobRepository) private _jobRepository: IJobRepository,
     @inject(TYPES.JobStageRepository)
-    private jobStageRepository: IJobStageRepository,
+    private _jobStageRepository: IJobStageRepository,
     @inject(TYPES.JobApplicationStageRepository)
-    private jobApplicationStageRepository: IJobApplicationStageRepository,
+    private _jobApplicationStageRepository: IJobApplicationStageRepository,
     @inject(TYPES.JobApplicationRepository)
-    private jobApplicationRepository: IJobApplicationRepository,
+    private _jobApplicationRepository: IJobApplicationRepository,
     @inject(TYPES.UserProfileRepository)
-    private userProfileRepository: IUserProfileRepository,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _userProfileRepository: IUserProfileRepository,
+    @inject(TYPES.InterviewerProfileRepository)
+    private _interviewerProfileRepository: IInterviewerProfileRepository,
+    @inject(TYPES.CompanyRepository)
+    private _companyRepository: ICompanyRepository,
+    @inject(TYPES.SubscriptionRepository)
+    private _subscriptionRepository: ISubscriptionRepository,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* helpers
   private buildFullStageList(
@@ -184,7 +194,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
         if (err?.status === 429 || err?.error?.code === 429) {
           const retryAfterSeconds = 5;
           if (attempt === maxRetries) {
-            this.logger.warn({
+            this._logger.warn({
               event: "AI rate limit reached after retries",
               retryAfterSeconds,
             });
@@ -197,7 +207,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
         }
 
         if (attempt < maxRetries) {
-          this.logger.warn({
+          this._logger.warn({
             event: "AI batch call failed, retrying",
             attempt,
             error: err?.message,
@@ -207,7 +217,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
       }
     }
 
-    this.logger.error({
+    this._logger.error({
       event: "AI batch scoring failed after all retries",
       error: (lastError as Error)?.message,
     });
@@ -216,7 +226,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
   //* create a job
   async createJob(dto: JobDto, recruiterId: string): Promise<any> {
-    this.logger.info({
+    this._logger.info({
       event: JOB_MESSAGES.JOB_CREATION_STARTED,
     });
 
@@ -241,7 +251,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
     today.setHours(0, 0, 0, 0);
 
     if (applicationDeadline < today) {
-      this.logger.warn({
+      this._logger.warn({
         event: APPLICATION_MESSAGES.INVALID_APPLICATION_DEADLINE,
         applicationDeadline: dto.applicationDeadline,
       });
@@ -251,17 +261,17 @@ Evaluate every candidate above against the job requirement and return the JSON a
       );
     }
 
-    const recruiter = await this.userRepository.findById(recruiterId);
+    const recruiter = await this._userRepository.findById(recruiterId);
 
     if (!recruiter) {
-      this.logger.warn({
+      this._logger.warn({
         event: RECRUITER_MESSAGES.RECRUITER_NOT_FOUND,
       });
       throw new NotFoundError(RECRUITER_MESSAGES.RECRUITER_NOT_FOUND);
     }
 
     if (!recruiter.company) {
-      this.logger.warn({
+      this._logger.warn({
         event: RECRUITER_MESSAGES.RECRUITER_NOT_ASSOSIATED_WITH_THIS_COMPANY,
       });
       throw new BadRequestError(
@@ -273,29 +283,29 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     const data = JobMapper.toJobEntity(dto, recruiter._id, companyId);
 
-    const result = await this.jobRepository.create(data);
+    const result = await this._jobRepository.create(data);
 
     if (!result) {
-      this.logger.warn({
+      this._logger.warn({
         event: "Failed to create job",
       });
       throw new InternalServerError("Failed to create job");
     }
 
-    this.logger.info({
+    this._logger.info({
       event: "Job created successfully",
     });
 
     const fullStages = this.buildFullStageList(dto.pipelineStages);
 
-    this.logger.info({
+    this._logger.info({
       event: "Final pipeline stages prepared (with mandatory stage)",
       data: fullStages,
     });
 
     const stageDocs = this.buildStageDocs(result._id, fullStages);
 
-    this.logger.info({
+    this._logger.info({
       event: "Stage documents constructed",
       count: stageDocs.length,
       preview: stageDocs.map((s) => ({
@@ -305,10 +315,10 @@ Evaluate every candidate above against the job requirement and return the JSON a
       })),
     });
 
-    const createdStages = await this.jobStageRepository.createMany(stageDocs);
+    const createdStages = await this._jobStageRepository.createMany(stageDocs);
 
     if (!createdStages) {
-      this.logger.error({
+      this._logger.error({
         event: "Failed to create job stages",
         jobId: result._id,
       });
@@ -316,7 +326,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
       throw new InternalServerError("Failed to create job stages");
     }
 
-    this.logger.info({
+    this._logger.info({
       event: "Job stages created successfully",
       jobId: result._id,
       totalStages: createdStages.length,
@@ -331,17 +341,17 @@ Evaluate every candidate above against the job requirement and return the JSON a
     dto: JobDto,
     recruiterId: string,
   ): Promise<any> {
-    this.logger.info({ event: "Job update started", jobId });
+    this._logger.info({ event: "Job update started", jobId });
 
-    const job = await this.jobRepository.findById(jobId);
+    const job = await this._jobRepository.findById(jobId);
 
     if (!job) {
-      this.logger.warn({ event: "Job not found", jobId });
+      this._logger.warn({ event: "Job not found", jobId });
       throw new NotFoundError("Job not found");
     }
 
     if (job.createdBy.toString() !== recruiterId) {
-      this.logger.warn({
+      this._logger.warn({
         event: RECRUITER_MESSAGES.CANT_EDIT_THE_JOB_THAT_YOU_DONT_OWN,
         jobId,
         recruiterId,
@@ -353,7 +363,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     const stagesLocked = job.applicantsCount > 0;
 
-    this.logger.info({
+    this._logger.info({
       event: "Stage lock status determined",
       jobId,
       applicantsCount: job.applicantsCount,
@@ -362,17 +372,17 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     const updateData = JobMapper.toJobUpdateEntity(dto);
 
-    const updatedJob = await this.jobRepository.update(jobId, updateData);
+    const updatedJob = await this._jobRepository.update(jobId, updateData);
 
     if (!updatedJob) {
-      this.logger.error({ event: "Failed to update job", jobId });
+      this._logger.error({ event: "Failed to update job", jobId });
       throw new InternalServerError("Failed to update job");
     }
 
-    this.logger.info({ event: "Job fields updated successfully", jobId });
+    this._logger.info({ event: "Job fields updated successfully", jobId });
 
     if (stagesLocked) {
-      this.logger.info({
+      this._logger.info({
         event: "Skipping stage update — job has applicants, stages are locked",
         jobId,
       });
@@ -381,17 +391,17 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     const fullStages = this.buildFullStageList(dto.pipelineStages);
 
-    this.logger.info({
+    this._logger.info({
       event: "Final pipeline stages prepared for update",
       jobId,
       data: fullStages,
     });
 
-    const deleteResult = await this.jobStageRepository.deleteMany({
+    const deleteResult = await this._jobStageRepository.deleteMany({
       jobId: job._id,
     });
 
-    this.logger.info({
+    this._logger.info({
       event: "Existing stages deleted",
       jobId,
       deletedCount: deleteResult?.deletedCount ?? 0,
@@ -399,17 +409,17 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     const stageDocs = this.buildStageDocs(job._id, fullStages);
 
-    const createdStages = await this.jobStageRepository.createMany(stageDocs);
+    const createdStages = await this._jobStageRepository.createMany(stageDocs);
 
     if (!createdStages) {
-      this.logger.error({
+      this._logger.error({
         event: "Failed to recreate job stages",
         jobId,
       });
       throw new InternalServerError("Failed to update job stages");
     }
 
-    this.logger.info({
+    this._logger.info({
       event: "Job stages recreated successfully",
       jobId,
       totalStages: createdStages.length,
@@ -418,23 +428,65 @@ Evaluate every candidate above against the job requirement and return the JSON a
     return updatedJob;
   }
   //* filter candidates using AI
-  async aiFilterCandidates(jobId: string): Promise<RankedCandidateDto[]> {
-    this.logger.info({ event: "AI candidate filtering started", jobId });
+  async aiFilterCandidates(
+    userId: string,
+    jobId: string,
+  ): Promise<RankedCandidateDto[]> {
+    this._logger.info({ event: "AI candidate filtering started", jobId });
 
-    const job = await this.jobRepository.findById(jobId);
+    const job = await this._jobRepository.findById(jobId);
 
     if (!job) {
-      this.logger.warn({ event: "Job not found", jobId });
+      this._logger.warn({ event: "Job not found", jobId });
       throw new NotFoundError("Job not found");
     }
 
-    const resumeReviewStage = await this.jobStageRepository.findOne({
+    const recruiter = await this._userRepository.findById(userId);
+
+    if (!recruiter) {
+      this._logger.warn({
+        event: RECRUITER_MESSAGES.RECRUITER_NOT_FOUND,
+        jobId,
+      });
+      throw new NotFoundError(RECRUITER_MESSAGES.RECRUITER_NOT_FOUND);
+    }
+
+    if (!recruiter?.company) {
+      this._logger.warn({
+        event: RECRUITER_MESSAGES.COMPANY_NOT_FOUND,
+        jobId,
+      });
+      throw new NotFoundError(RECRUITER_MESSAGES.COMPANY_NOT_FOUND);
+    }
+
+    const company = await this._companyRepository.findById(
+      recruiter?.company.toString(),
+    );
+
+    if (!company) {
+      this._logger.warn({
+        event: RECRUITER_MESSAGES.COMPANY_NOT_FOUND,
+        jobId,
+      });
+      throw new NotFoundError(RECRUITER_MESSAGES.COMPANY_NOT_FOUND);
+    }
+
+    const isSubscribed = await this._subscriptionRepository.findOne({
+      companyId: company._id,
+    });
+
+    if (!isSubscribed) {
+      this._logger.warn({ event: SUBSCRIPTION_MESSAGES.NOT_SUBSCRIBED, jobId });
+      throw new NotFoundError(SUBSCRIPTION_MESSAGES.NOT_SUBSCRIBED);
+    }
+
+    const resumeReviewStage = await this._jobStageRepository.findOne({
       jobId: job._id,
       name: "resume_review",
     });
 
     if (!resumeReviewStage) {
-      this.logger.error({
+      this._logger.error({
         event: "Resume review stage missing for job",
         jobId,
       });
@@ -443,12 +495,12 @@ Evaluate every candidate above against the job requirement and return the JSON a
       );
     }
     const resumeReviewApplicationStages =
-      await this.jobApplicationStageRepository.find({
+      await this._jobApplicationStageRepository.find({
         jobStageId: resumeReviewStage._id,
       });
 
     if (resumeReviewApplicationStages.length === 0) {
-      this.logger.info({
+      this._logger.info({
         event: "No application-stage instances found for resume review",
         jobId,
       });
@@ -459,12 +511,12 @@ Evaluate every candidate above against the job requirement and return the JSON a
       (s) => s._id,
     );
 
-    const applications = await this.jobApplicationRepository.find({
+    const applications = await this._jobApplicationRepository.find({
       jobId: job._id,
       currentStageId: { $in: resumeReviewApplicationStageIds },
     });
 
-    this.logger.info({
+    this._logger.info({
       event: "Resume review applications fetched",
       jobId,
       count: applications.length,
@@ -477,8 +529,8 @@ Evaluate every candidate above against the job requirement and return the JSON a
     const userIds = applications.map((a) => a.userId);
 
     const [profiles, users] = await Promise.all([
-      this.userProfileRepository.find({ userId: { $in: userIds } }),
-      this.userRepository.find({ _id: { $in: userIds } }),
+      this._userProfileRepository.find({ userId: { $in: userIds } }),
+      this._userRepository.find({ _id: { $in: userIds } }),
     ]);
 
     const profileByUserId = new Map(
@@ -495,14 +547,14 @@ Evaluate every candidate above against the job requirement and return the JSON a
     const candidatesForAi = AiMatchMapper.toCandidateListForAi(pairs);
 
     if (candidatesForAi.length === 0) {
-      this.logger.warn({
+      this._logger.warn({
         event: "No candidates had profiles to score",
         jobId,
       });
       return [];
     }
 
-    this.logger.info({
+    this._logger.info({
       event: "Calling AI for batch scoring",
       jobId,
       candidateCount: candidatesForAi.length,
@@ -527,12 +579,55 @@ Evaluate every candidate above against the job requirement and return the JSON a
 
     ranked.sort((a, b) => b.overallScore - a.overallScore);
 
-    this.logger.info({
+    this._logger.info({
       event: "AI candidate filtering completed",
       jobId,
       rankedCount: ranked.length,
     });
 
     return ranked;
+  }
+  //* get company interviewers
+  async getCompanyInterviewers(
+    recruiterId: string,
+    params: {
+      search?: string;
+      capability?: string;
+      page: number;
+      limit: number;
+    },
+  ): Promise<PaginatedInterviewersResponse> {
+    const recruiter = await this._userRepository.findById(recruiterId);
+
+    if (!recruiter) {
+      this._logger.warn({
+        event: RECRUITER_MESSAGES.RECRUITER_NOT_FOUND,
+        recruiterId,
+      });
+      throw new NotFoundError(RECRUITER_MESSAGES.RECRUITER_NOT_FOUND);
+    }
+
+    if (!recruiter.company) {
+      this._logger.warn({
+        event: RECRUITER_MESSAGES.RECRUITER_NOT_ASSOSIATED_WITH_THIS_COMPANY,
+        recruiterId,
+      });
+      throw new BadRequestError(
+        RECRUITER_MESSAGES.RECRUITER_NOT_ASSOSIATED_WITH_THIS_COMPANY,
+      );
+    }
+
+    const { data, total } =
+      await this._interviewerProfileRepository.findByCompanyPaginated(
+        recruiter.company,
+        params,
+      );
+
+    return {
+      interviewers: data,
+      total,
+      page: params.page,
+      totalPages: Math.max(1, Math.ceil(total / params.limit)),
+    };
   }
 }

@@ -1,10 +1,11 @@
 import { UserRole } from "../../../../../constants/roles";
 import { VerifyReqDto } from "../../../../../dtos/v1/company/admin/request-dtos/verifyReqDto";
 import { ProfileResponseDto } from "../../../../../dtos/v1/company/admin/response-dto/companyProfileDto";
+import { CheckoutSessionResult } from "../../../../../interfaces/subscription/subscription";
 import {
   ICompanyVerification,
   VerificationType,
-} from "../../../../../models/company.verification.model";
+} from "../../../../../models/company/company.verification.model";
 
 export interface ICompanyService {
   createVerifyRequest(

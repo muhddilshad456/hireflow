@@ -1,21 +1,21 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "../../../features/admin/auth/pages/Login";
 import { AdminLayout } from "./AdminLayout";
-import { Dashboard } from "../../../features/admin/dashboard/pages/DashBoard";
+import { Dashboard } from "../../../features/company/admin/dashboard/pages/Dashboard";
 import { CompanyManagement } from "../../../features/admin/company-management/pages/CompanyMangement";
-import { UserManagement } from "../../../features/admin/dashboard/pages/UserManagement";
+import { UserManagement } from "../../../features/admin/user-management/pages/UserManagement";
 import { AuditReports } from "../../../features/admin/dashboard/pages/AuditReport";
-import { JobManagement } from "../../../features/admin/job-management/pages/JobManagement";
 import { NotFound } from "../../../features/shared/pages/NotFound";
 import ForgotPassword from "../../../features/admin/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/admin/auth/pages/ResetPassword";
 import ProtectedRoute from "../../../routes/ProtectedRoute";
 import PublicRoute from "../../../routes/PublicRoute";
-import { CompanyApprovalManagement } from "../../../features/admin/dashboard/pages/CompanyApprovalManagement";
-import CompanyDetailsReview from "../../../features/admin/dashboard/pages/CompanyReqDetails";
-import { CompanyEditReqManagement } from "../../../features/admin/dashboard/pages/CompanyEditReqManagement";
+import { CompanyApprovalManagement } from "../../../features/admin/company-management/pages/CompanyApprovalManagement";
+import CompanyDetailsReview from "../../../features/admin/company-management/pages/CompanyReqDetails";
+import { CompanyEditReqManagement } from "../../../features/admin/company-management/pages/CompanyEditReqManagement";
 import JobDetailsPage from "../../../features/admin/job-management/pages/JobDetails";
 import { CompanyDetailsPage } from "../../../features/admin/company-management/pages/CompanyDetails";
+import { JobManagement } from "../../../features/admin/job-management/pages/JobManagement";
 
 const AdminRoutes = () => {
   return (

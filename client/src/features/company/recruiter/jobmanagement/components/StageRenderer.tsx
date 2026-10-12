@@ -12,35 +12,7 @@ import { AssessmentStage } from "./stages/AssessmentStage";
 import { DocumentVerificationStage } from "./stages/DocumentVerificationStage";
 import { getStageCandidates } from "../services/jobServices";
 import type { JobStageName } from "../../../../../constents/jobStages";
-
-export interface ApiStageCandidate {
-  applicationStageId: string;
-  status: "PENDING" | "IN_PROGRESS" | "PASSED" | "FAILED";
-  feedback?: string;
-  reviewedBy?: string;
-  reviewedAt?: string;
-  interviewRequestedAt?: string;
-  interviewerId?: string;
-  scheduledAt?: string;
-  interviewerFeedback?: string;
-  interviewerSubmittedAt?: string;
-  startedAt?: string;
-  completedAt?: string;
-  application: {
-    _id: string;
-    userId: { _id: string; name: string; email: string } | null;
-    resumeUrl: string;
-    coverLetter: string;
-    status:
-      | "IN_PROGRESS"
-      | "REJECTED"
-      | "SELECTED"
-      | "OFFER_SENT"
-      | "WITHDRAWN";
-    appliedAt: string;
-    currentStageId?: string;
-  } | null;
-}
+import type { ApiStageCandidate } from "../../../../../types/applicaionTypes";
 
 export interface StageDetail {
   _id: string;
@@ -147,7 +119,9 @@ export function StageRenderer() {
           limit: PAGE_SIZE,
         });
 
-        if (requestId !== requestIdRef.current) return; // stale — a newer request has since fired
+        console.log("result of candidate fetch : ", result);
+
+        if (requestId !== requestIdRef.current) return;
 
         const data = result?.data?.data ?? result?.data;
 

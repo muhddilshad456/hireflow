@@ -5,6 +5,7 @@ import { IUserRepository } from "../../../../repositories/user/interfaces/IUserR
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { ConflictError } from "../../../../errors/conflict.error";
 import { GetAllUsersResponse } from "../../../../types/getAllUsers";
+import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 
 @injectable()
 export class UserService implements IUserService {
@@ -32,6 +33,8 @@ export class UserService implements IUserService {
       email: user.email,
       status: user.isBlocked ? "Blocked" : "Active",
     }));
+
+    console.log("formatted usres : ", formattedUsers);
 
     return {
       users: formattedUsers,

@@ -1,0 +1,16 @@
+export const INTERVIEWER_MESSAGES = {
+  PROFILE_FETCHED: "Interviewer profile fetched successfully",
+  PROFILE_AUTO_CREATED: "Interviewer profile created successfully",
+  PROFILE_UPDATED: "Interviewer profile updated successfully",
+  PROFILE_CREATED: "Interviewer profile created successfully",
+  PROFILE_UPDATE_FAILED: "Interviewer profile update failed",
+  PROFILE_NOT_FOUND: "Interviewer profile not found",
+  PROFILE_ALREADY_EXISTS: "Interviewer profile already exists",
+  AVAILABILITY_UPDATED: "Interviewer availability updated successfully",
+  AVAILABLE_INTERVIEWERS_FETCHED: "Available interviewers fetched successfully",
+  INVALID_AVAILABILITY_VALUE: "Availability value must be true or false",
+  INVALID_CAPABILITIES: "Capabilities must be a list of strings",
+  TOO_MANY_CAPABILITIES: "Too many capabilities provided",
+  BIO_TOO_LONG: "Bio exceeds the maximum allowed length",
+  PROFILE_INCOMPLETE: "Complete your profile before setting availability",
+} as const;

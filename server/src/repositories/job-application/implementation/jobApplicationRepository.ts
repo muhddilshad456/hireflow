@@ -2,7 +2,7 @@ import { injectable } from "inversify";
 import {
   IJobApplication,
   JobApplicationModel,
-} from "../../../models/job.application.model";
+} from "../../../models/job-application/job.application.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 import { IJobApplicationRepository } from "../interface/IJobApplicationRepository";
 import { PipelineStage } from "mongoose";

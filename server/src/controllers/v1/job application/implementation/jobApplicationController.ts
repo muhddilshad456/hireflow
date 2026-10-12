@@ -57,25 +57,31 @@ export class JobApplicationController implements IJobApplicationController {
       next(error);
     }
   }
-  //* move to next stage
-  async moveToNextStage(
+  //* update applicaiton stage
+  async updateApplicationStage(
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const applicationId = req.params.applicationId as string;
+      const appStageId = req.params.appStageId as string;
+      const { decision, feedback } = req.body;
+      const recruiterId = req.user.userId;
 
-      const feedback = req?.body?.feedback;
+      console.log("Application stage Id : ", appStageId);
+      console.log("decision : ", decision);
+      console.log("recruiter Id : ", recruiterId);
 
-      const result = await this.jobApplicationService.moveToNextStage(
-        applicationId,
+      const result = await this.jobApplicationService.updateApplicationStage(
+        appStageId,
+        decision,
         feedback,
+        recruiterId,
       );
 
       ResponseHandler.success(
         res,
-        APPLICATION_MESSAGES.STAGE_UPDATE_SUCCESSFULLY,
+        APPLICATION_MESSAGES.APPLICATION_STAGE_UPDATED,
         result,
       );
     } catch (error) {
@@ -102,6 +108,62 @@ export class JobApplicationController implements IJobApplicationController {
       ResponseHandler.success(
         res,
         APPLICATION_MESSAGES.STAGE_UPDATE_SUCCESSFULLY,
+        result,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get application stage details
+  async getJobApplicationStageDetails(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      const { applicationId, jobStageId } = req.params;
+
+      const result =
+        await this.jobApplicationService.getJobApplicationStageDetails(
+          userId,
+          applicationId as string,
+          jobStageId as string,
+        );
+
+      ResponseHandler.success(
+        res,
+        APPLICATION_MESSAGES.APPLICATION_STAGE_FETCH_SUCCESS,
+        result,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* add or edit assessment resonce
+  async addOrEditAssessmentResponse(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      const { applicationId, jobStageId } = req.params;
+      const { text } = req.body;
+      const file = req.file;
+
+      const result =
+        await this.jobApplicationService.addOrEditAssessmentResponse(
+          userId,
+          applicationId as string,
+          jobStageId as string,
+          text,
+          file,
+        );
+
+      ResponseHandler.success(
+        res,
+        APPLICATION_MESSAGES.RESPONSE_SAVED_SUCCESS,
         result,
       );
     } catch (error) {

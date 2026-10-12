@@ -17,6 +17,7 @@ import { AppliedJobs } from "../../../features/user/job/pages/AppliedJobs";
 import { AppliedJobPage } from "../../../features/user/application/pages/ApplicationLayout";
 import { StageRenderer } from "../../../features/user/application/components/StageRenderer";
 import { ChatPage } from "../../../features/user/chat/pages/chat";
+import CandidateInterviewPage from "../../../features/user/application/interview/pages/CandidateInterviewPage";
 
 const UserRoutes = () => {
   return (
@@ -47,6 +48,7 @@ const UserRoutes = () => {
             path="/application/:applicationId/chat"
             element={<ChatPage />}
           />
+          <Route path="interview/:id" element={<CandidateInterviewPage />} />
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

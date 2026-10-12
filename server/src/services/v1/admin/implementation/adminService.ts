@@ -5,7 +5,7 @@ import { ICompanyVerRepository } from "../../../../repositories/company/interfac
 import {
   ICompanyVerification,
   VerificationType,
-} from "../../../../models/company.verification.model";
+} from "../../../../models/company/company.verification.model";
 import { Logger } from "pino";
 import { BadRequestError } from "../../../../errors/bad-request.error";
 import { NotFoundError } from "../../../../errors/not-found.error";

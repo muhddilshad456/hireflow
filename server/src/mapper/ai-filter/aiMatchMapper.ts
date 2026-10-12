@@ -6,9 +6,9 @@ import {
   AiMatchResultDto,
   RankedCandidateDto,
 } from "../../interfaces/ai-filter/ai-responce";
-import { IJobApplication } from "../../models/job.application.model";
-import { IJob } from "../../models/job.model";
-import { IUserProfile } from "../../models/user.profile.model";
+import { IJobApplication } from "../../models/job-application/job.application.model";
+import { IJob } from "../../models/job/job.model";
+import { IUserProfile } from "../../models/profiles/user.profile.model";
 
 export class AiMatchMapper {
   static toJobForAi(job: IJob): JobForAiDto {
