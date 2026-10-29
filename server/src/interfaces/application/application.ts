@@ -73,3 +73,33 @@ export interface MyApplicationDetailsResult {
   stages: ApplicationStageSummary[];
   job: IJob;
 }
+
+export interface MyApplicationItemJob {
+  _id: Types.ObjectId;
+  title: string;
+  company: Types.ObjectId;
+  location: string;
+  jobType: string;
+  status: string;
+}
+
+export interface MyApplicationItem {
+  _id: Types.ObjectId;
+  status: string;
+  appliedAt: Date;
+  resumeUrl: string;
+  coverLetter?: string;
+  currentStageId?: Types.ObjectId;
+  offerDetails?: unknown;
+  job: MyApplicationItemJob;
+}
+
+export interface MyApplicationsResponse {
+  applications: MyApplicationItem[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}

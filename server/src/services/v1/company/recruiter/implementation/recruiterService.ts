@@ -1,3 +1,4 @@
+import { IJob } from "../../../../../models/job/job.model";
 import { inject, injectable } from "inversify";
 import { JobDto } from "../../../../../dtos/v1/job/job.dto";
 import { IRecruiterService } from "../interface/IRecruiterService";
@@ -30,12 +31,19 @@ import { IJobApplicationStageRepository } from "../../../../../repositories/job-
 import { AI_MATCH_RESPONSE_SCHEMA } from "../../../../../schemas/geminiResponseSchema";
 import { VALIDATION_MESSAGES } from "../../../../../constants/messages/validation";
 import { JOB_MESSAGES } from "../../../../../constants/messages/jobs";
-import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application";
+import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application/application";
 import { IInterviewerProfileRepository } from "../../../../../repositories/profile/interface/IInterviewerProfileRepository";
 import { PaginatedInterviewersResponse } from "../../../../../interfaces/interviewer/interviewer";
 import { ICompanyRepository } from "../../../../../repositories/company/interface/ICompanyRepository";
 import { ISubscriptionRepository } from "../../../../../repositories/subscription/interface/ISubscriptionRepository";
 import { SUBSCRIPTION_MESSAGES } from "../../../../../constants/messages/subscription";
+import { USER_MESSAGES } from "../../../../../constants/messages/user";
+import {
+  RecruiterDashboard,
+  RecruiterProfileResponse,
+} from "../../../../../interfaces/company/recruiter/recruiter";
+import { UnauthorizedError } from "../../../../../errors/unauthorized.error";
+import { IDashboardRepository } from "../../../../../repositories/dashboard/interface/IDashboardRepository";
 
 @injectable()
 export class RecruiterService implements IRecruiterService {
@@ -56,6 +64,8 @@ export class RecruiterService implements IRecruiterService {
     private _companyRepository: ICompanyRepository,
     @inject(TYPES.SubscriptionRepository)
     private _subscriptionRepository: ISubscriptionRepository,
+    @inject(TYPES.DashboardRepository)
+    private _dashboardRepository: IDashboardRepository,
     @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* helpers
@@ -225,7 +235,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
   }
 
   //* create a job
-  async createJob(dto: JobDto, recruiterId: string): Promise<any> {
+  async createJob(dto: JobDto, recruiterId: string): Promise<IJob> {
     this._logger.info({
       event: JOB_MESSAGES.JOB_CREATION_STARTED,
     });
@@ -340,7 +350,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
     jobId: string,
     dto: JobDto,
     recruiterId: string,
-  ): Promise<any> {
+  ): Promise<IJob> {
     this._logger.info({ event: "Job update started", jobId });
 
     const job = await this._jobRepository.findById(jobId);
@@ -628,6 +638,64 @@ Evaluate every candidate above against the job requirement and return the JSON a
       total,
       page: params.page,
       totalPages: Math.max(1, Math.ceil(total / params.limit)),
+    };
+  }
+  //* get profile
+  async getRecruiterProfile(userId: string): Promise<RecruiterProfileResponse> {
+    const user = await this._userRepository.findByIdWithCompany(userId);
+
+    if (!user) {
+      this._logger.warn({
+        event: USER_MESSAGES.USER_NOT_FOUND,
+        userId,
+      });
+      throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
+    }
+
+    return {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      profilePicture: user.profilePicture ?? null,
+      companyName: user.company?.companyName ?? null,
+    };
+  }
+  //* get dashboard
+  async getDashboard(recruiterId: string): Promise<RecruiterDashboard> {
+    if (!recruiterId) {
+      throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
+    }
+
+    // Only the jobs this recruiter created, newest first
+    const jobs = await this._dashboardRepository.getJobsByCreator(recruiterId);
+    const jobIds = jobs.map((j) => j._id);
+    const latest = jobs.slice(0, 5);
+
+    // These two don't depend on each other, so run them together
+    const [byStatus, applicantCounts] = await Promise.all([
+      this._dashboardRepository.getApplicationsByStatus(jobIds),
+      this._dashboardRepository.countApplicantsPerJob(latest.map((j) => j._id)),
+    ]);
+
+    const countOf = (status: string) =>
+      byStatus.find((r) => r.status === status)?.count ?? 0;
+
+    return {
+      stats: {
+        openJobs: jobs.filter((j) => j.status === "OPEN").length,
+        totalJobs: jobs.length,
+        totalApplicants: byStatus.reduce((sum, r) => sum + r.count, 0),
+        inProgress: countOf("IN_PROGRESS"),
+        selected: countOf("SELECTED"),
+      },
+      applicationsByStatus: byStatus,
+      latestJobs: latest.map((j) => ({
+        _id: j._id.toString(),
+        title: j.title,
+        status: j.status,
+        applicantsCount: applicantCounts.get(j._id.toString()) ?? 0,
+        createdAt: j.createdAt.toISOString(),
+      })),
     };
   }
 }

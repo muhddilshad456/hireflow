@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
-import { ProfileArrayField } from "../../../../constants/profile/profile.constents";
 
 export interface IProfileController {
   getProfile(req: Request, res: Response, next: NextFunction): Promise<void>;

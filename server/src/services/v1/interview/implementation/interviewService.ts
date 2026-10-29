@@ -8,7 +8,7 @@ import { InterviewRequestMapper } from "../../../../mapper/interview/interview-r
 import { IInterviewRequestRepository } from "../../../../repositories/interview-request/interface/IInterviewRequestRepository";
 import { BadRequestError } from "../../../../errors/bad-request.error";
 import { INTERVIEW_REQUEST_MESSAGES } from "../../../../constants/messages/interview/interview-request";
-import { APPLICATION_MESSAGES } from "../../../../constants/messages/application";
+import { APPLICATION_MESSAGES } from "../../../../constants/messages/application/application";
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 import { JOB_MESSAGES } from "../../../../constants/messages/jobs";
@@ -33,29 +33,32 @@ import { IUserProfileRepository } from "../../../../repositories/profile/interfa
 import { IInterview } from "../../../../models/interview/interview";
 import { InterviewFeedbackDto } from "../../../../dtos/v1/interview/interviewFeedbackDto ";
 import { Types } from "mongoose";
+import { INotificationService } from "../../notification/interface/INotificationService";
 
 @injectable()
 export class InterviewService implements IInterviewService {
   constructor(
     @inject(TYPES.InterviewRequestRepository)
-    private interviewRequestRepository: IInterviewRequestRepository,
+    private _interviewRequestRepository: IInterviewRequestRepository,
     @inject(TYPES.JobApplicationRepository)
-    private jobApplicationRepository: IJobApplicationRepository,
+    private _jobApplicationRepository: IJobApplicationRepository,
     @inject(TYPES.JobStageRepository)
-    private jobStageRepository: IJobStageRepository,
+    private _jobStageRepository: IJobStageRepository,
     @inject(TYPES.JobRepository)
-    private jobRepository: IJobRepository,
+    private _jobRepository: IJobRepository,
     @inject(TYPES.JobApplicationStageRepository)
-    private jobApplicationStageRepository: IJobApplicationStageRepository,
+    private _jobApplicationStageRepository: IJobApplicationStageRepository,
     @inject(TYPES.UserRepository)
-    private userRepository: IUserRepository,
+    private _userRepository: IUserRepository,
     @inject(TYPES.InterviewerProfileRepository)
-    private interviewerProfileRepository: IInterviewerProfileRepository,
+    private _interviewerProfileRepository: IInterviewerProfileRepository,
     @inject(TYPES.InterviewRepository)
-    private interviewRepository: IInterviewRepository,
+    private _interviewRepository: IInterviewRepository,
     @inject(TYPES.UserProfileRepository)
-    private userProfileRepository: IUserProfileRepository,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _userProfileRepository: IUserProfileRepository,
+    @inject(TYPES.NotificationService)
+    private _notificationService: INotificationService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* create interview request
   async createInterviewRequest(
@@ -65,7 +68,7 @@ export class InterviewService implements IInterviewService {
     const scheduledAt = new Date(data.scheduledAt);
 
     if (scheduledAt <= new Date()) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_REQUEST_MESSAGES.INVALID_INTERVIEW_DATE,
         recruiterId,
       });
@@ -76,12 +79,12 @@ export class InterviewService implements IInterviewService {
     }
 
     const jobApplicationStage =
-      await this.jobApplicationStageRepository.findById(
+      await this._jobApplicationStageRepository.findById(
         data.jobApplicationStageId,
       );
 
     if (!jobApplicationStage) {
-      this.logger.warn({
+      this._logger.warn({
         event: JOB_MESSAGES.STAGE_NOT_FOUND,
         jobApplicationStageId: data.jobApplicationStageId,
       });
@@ -89,12 +92,12 @@ export class InterviewService implements IInterviewService {
       throw new NotFoundError(JOB_MESSAGES.STAGE_NOT_FOUND);
     }
 
-    const application = await this.jobApplicationRepository.findById(
+    const application = await this._jobApplicationRepository.findById(
       jobApplicationStage.applicationId.toString(),
     );
 
     if (!application) {
-      this.logger.warn({
+      this._logger.warn({
         event: APPLICATION_MESSAGES.APPLICATION_NOT_FOUND,
         applicationId: jobApplicationStage.applicationId,
       });
@@ -102,12 +105,12 @@ export class InterviewService implements IInterviewService {
       throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
     }
 
-    const stage = await this.jobStageRepository.findById(
+    const stage = await this._jobStageRepository.findById(
       jobApplicationStage.jobStageId.toString(),
     );
 
     if (!stage) {
-      this.logger.warn({
+      this._logger.warn({
         event: JOB_MESSAGES.STAGE_NOT_FOUND,
         stageId: jobApplicationStage.jobStageId,
       });
@@ -116,7 +119,7 @@ export class InterviewService implements IInterviewService {
     }
 
     if (stage.jobId.toString() !== application.jobId.toString()) {
-      this.logger.warn({
+      this._logger.warn({
         event: JOB_MESSAGES.STAGE_NOT_BELONG_TO_APPLICATION,
         stageId: jobApplicationStage.jobStageId,
         applicationId: jobApplicationStage.applicationId,
@@ -132,7 +135,7 @@ export class InterviewService implements IInterviewService {
     ];
 
     if (!INTERVIEW_STAGES.includes(stage.name)) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.INVALID_INTERVIEW_STAGE,
         stage: stage.name,
       });
@@ -140,13 +143,13 @@ export class InterviewService implements IInterviewService {
       throw new BadRequestError(INTERVIEW_MESSAGES.INVALID_INTERVIEW_STAGE);
     }
 
-    const recruiterHasAccess = await this.jobRepository.find({
+    const recruiterHasAccess = await this._jobRepository.find({
       _id: application.jobId.toString(),
       createdBy: recruiterId,
     });
 
     if (!recruiterHasAccess) {
-      this.logger.warn({
+      this._logger.warn({
         event: RECRUITER_MESSAGES.RECRUITER_NOT_AUTHORIZED,
         recruiterId,
         jobId: application.jobId,
@@ -155,12 +158,11 @@ export class InterviewService implements IInterviewService {
       throw new ForbiddenError(RECRUITER_MESSAGES.RECRUITER_NOT_AUTHORIZED);
     }
 
-    const interviewerProfile = await this.interviewerProfileRepository.findById(
-      data.interviewerId,
-    );
+    const interviewerProfile =
+      await this._interviewerProfileRepository.findById(data.interviewerId);
 
     if (!interviewerProfile) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.INTERVIEWER_NOT_FOUND,
         interviewerId: data.interviewerId,
       });
@@ -168,12 +170,12 @@ export class InterviewService implements IInterviewService {
       throw new NotFoundError(INTERVIEW_MESSAGES.INTERVIEWER_NOT_FOUND);
     }
 
-    const existingRequest = await this.interviewRequestRepository.findOne({
+    const existingRequest = await this._interviewRequestRepository.findOne({
       jobApplicationStageId: data.jobApplicationStageId,
     });
 
     if (existingRequest) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_ALREADY_EXISTS,
         applicationId: jobApplicationStage.applicationId,
         jobStageId: jobApplicationStage.jobStageId,
@@ -184,7 +186,7 @@ export class InterviewService implements IInterviewService {
       );
     }
 
-    let interviewRequestData =
+    const interviewRequestData =
       InterviewRequestMapper.toNewInterviewRequestEntity(
         {
           jobApplicationStageId: data.jobApplicationStageId,
@@ -195,8 +197,18 @@ export class InterviewService implements IInterviewService {
         recruiterId,
       );
 
-    let interviewRequest =
-      await this.interviewRequestRepository.create(interviewRequestData);
+    const interviewRequest =
+      await this._interviewRequestRepository.create(interviewRequestData);
+
+    await this._notificationService.notify(
+      interviewRequest?.interviewerId?.toString(),
+      {
+        type: "INTERVIEW REQUEST",
+        title: "New interview request.",
+        message: "Your recruiter request for an interview.",
+        link: `/interview-requests`,
+      },
+    );
 
     return interviewRequest;
   }
@@ -209,32 +221,32 @@ export class InterviewService implements IInterviewService {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
-    const interview = await this.interviewRepository.findById(interviewId);
+    const interview = await this._interviewRepository.findById(interviewId);
     if (!interview) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.INTERVIEW_NOT_FOUND,
         interviewId,
       });
       throw new NotFoundError(INTERVIEW_MESSAGES.INTERVIEW_NOT_FOUND);
     }
 
-    const application = await this.jobApplicationRepository.findById(
+    const application = await this._jobApplicationRepository.findById(
       interview.jobApplicationId.toString(),
     );
     if (!application) {
-      this.logger.warn({
+      this._logger.warn({
         event: APPLICATION_MESSAGES.APPLICATION_NOT_FOUND,
         jobApplicationId: interview.jobApplicationId,
       });
       throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
     }
 
-    const candidate = await this.userRepository.findByIdSelect(
+    const candidate = await this._userRepository.findByIdSelect(
       application.userId.toString(),
       "name email profilePicture",
     );
     if (!candidate) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.CANDIDATE_NOT_FOUND,
         userId: application.userId,
       });
@@ -242,28 +254,28 @@ export class InterviewService implements IInterviewService {
     }
 
     // 5. Job — title, description, location, company only
-    const job = await this.jobRepository.findByIdSelect(
+    const job = await this._jobRepository.findByIdSelect(
       application.jobId.toString(),
       "title description location company",
     );
     if (!job) {
-      this.logger.warn({
+      this._logger.warn({
         event: JOB_MESSAGES.JOB_NOT_FOUND,
         jobId: application.jobId,
       });
       throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
     }
 
-    const userProfile = await this.userProfileRepository.findOne({
+    const userProfile = await this._userProfileRepository.findOne({
       userId: application.userId,
     });
 
     // 7. Full job stage details
-    const jobStage = await this.jobStageRepository.findById(
+    const jobStage = await this._jobStageRepository.findById(
       interview.jobStageId.toString(),
     );
     if (!jobStage) {
-      this.logger.warn({
+      this._logger.warn({
         event: JOB_MESSAGES.JOB_STAGE_NOT_FOUND,
         jobStageId: interview.jobStageId,
       });
@@ -271,12 +283,12 @@ export class InterviewService implements IInterviewService {
     }
 
     // 8. Recruiter — name, email, profilePicture only
-    const recruiter = await this.userRepository.findByIdSelect(
+    const recruiter = await this._userRepository.findByIdSelect(
       interview.recruiterId.toString(),
       "name email profilePicture",
     );
     if (!recruiter) {
-      this.logger.warn({
+      this._logger.warn({
         event: RECRUITER_MESSAGES.RECRUITER_NOT_FOUND,
         recruiterId: interview.recruiterId,
       });
@@ -303,9 +315,9 @@ export class InterviewService implements IInterviewService {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
-    const interview = await this.interviewRepository.findById(interviewId);
+    const interview = await this._interviewRepository.findById(interviewId);
     if (!interview) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.INTERVIEW_NOT_FOUND,
         interviewId,
       });
@@ -313,7 +325,7 @@ export class InterviewService implements IInterviewService {
     }
 
     if (interview.interviewerId.toString() !== userId.toString()) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.NOT_AUTHORIZED,
         userId,
         interviewId,
@@ -322,14 +334,14 @@ export class InterviewService implements IInterviewService {
     }
 
     if (interview.status === "CANCELLED") {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.CANNOT_SUBMIT_FOR_CANCELLED,
         interviewId,
       });
       throw new BadRequestError(INTERVIEW_MESSAGES.CANNOT_SUBMIT_FOR_CANCELLED);
     }
 
-    const updated = await this.interviewRepository.findOneAndUpdate(
+    const updated = await this._interviewRepository.findOneAndUpdate(
       { _id: interviewId },
       {
         feedback: dto.feedback,
@@ -345,12 +357,13 @@ export class InterviewService implements IInterviewService {
     interviewId: Types.ObjectId,
     userId: Types.ObjectId,
   ): Promise<boolean> {
-    const interview = await this.interviewRepository.findById(
+    const interview = await this._interviewRepository.findById(
       interviewId.toString(),
     );
     if (!interview) return false;
-    const application = await this.jobApplicationRepository.findById(
-      (interview?.jobApplicationId).toString(),
+    if (!interview.jobApplicationId) return false;
+    const application = await this._jobApplicationRepository.findById(
+      interview.jobApplicationId.toString(),
     );
     if (!application) return false;
     return (

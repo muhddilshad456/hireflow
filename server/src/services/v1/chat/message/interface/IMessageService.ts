@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
-import { SenderRole } from "../../../../../interfaces/chat/message";
+import { MessageEntity, SenderRole } from "../../../../../interfaces/chat/message";
+import { IMessage } from "../../../../../models/chat/message";
 
 export interface IMessageService {
   sendMessage(params: {
@@ -8,15 +9,15 @@ export interface IMessageService {
     senderRole: SenderRole;
     content?: string;
     attachment?: Express.Multer.File;
-  }): Promise<any>;
+  }): Promise<IMessage>;
   getMessages(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
     cursor?: string,
-    limit?: Number,
-  ): Promise<any>;
+    limit?: number,
+  ): Promise<MessageEntity[]>;
   markAsRead(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
-  ): Promise<any>;
+  ): Promise<void>;
 }

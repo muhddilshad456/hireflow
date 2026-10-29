@@ -1,5 +1,11 @@
 import { inject } from "inversify";
-import { IAdminService } from "../interface/IAdminService";
+import {
+  GetAllCompanyVerificationReqResponse,
+  IAdminService,
+} from "../interface/IAdminService";
+import { GetAllCompaniesResult } from "../../../../repositories/user/interfaces/IUserRepository.js";
+import { ICompany } from "../../../../models/company/company.model";
+import { IUserWithCompany } from "../../../../types/userWithCompany";
 import { TYPES } from "../../../../dependency-injection/types";
 import { ICompanyVerRepository } from "../../../../repositories/company/interface/ICompanyVerRepository";
 import {
@@ -16,17 +22,28 @@ import { CompanyMapper } from "../../../../mapper/company/admin/companyMapper";
 import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
 import { InternalServerError } from "../../../../errors/internal-server.error";
 import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation";
+import { USER_MESSAGES } from "../../../../constants/messages/user";
+import {
+  AdminDashboard,
+  AdminProfileResponse,
+} from "../../../../interfaces/admin/admin";
+import { INotificationService } from "../../notification/interface/INotificationService";
+import { IDashboardRepository } from "../../../../repositories/dashboard/interface/IDashboardRepository";
 
 export class AdminService implements IAdminService {
   constructor(
     @inject(TYPES.CompanyVerRepository)
-    private companyVerRepository: ICompanyVerRepository,
+    private _companyVerRepository: ICompanyVerRepository,
     @inject(TYPES.CompanyRepository)
-    private companyRepository: ICompanyRepository,
+    private _companyRepository: ICompanyRepository,
     @inject(TYPES.UserRepository)
-    private userRepository: IUserRepository,
+    private _userRepository: IUserRepository,
+    @inject(TYPES.NotificationService)
+    private _notificationService: INotificationService,
+    @inject(TYPES.DashboardRepository)
+    private _dashboardRepository: IDashboardRepository,
     @inject(TYPES.Logger)
-    private logger: Logger,
+    private _logger: Logger,
   ) {}
   //* get all company verification requests
   async getAllCompanyVerificationReq(
@@ -35,9 +52,9 @@ export class AdminService implements IAdminService {
     search: string,
     status: string,
     type: VerificationType,
-  ): Promise<any> {
+  ): Promise<GetAllCompanyVerificationReqResponse> {
     const { verificationRequests, totalVerificationRequests } =
-      await this.companyVerRepository.getAllVerificationReq(
+      await this._companyVerRepository.getAllVerificationReq(
         page,
         limit,
         search,
@@ -46,14 +63,14 @@ export class AdminService implements IAdminService {
       );
 
     if (!type) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.TYPE_REQUIRED,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.TYPE_REQUIRED);
     }
 
     if (type != VerificationType.NEW && type != VerificationType.UPDATE) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.INVALID_TYPE,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.INVALID_TYPE);
@@ -78,18 +95,20 @@ export class AdminService implements IAdminService {
     };
   }
   //* get verification req
-  async getCompanyVerificationReq(companyVerificationId: string): Promise<any> {
+  async getCompanyVerificationReq(
+    companyVerificationId: string,
+  ): Promise<ICompanyVerification> {
     if (!companyVerificationId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.ID_REQUIRED,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
-    const result = await this.companyVerRepository.findById(
+    const result = await this._companyVerRepository.findById(
       companyVerificationId,
     );
     if (!result) {
-      this.logger.warn({
+      this._logger.warn({
         event: "VERIFICATION_REQ_NOT_FOUND",
       });
       throw new NotFoundError("verification request not found");
@@ -97,20 +116,20 @@ export class AdminService implements IAdminService {
     return result;
   }
   //* approve company
-  async approveCompany(companyVerificationId: string): Promise<any> {
-    const request = await this.companyVerRepository.findById(
+  async approveCompany(companyVerificationId: string): Promise<ICompany> {
+    const request = await this._companyVerRepository.findById(
       companyVerificationId,
     );
 
     if (!request) {
-      this.logger.warn({
+      this._logger.warn({
         event: "VERIFICATION_REQ_NOT_FOUND",
       });
       throw new NotFoundError("verification request not found");
     }
 
     if (request.status !== VerificationStatus.PENDING) {
-      this.logger.warn({
+      this._logger.warn({
         event: "REQUEST_ALREADY_PROCESSED",
       });
       throw new ConflictError("Request already processed");
@@ -121,82 +140,90 @@ export class AdminService implements IAdminService {
     let company;
 
     if (request.verificationType == VerificationType.NEW) {
-      company = await this.companyRepository.create(companyData);
+      company = await this._companyRepository.create(companyData);
     } else if (request.verificationType == VerificationType.UPDATE) {
       if (!request.adminId) {
-        this.logger.warn({
+        this._logger.warn({
           event: "adminId missing for update",
           companyId: request.adminId,
         });
         throw new BadRequestError("adminId missing for update");
       }
-      const existingCompany = await this.companyRepository.findOne({
+      const existingCompany = await this._companyRepository.findOne({
         adminId: request.adminId,
       });
 
       if (!existingCompany) {
-        this.logger.warn({
+        this._logger.warn({
           event: "Company not found for update",
           companyId: request.companyId,
         });
         throw new NotFoundError("Company not found for update");
       }
-      company = await this.companyRepository.update(
+      company = await this._companyRepository.update(
         existingCompany._id.toString(),
         companyData,
       );
     }
 
     if (!company) {
-      this.logger.error({
+      this._logger.error({
         event: "Failed to process company",
       });
 
       throw new InternalServerError("Failed to process company");
     }
 
-    await this.userRepository.update(request.adminId.toString(), {
+    await this._userRepository.update(request.adminId.toString(), {
       company: company._id,
     });
 
-    await this.companyVerRepository.update(companyVerificationId, {
+    await this._companyVerRepository.update(companyVerificationId, {
       companyId: company._id,
       status: VerificationStatus.APPROVED,
     });
+
+    await this._notificationService.notify(company?.adminId?.toString(), {
+      type: "COMPANY APPROVAL",
+      title: "Verification Approved.",
+      message: "Your verificaitn request approved.",
+      link: `/dashboard`,
+    });
+
     return company;
   }
   //* reject company
   async rejectCompany(
     companyVerificationId: string,
     reason: string,
-  ): Promise<any> {
+  ): Promise<void> {
     if (!companyVerificationId) {
-      this.logger.warn({
+      this._logger.warn({
         event: "COMPANY_VERIFICATION_ID_REQUIRED",
       });
       throw new BadRequestError("companyVerificationId is required");
     }
 
     if (!reason || reason.trim() === "") {
-      this.logger.warn({
+      this._logger.warn({
         event: "REASON_REQUIRED",
       });
       throw new BadRequestError("Rejection reason is required");
     }
 
-    const request = await this.companyVerRepository.findById(
+    const request = await this._companyVerRepository.findById(
       companyVerificationId,
     );
 
     if (!request) {
-      this.logger.warn({
+      this._logger.warn({
         event: "COMPANY_VERIFICATION_REQ_NOT_FOUND",
       });
       throw new NotFoundError("Verification request not found");
     }
 
     if (request.status !== VerificationStatus.PENDING) {
-      this.logger.warn({
+      this._logger.warn({
         event: "REQUEST_ALREADY_PROCESSED",
       });
       throw new ConflictError("Request already processed");
@@ -207,9 +234,16 @@ export class AdminService implements IAdminService {
       adminNote: reason,
     };
 
-    await this.companyVerRepository.update(companyVerificationId, data);
+    await this._companyVerRepository.update(companyVerificationId, data);
 
-    this.logger.info({
+    await this._notificationService.notify(request?.adminId?.toString(), {
+      type: "COMPANY REJECTION",
+      title: "Verification rejected.",
+      message: "Your verificaitn request rejected.",
+      link: `/dashboard`,
+    });
+
+    this._logger.info({
       event: "COMPANY_VERIFICATION_REJECTED",
       companyVerificationId,
     });
@@ -220,8 +254,8 @@ export class AdminService implements IAdminService {
     limit: number,
     search: string,
     status: string,
-  ): Promise<any> {
-    const result = await this.userRepository.getAllCompanies(
+  ): Promise<{ result: GetAllCompaniesResult }> {
+    const result = await this._userRepository.getAllCompanies(
       page,
       limit,
       search,
@@ -230,8 +264,45 @@ export class AdminService implements IAdminService {
     return { result };
   }
   //* get a company details
-  async getCompanyDetails(id: string): Promise<any> {
-    const result = await this.userRepository.findByIdWithCompany(id);
+  async getCompanyDetails(id: string): Promise<IUserWithCompany | null> {
+    const result = await this._userRepository.findByIdWithCompany(id);
     return result;
+  }
+  //* get profile
+  async getAdminProfile(userId: string): Promise<AdminProfileResponse> {
+    const user = await this._userRepository.findByIdWithCompany(userId);
+
+    if (!user) {
+      this._logger.warn({
+        event: USER_MESSAGES.USER_NOT_FOUND,
+        userId,
+      });
+      throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
+    }
+
+    return {
+      userId: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      profilePicture: user.profilePicture ?? null,
+    };
+  }
+  //* get dashboard
+  async getDashboard(): Promise<AdminDashboard> {
+    const [stats, pending] = await Promise.all([
+      this._dashboardRepository.getPlatformCounts(new Date()),
+      this._dashboardRepository.getPendingVerifications(5),
+    ]);
+
+    return {
+      stats,
+      pendingVerificationRequests: pending.map((r) => ({
+        _id: r._id,
+        companyName: r.companyName,
+        verificationType: r.verificationType,
+        email: r.email,
+        createdAt: r.createdAt.toISOString(),
+      })),
+    };
   }
 }

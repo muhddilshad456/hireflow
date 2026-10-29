@@ -3,5 +3,12 @@ import { IJobApplication } from "../../../models/job-application/job.application
 import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
 export interface IJobApplicationRepository extends IBaseRepository<IJobApplication> {
-  getMyApplicationsAggregate(pipeline: PipelineStage[]): Promise<any[]>;
+  getMyApplicationsAggregate<T = unknown>(
+    pipeline: PipelineStage[],
+  ): Promise<T[]>;
+}
+
+export interface AggregateFacetResult<T = unknown> {
+  data: T[];
+  totalCount: { count: number }[];
 }

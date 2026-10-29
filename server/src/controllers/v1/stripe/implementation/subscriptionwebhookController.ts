@@ -11,8 +11,8 @@ import { ISubscriptionService } from "../../../../services/v1/subscription/inter
 export class SubscriptionwebhookController implements ISubscriptionwebhookController {
   constructor(
     @inject(TYPES.SubscriptionService)
-    private subscriptionService: ISubscriptionService,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _subscriptionService: ISubscriptionService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
 
   async handleStripeWebhook(req: Request, res: Response): Promise<void> {
@@ -31,7 +31,7 @@ export class SubscriptionwebhookController implements ISubscriptionwebhookContro
         STRIPE_WEBHOOK_SECRET,
       );
     } catch (error) {
-      this.logger.warn({
+      this._logger.warn({
         event: "STRIPE_WEBHOOK_SIGNATURE_INVALID",
         error: error instanceof Error ? error.message : error,
       });
@@ -41,10 +41,10 @@ export class SubscriptionwebhookController implements ISubscriptionwebhookContro
 
     // 2. Process it. A 500 makes Stripe retry later; a 200 tells it we're done.
     try {
-      await this.subscriptionService.handleStripeEvent(event);
+      await this._subscriptionService.handleStripeEvent(event);
       res.status(200).json({ received: true });
     } catch (error) {
-      this.logger.error({
+      this._logger.error({
         event: "STRIPE_WEBHOOK_PROCESSING_FAILED",
         type: event.type,
         eventId: event.id,

@@ -11,4 +11,5 @@ export type JobFilters = {
   page?: number;
   limit?: number;
   createdBy?: string;
+  company?: string;
 };

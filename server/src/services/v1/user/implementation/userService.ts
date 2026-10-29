@@ -5,12 +5,11 @@ import { IUserRepository } from "../../../../repositories/user/interfaces/IUserR
 import { NotFoundError } from "../../../../errors/not-found.error";
 import { ConflictError } from "../../../../errors/conflict.error";
 import { GetAllUsersResponse } from "../../../../types/getAllUsers";
-import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 
 @injectable()
 export class UserService implements IUserService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
   ) {}
   async getAllUser(
     page: number,
@@ -18,7 +17,7 @@ export class UserService implements IUserService {
     search: string,
     status: string,
   ): Promise<GetAllUsersResponse> {
-    const { users, totalUsers } = await this.userRepository.getAllUsers(
+    const { users, totalUsers } = await this._userRepository.getAllUsers(
       page,
       limit,
       search,
@@ -45,7 +44,7 @@ export class UserService implements IUserService {
   }
 
   async updateStatus(id: string, status: string): Promise<void> {
-    const user = await this.userRepository.findById(id);
+    const user = await this._userRepository.findById(id);
 
     if (!user) throw new NotFoundError("user not found");
 
@@ -57,6 +56,6 @@ export class UserService implements IUserService {
 
     const isBlocked = status == "BLOCKED";
 
-    await this.userRepository.update(id, { isBlocked });
+    await this._userRepository.update(id, { isBlocked });
   }
 }

@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { IAuthService } from "../../../../services/v1/auth/interface/IAuthService.js";
 import { AuthRequest } from "../../../../middlewares/auth.middleware.js";
 import { injectable, inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
@@ -11,13 +10,13 @@ import { IPasswordService } from "../../../../services/v1/auth/interface/IPasswo
 @injectable()
 export class PasswordController implements IPasswordController {
   constructor(
-    @inject(TYPES.PasswordService) private passwordService: IPasswordService,
+    @inject(TYPES.PasswordService) private _passwordService: IPasswordService,
   ) {}
   //* forgott password
   async forgotPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const email = req.body.email;
-      await this.passwordService.forgotPassword(email);
+      await this._passwordService.forgotPassword(email);
       res.json({ message: "Reset link sent to email" });
     } catch (error: unknown) {
       next(error);
@@ -27,7 +26,7 @@ export class PasswordController implements IPasswordController {
   async resetPassword(req: Request, res: Response, next: NextFunction) {
     try {
       const tdo = req.body;
-      const result = await this.passwordService.resetPassword(tdo);
+      const result = await this._passwordService.resetPassword(tdo);
       ResponseHandler.success(res, "Password changed successfully..", result);
     } catch (error) {
       next(error);
@@ -45,7 +44,7 @@ export class PasswordController implements IPasswordController {
       console.log("cur : ", currentPassword);
       console.log("new pass : ", newPassword);
       const userId = req.user?.userId;
-      const result = await this.passwordService.changePassword(
+      const result = await this._passwordService.changePassword(
         userId,
         currentPassword,
         newPassword,

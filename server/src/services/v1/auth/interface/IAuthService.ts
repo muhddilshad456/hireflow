@@ -1,5 +1,5 @@
+import { Types } from "mongoose";
 import { LoginDto } from "../../../../dtos/v1/auth/login.dto";
-import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto";
 import { SignupDto } from "../../../../dtos/v1/auth/signup.dto";
 import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto";
 import { IUser } from "../../../../models/user.model";
@@ -16,5 +16,9 @@ export interface IAuthService {
   getCurrentUser(userId: string): Promise<Partial<IUser>>;
   getGoogleAuthUrl(): Promise<string>;
   handleGoogleCallback(code: string): Promise<TokenPair>;
-  acceptInvite(id: string, token: string, password: string): Promise<any>;
+  acceptInvite(
+    id: string,
+    token: string,
+    password: string,
+  ): Promise<{ message: string; userId: Types.ObjectId }>;
 }

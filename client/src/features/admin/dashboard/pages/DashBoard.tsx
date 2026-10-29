@@ -1,187 +1,205 @@
-type ActivityStatus = "Pending" | "Active" | "Approved" | "Closed";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Briefcase,
+  Building2,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import type { AdminDashboardData } from "../../../../types/admin/admin";
+import {
+  StatCard,
+  StatCardSkeleton,
+} from "../../../shared/components/StatCard";
+import { SimpleBarChart } from "../../../company/interviewer/dashboard/components/Simplebarchart";
+import { getAdminDashboard } from "../../services/adminServices";
 
-interface ActivityItem {
-  id: string;
-  activity: string;
-  timestamp: string;
-  status: ActivityStatus;
-}
-interface StatItem {
-  label: string;
-  value: number;
-  change: number;
-}
-
-// ─── Static Data ─────────────────────────────────────────────────────────────
-
-const STATS: StatItem[] = [
-  { label: "Total Users", value: 7265, change: 11.01 },
-  { label: "Total Recruiters", value: 156, change: 15.03 },
-  { label: "Total Jobs", value: 3671, change: -0.03 },
-  { label: "Total Applications", value: 2318, change: 6.08 },
-];
-
-const ACTIVITIES: ActivityItem[] = [
-  {
-    id: "1",
-    activity: "Company Registration – Tech Innovators Inc.",
-    timestamp: "2023-11-15 10:30 AM",
-    status: "Pending",
-  },
-  {
-    id: "2",
-    activity: "Job Posting – Senior Software Engineer",
-    timestamp: "2023-11-14 03:45 PM",
-    status: "Active",
-  },
-  {
-    id: "3",
-    activity: "Company Registration – Creative Solutions Ltd.",
-    timestamp: "2023-11-13 09:15 AM",
-    status: "Approved",
-  },
-  {
-    id: "4",
-    activity: "Job Posting – Marketing Manager",
-    timestamp: "2023-11-12 01:20 PM",
-    status: "Closed",
-  },
-  {
-    id: "5",
-    activity: "Company Registration – Global Enterprises",
-    timestamp: "2023-11-11 11:55 AM",
-    status: "Approved",
-  },
-];
-
-const ACTIVITY_STATUS_STYLE: Record<ActivityStatus, string> = {
-  Pending: "bg-yellow-400 text-yellow-900",
-  Active: "bg-green-500 text-white",
-  Approved: "bg-emerald-500 text-white",
-  Closed: "bg-cyan-500 text-white",
-};
-
-const IcoTrendUp = () => (
-  <svg
-    width="11"
-    height="11"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-const IcoTrendDown = () => (
-  <svg
-    width="11"
-    height="11"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
-    <polyline points="16 17 22 17 22 11" />
-  </svg>
-);
-
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
-function StatCard({ label, value, change }: StatItem) {
-  const pos = change >= 0;
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 lg:px-5 py-4 hover:shadow-md transition-shadow">
-      <p className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2 leading-tight">
-        {label}
-      </p>
-      <div className="flex items-end justify-between gap-2">
-        <span className="text-xl sm:text-2xl lg:text-[28px] font-bold text-gray-800 leading-none tracking-tight">
-          {value.toLocaleString()}
-        </span>
-        <span
-          className={`flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2 py-1 rounded-full shrink-0 ${pos ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}
-        >
-          {pos ? <IcoTrendUp /> : <IcoTrendDown />}
-          {pos ? "+" : ""}
-          {change.toFixed(2)}%
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function ActivityTable() {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-4 md:px-6 py-4 border-b border-gray-50">
-        <h3 className="text-[13px] font-semibold text-gray-600">
-          Recent Activity
-        </h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[13px] min-w-[480px]">
-          <thead>
-            <tr className="bg-gray-50/80 border-b border-gray-100">
-              {["Activity", "Timestamp", "Status"].map((h) => (
-                <th
-                  key={h}
-                  className="text-left px-4 md:px-6 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ACTIVITIES.map((item, i) => (
-              <tr
-                key={item.id}
-                className={`hover:bg-gray-50 transition-colors ${i < ACTIVITIES.length - 1 ? "border-b border-gray-50" : ""}`}
-              >
-                <td className="px-4 md:px-6 py-4 text-gray-700 font-medium">
-                  {item.activity}
-                </td>
-                <td className="px-4 md:px-6 py-4 text-gray-400 font-mono text-[11px] whitespace-nowrap">
-                  {item.timestamp}
-                </td>
-                <td className="px-4 md:px-6 py-4">
-                  <span
-                    className={`inline-flex items-center justify-center px-4 py-1.5 rounded-md text-[11px] font-semibold min-w-[80px] ${ACTIVITY_STATUS_STYLE[item.status]}`}
-                  >
-                    {item.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 export function Dashboard() {
+  const navigate = useNavigate();
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getAdminDashboard();
+      setData(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Failed to load the dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  if (error) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm text-red-500">{error}</p>
+        <button
+          onClick={fetchDashboard}
+          className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  const stats = data?.stats;
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-lg font-bold text-gray-800">Dashboard</h1>
-        <p className="text-[12px] text-gray-400 mt-0.5">
-          Welcome back! Here's what's happening today.
-        </p>
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        An overview of the whole platform.
+      </p>
+
+      {/* ---------- stat cards ---------- */}
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {loading || !stats ? (
+          Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard
+              label="Companies"
+              value={stats.totalCompanies}
+              icon={<Building2 size={18} />}
+            />
+            <StatCard
+              label="Pending verifications"
+              value={stats.pendingVerifications}
+              icon={<ShieldCheck size={18} />}
+            />
+            <StatCard
+              label="Candidates"
+              value={stats.candidates}
+              icon={<Users size={18} />}
+            />
+            <StatCard
+              label="Jobs posted"
+              value={stats.totalJobs}
+              icon={<Briefcase size={18} />}
+            />
+            <StatCard
+              label="Active subscriptions"
+              value={stats.activeSubscriptions}
+              icon={<Sparkles size={18} />}
+            />
+          </>
+        )}
       </div>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        {STATS.map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        {/* ---------- chart ---------- */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-gray-900">
+            Companies by status
+          </h2>
+          <div className="mt-4">
+            {loading || !stats ? (
+              <div className="space-y-4 animate-pulse">
+                {[0, 1].map((i) => (
+                  <div key={i}>
+                    <div className="mb-2 h-3 w-24 rounded bg-gray-200" />
+                    <div className="h-2.5 w-full rounded-full bg-gray-200" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <SimpleBarChart
+                emptyText="No companies yet."
+                items={[
+                  {
+                    label: "Active",
+                    count: stats.activeCompanies,
+                    barClass: "bg-emerald-500",
+                  },
+                  {
+                    label: "Inactive",
+                    count: stats.inactiveCompanies,
+                    barClass: "bg-slate-400",
+                  },
+                ]}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* ---------- pending verification requests ---------- */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-900">
+              Pending verification requests
+            </h2>
+            <button
+              onClick={() => navigate("/admin/companies-verify-requests")}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              View all
+            </button>
+          </div>
+
+          <div className="mt-4">
+            {loading || !data ? (
+              <div className="space-y-3 animate-pulse">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-12 rounded-lg bg-gray-100" />
+                ))}
+              </div>
+            ) : data.pendingVerificationRequests.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-400">
+                No pending requests. You're all caught up.
+              </p>
+            ) : (
+              <ul className="divide-y divide-gray-50">
+                {data.pendingVerificationRequests.map((r) => (
+                  <li
+                    key={r._id}
+                    className="flex items-center justify-between gap-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-gray-900">
+                        {r.companyName}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-gray-500">
+                        {r.email}
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Requested {formatDate(r.createdAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        r.verificationType === "NEW"
+                          ? "bg-blue-50 text-blue-600"
+                          : "bg-amber-50 text-amber-600"
+                      }`}
+                    >
+                      {r.verificationType === "NEW"
+                        ? "New company"
+                        : "Profile update"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </div>
-      <ActivityTable />
     </div>
   );
 }

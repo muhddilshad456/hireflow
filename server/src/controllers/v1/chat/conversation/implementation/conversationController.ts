@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { Types } from "mongoose";
 import { IConversationController } from "../interface/IConversationController";
 import { inject, injectable } from "inversify";
@@ -11,7 +11,7 @@ import { ResponseHandler } from "../../../../../utils/responseHandler";
 export class ConversationController implements IConversationController {
   constructor(
     @inject(TYPES.ConversationService)
-    private conversationService: IConversationService,
+    private _conversationService: IConversationService,
   ) {}
   //* create or get conversation
   async createOrGet(
@@ -23,13 +23,13 @@ export class ConversationController implements IConversationController {
       console.log("🚀 CREATE CONVERSATION API HIT");
       const { applicationId } = req.body;
       const conversation =
-        await this.conversationService.getOrCreateConversation(
+        await this._conversationService.getOrCreateConversation(
           new Types.ObjectId(applicationId),
           new Types.ObjectId(req.user!.userId),
           req.user!.role,
         );
       ResponseHandler.success(res, "Conversation ready", conversation);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
       next(error);
     }
@@ -43,7 +43,7 @@ export class ConversationController implements IConversationController {
     try {
       const jobId = req.params.jobId as string;
 
-      const conversations = await this.conversationService.listConversations(
+      const conversations = await this._conversationService.listConversations(
         new Types.ObjectId(req.user!.userId),
         req.user!.role,
         new Types.ObjectId(jobId),

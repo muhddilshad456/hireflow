@@ -10,7 +10,7 @@ import { TYPES } from "../../../../dependency-injection/types.js";
 @injectable()
 export class EmailController implements IEmailController {
   constructor(
-    @inject(TYPES.AuthEmailService) private authEmailService: IAuthEmailService,
+    @inject(TYPES.AuthEmailService) private _authEmailService: IAuthEmailService,
   ) {}
   //* change email
   async changeEmail(
@@ -22,7 +22,7 @@ export class EmailController implements IEmailController {
       const { newEmail } = req.body;
       console.log(req.user);
       const userId = req.user?.userId;
-      const result = await this.authEmailService.changeEmail(userId, newEmail);
+      const result = await this._authEmailService.changeEmail(userId, newEmail);
       ResponseHandler.success(
         res,
         AUTH_MESSAGES.EMAIL_VERIFICATION_SENT,
@@ -40,7 +40,7 @@ export class EmailController implements IEmailController {
   ): Promise<void> {
     try {
       const { token } = req.body;
-      const result = await this.authEmailService.verifyEmailChange(token);
+      const result = await this._authEmailService.verifyEmailChange(token);
       ResponseHandler.success(res, AUTH_MESSAGES.EMAIL_CHANGE_SUCCESS, result);
     } catch (error) {
       next(error);

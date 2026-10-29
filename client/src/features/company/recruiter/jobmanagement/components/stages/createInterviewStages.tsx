@@ -7,6 +7,7 @@ import { InterviewResultCard } from "../stage-shared/InterviewResultCard.tsx.tsx
 import type { StageDetail } from "../StageRenderer.tsx";
 import { requestForInterview } from "../../services/interviewServices.tsx";
 import toast from "react-hot-toast";
+import { updateJobApplicationStage } from "../../services/jobServices.tsx";
 
 interface InterviewStageConfig {
   title: string;
@@ -38,7 +39,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
         const scheduledAt = new Date(`${date}T${time}`).toISOString();
 
         await requestForInterview({
-          jobApplicationStageId: c.applicationStageId,
+          jobApplicationStageId: c.applicationStage._id,
           interviewerId,
           scheduledAt,
         });
@@ -55,14 +56,18 @@ export function createInterviewStage(config: InterviewStageConfig) {
       result: "PASS" | "FAIL",
       feedback: string,
     ) => {
+      const decision = result == "PASS" ? "PASSED" : "FAILED";
       try {
-        // await submitInterviewResult(jobId, c.applicationStageId, {
-        //   status: result === "PASS" ? "PASSED" : "FAILED",
-        //   feedback,
-        // });
+        await updateJobApplicationStage(
+          c?.applicationStage?._id,
+          decision,
+          feedback,
+        );
+        toast.success("Result updated");
         await refetchJob();
-      } catch (err) {
-        console.log(err);
+      } catch (err: any) {
+        console.log(err?.response);
+        toast.error(err?.response?.data?.message);
       }
     };
 
@@ -74,18 +79,18 @@ export function createInterviewStage(config: InterviewStageConfig) {
           {stage.candidates.map((c) => {
             const isDecided = c.status === "PASSED" || c.status === "FAILED";
             const progressStatus =
-              c.interviewProgress?.status ?? "NOT_REQUESTED";
+              c?.applicationStage?.interviewProgress?.status ?? "NOT_REQUESTED";
 
             if (isDecided) {
               return (
-                <FinalResultCard key={c.applicationStageId} candidate={c} />
+                <FinalResultCard key={c.applicationStage._id} candidate={c} />
               );
             }
 
             if (progressStatus === "COMPLETED") {
               return (
                 <InterviewResultCard
-                  key={c.applicationStageId}
+                  key={c.applicationStage._id}
                   candidate={c}
                   title={config.resultTitle ?? `${config.title} Results`}
                   feedbackLabel={config.feedbackLabel}
@@ -98,7 +103,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
 
             return (
               <InterviewCandidateCard
-                key={c.applicationStageId}
+                key={c.applicationStage._id}
                 candidate={c}
                 interviewLabel={config.interviewLabel}
                 scheduleButtonLabel={config.scheduleButtonLabel}

@@ -8,6 +8,7 @@ export const APPLICATION_MESSAGES = {
 
   APPLICATION_IN_PROGRESS: "Application is in progress",
   APPLICATION_REJECTED: "Application rejected",
+  APPLICATION_WITHDRAWN: "Application withdrawn",
   APPLICATION_SELECTED: "Application selected",
   APPLICATION_OFFER_SENT: "Offer has been sent",
   APPLICATION_ACCEPTED: "Offer accepted",
@@ -54,4 +55,11 @@ export const APPLICATION_MESSAGES = {
   TASK_NOT_ADDED: "Assessment task has not been added by the recruiter yet",
   STAGE_NOT_EDITABLE:
     "This stage has already been reviewed and can no longer be edited",
+  OFFER_LETTER_UPLOADED: "Offer letter uploaded successfully",
+  OFFER_RESPONSE_SAVED: "Offer response saved successfully",
+  OFFER_LETTER_REQUIRED: "Offer letter file is required",
+  NOT_OFFER_STAGE: "This is not an offer stage",
+  OFFER_LETTER_NOT_SENT: "The offer letter has not been sent yet",
+  OFFER_ALREADY_RESPONDED: "The candidate has already responded to this offer",
+  INVALID_OFFER_RESPONSE: "Response must be ACCEPTED or DECLINED",
 };

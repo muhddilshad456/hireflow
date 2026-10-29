@@ -9,19 +9,13 @@ export interface IJobApplication extends Document {
   resumeUrl: string;
   coverLetter: string;
 
-  status: "IN_PROGRESS" | "REJECTED" | "SELECTED" | "OFFER_SENT" | "WITHDRAWN";
+  status: "IN_PROGRESS" | "REJECTED" | "SELECTED" | "WITHDRAWN";
 
   currentStageId?: Types.ObjectId;
 
   appliedAt: Date;
 
   finalizedAt?: Date;
-
-  offerDetails?: {
-    salary?: number;
-    joiningDate?: Date;
-    expiryDate?: Date;
-  };
 }
 
 const jobApplicationSchema = new Schema<IJobApplication>(
@@ -72,12 +66,6 @@ const jobApplicationSchema = new Schema<IJobApplication>(
 
     finalizedAt: {
       type: Date,
-    },
-
-    offerDetails: {
-      salary: Number,
-      joiningDate: Date,
-      expiryDate: Date,
     },
   },
   { timestamps: true },

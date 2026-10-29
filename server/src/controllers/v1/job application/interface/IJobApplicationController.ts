@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
 
 export interface IJobApplicationController {
@@ -28,6 +28,26 @@ export interface IJobApplicationController {
     next: NextFunction,
   ): Promise<void>;
   addOrEditAssessmentResponse(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  updateDocumentsForVerification(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  uploadOfferLetter(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  updateOfferResponse(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  withdrawApplication(
     req: AuthRequest,
     res: Response,
     next: NextFunction,

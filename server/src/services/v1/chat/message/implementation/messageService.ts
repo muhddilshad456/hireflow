@@ -13,28 +13,31 @@ import { CONVERSATION_MESSAGES } from "../../../../../constants/messages/chat/co
 import { MSG_MESSAGES } from "../../../../../constants/messages/chat/msg";
 import { ICloudinaryService } from "../../../../cloudinary/interface/ICloudinaryService";
 import { IMessageService } from "../interface/IMessageService";
+import { IConversation } from "../../../../../models/chat/conversation";
+import { IMessage } from "../../../../../models/chat/message";
+import { MessageEntity } from "../../../../../interfaces/chat/message";
 import { IChatEventPublisher } from "../../../../../events/chat/interface/IChatEventPublisher";
 
 @injectable()
 export class MessageService implements IMessageService {
   constructor(
     @inject(TYPES.MessageRepository)
-    private messageRepository: IMessageRepository,
+    private _messageRepository: IMessageRepository,
     @inject(TYPES.ConversationRepository)
-    private conversationRepository: IConversationRepository,
+    private _conversationRepository: IConversationRepository,
     @inject(TYPES.ChatEventPublisher)
-    private eventPublisher: IChatEventPublisher,
+    private _eventPublisher: IChatEventPublisher,
     @inject(TYPES.CloudinaryService)
-    private cloudinaryService: ICloudinaryService,
+    private _cloudinaryService: ICloudinaryService,
     @inject(TYPES.Logger)
-    private logger: Logger,
+    private _logger: Logger,
   ) {}
   //* security layer
   private async assertActiveParticipant(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
-  ): Promise<any> {
-    const convo = await this.conversationRepository.findById(
+  ): Promise<IConversation> {
+    const convo = await this._conversationRepository.findById(
       conversationId.toString(),
     );
     if (!convo)
@@ -61,7 +64,7 @@ export class MessageService implements IMessageService {
     senderRole: SenderRole;
     content?: string;
     attachment?: Express.Multer.File;
-  }): Promise<any> {
+  }): Promise<IMessage> {
     if (!params.content && !params.attachment) {
       throw new BadRequestError(MSG_MESSAGES.MESSAGE_EMPTY);
     }
@@ -71,7 +74,7 @@ export class MessageService implements IMessageService {
     let uploadedAttachement;
 
     if (params.attachment) {
-      const url = await this.cloudinaryService.uploadFile(
+      const url = await this._cloudinaryService.uploadFile(
         params.attachment,
         "message-attachments",
       );
@@ -85,20 +88,20 @@ export class MessageService implements IMessageService {
       ...params,
       attachment: uploadedAttachement,
     });
-    const message = await this.messageRepository.create(entity);
+    const message = await this._messageRepository.create(entity);
 
-    await this.conversationRepository.updateLastMessage(
+    await this._conversationRepository.updateLastMessage(
       params.conversationId,
       params.content?.slice(0, 100) ?? "📎 Attachment",
       message.createdAt ?? new Date(),
     );
 
-    this.eventPublisher.publishNewMessage(
+    this._eventPublisher.publishNewMessage(
       params.conversationId.toString(),
       message,
     );
 
-    this.logger.info({
+    this._logger.info({
       event: "MESSAGE_SENT",
       conversationId: params.conversationId,
       senderId: params.senderId,
@@ -113,10 +116,10 @@ export class MessageService implements IMessageService {
     userId: Types.ObjectId,
     cursor?: string,
     limit = 30,
-  ): Promise<any> {
+  ): Promise<MessageEntity[]> {
     await this.assertActiveParticipant(conversationId, userId);
     const cursorId = cursor ? new Types.ObjectId(cursor) : undefined;
-    return this.messageRepository.findByConversation(
+    return this._messageRepository.findByConversation(
       conversationId,
       cursorId,
       limit,
@@ -126,9 +129,9 @@ export class MessageService implements IMessageService {
   async markAsRead(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
-  ): Promise<any> {
+  ): Promise<void> {
     await this.assertActiveParticipant(conversationId, userId);
-    await this.messageRepository.markReadByRecipient(conversationId, userId);
-    this.logger.info({ event: "MESSAGES_MARKED_READ", conversationId, userId });
+    await this._messageRepository.markReadByRecipient(conversationId, userId);
+    this._logger.info({ event: "MESSAGES_MARKED_READ", conversationId, userId });
   }
 }

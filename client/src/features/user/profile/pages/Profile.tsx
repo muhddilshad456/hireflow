@@ -59,21 +59,10 @@ interface Education {
   graduationYear?: number;
 }
 
-interface Resume {
-  id: string;
-  name: string;
-  isDefault: boolean;
-}
-
 interface CoverLetter {
   id: string;
   title: string;
   content: string;
-}
-
-interface ContactEntry {
-  id: string;
-  value: string;
 }
 
 export interface Profile {
@@ -119,12 +108,6 @@ export interface Profile {
   }[];
 
   profileCompleted: boolean;
-}
-
-const activityStats = { ongoing: 3, hired: 1, rejected: 1 };
-
-function uid() {
-  return Math.random().toString(36).slice(2, 9);
 }
 
 function isProfileComplete(p: Profile | null): boolean {
@@ -304,30 +287,6 @@ function PlusBtn({ onClick }: { onClick: () => void }) {
 }
 
 // ─── Label/Value display row ──────────────────────────────────────────────────
-function InfoRow({
-  label,
-  value,
-  onEdit,
-  onDelete,
-}: {
-  label: string;
-  value: string | null;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-      <div className="min-w-0 flex-1">
-        <p className="text-gray-400 text-xs">{label}</p>
-        <p className="text-gray-700 text-sm font-medium truncate">{value}</p>
-      </div>
-      <div className="flex gap-1.5 ml-3 shrink-0">
-        <GreenBtn onClick={onEdit}>Edit</GreenBtn>
-        <RedBtn onClick={onDelete}>Delete</RedBtn>
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function Profile() {

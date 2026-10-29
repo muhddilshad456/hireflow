@@ -22,6 +22,7 @@ interface ApplyModalProps {
   isOpen: boolean;
   jobId: string;
   onClose: () => void;
+  onRefresh: () => void;
   onApplied?: () => void;
 }
 
@@ -43,6 +44,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
   isOpen,
   jobId,
   onClose,
+  onRefresh,
   onApplied,
 }) => {
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -151,7 +153,8 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
         }
         const uploadResult = await uploadFile(formData);
 
-        resumeUrlToSubmit = uploadResult.data; // adjust to match your upload API response shape
+        resumeUrlToSubmit = uploadResult.data;
+        onRefresh();
       } catch (err: any) {
         console.log(err?.response?.data);
         setError("Failed to upload resume. Please try again.");

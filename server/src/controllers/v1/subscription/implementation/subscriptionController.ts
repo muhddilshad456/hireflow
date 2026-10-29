@@ -11,7 +11,7 @@ import { ISubscriptionService } from "../../../../services/v1/subscription/inter
 export class SubscriptionController implements ISubscriptionController {
   constructor(
     @inject(TYPES.SubscriptionService)
-    private subscriptionService: ISubscriptionService,
+    private _subscriptionService: ISubscriptionService,
   ) {}
   //* create-checkout-session
   async createCheckoutSession(
@@ -21,7 +21,7 @@ export class SubscriptionController implements ISubscriptionController {
   ): Promise<void> {
     try {
       const userId = req.user?.userId;
-      const result = await this.subscriptionService.createCheckoutSession(
+      const result = await this._subscriptionService.createCheckoutSession(
         userId as string,
       );
 
@@ -44,7 +44,7 @@ export class SubscriptionController implements ISubscriptionController {
     try {
       const userId = req.user?.userId;
 
-      const result = await this.subscriptionService.getSubscriptionStatus(
+      const result = await this._subscriptionService.getSubscriptionStatus(
         userId as string,
       );
 
@@ -66,7 +66,7 @@ export class SubscriptionController implements ISubscriptionController {
     try {
       const userId = req.user?.userId;
 
-      const result = await this.subscriptionService.getCompanyAccess(
+      const result = await this._subscriptionService.getCompanyAccess(
         userId as string,
       );
 

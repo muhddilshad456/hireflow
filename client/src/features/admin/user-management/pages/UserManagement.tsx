@@ -22,6 +22,7 @@ export function UserManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState<UserFilterType>("All");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmUser, setConfirmUser] = useState<UserItem | null>(null);
 
@@ -55,8 +56,16 @@ export function UserManagement() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchUsers();
-  }, [search, page, filter]);
+  }, [debouncedSearch, page, filter]);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     let value = e.target.value;

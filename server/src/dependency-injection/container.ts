@@ -54,6 +54,10 @@ import { SubscriptionRepository } from "../repositories/subscription/implementat
 import { SubscriptionService } from "../services/v1/subscription/implementation/subscriptionService";
 import { SubscriptionwebhookController } from "../controllers/v1/stripe/implementation/subscriptionwebhookController";
 import { SubscriptionController } from "../controllers/v1/subscription/implementation/subscriptionController";
+import { NotificationRepository } from "../repositories/notification/implementation/notificationRepository";
+import { NotificationService } from "../services/v1/notification/implementation/notificationService";
+import { NotificationController } from "../controllers/v1/notification/implementation/notificationController";
+import { DashboardRepository } from "../repositories/dashboard/implementation/dashboardRepository";
 
 const container = new Container();
 
@@ -77,6 +81,8 @@ container
   .bind(TYPES.InterviewerProfileRepository)
   .to(InterviewerProfileRepository);
 container.bind(TYPES.SubscriptionRepository).to(SubscriptionRepository);
+container.bind(TYPES.NotificationRepository).to(NotificationRepository);
+container.bind(TYPES.DashboardRepository).to(DashboardRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.AuthEmailService).to(AuthEmailService);
@@ -94,6 +100,7 @@ container.bind(TYPES.ChatPermissionService).to(ChatPermissionService);
 container.bind(TYPES.InterviewService).to(InterviewService);
 container.bind(TYPES.InterviewerService).to(InterviewerService);
 container.bind(TYPES.SubscriptionService).to(SubscriptionService);
+container.bind(TYPES.NotificationService).to(NotificationService);
 ///////////////////
 container.bind(TYPES.EmailService).to(EmailService);
 container.bind(TYPES.RedisService).to(RedisService);
@@ -118,6 +125,7 @@ container.bind(TYPES.SubscriptionController).to(SubscriptionController);
 container
   .bind(TYPES.SubscriptionwebhookController)
   .to(SubscriptionwebhookController);
+container.bind(TYPES.NotificationController).to(NotificationController);
 
 export function bindSocketDependencies(io: import("socket.io").Server) {
   container.bind(TYPES.SocketIO).toConstantValue(io);

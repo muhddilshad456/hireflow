@@ -9,14 +9,14 @@ import { PROFILE_MESSAGES } from "../../../../constants/messages/profile";
 export class UploadService implements IUploadService {
   constructor(
     @inject(TYPES.CloudinaryService)
-    private cloudinaryService: ICloudinaryService,
+    private _cloudinaryService: ICloudinaryService,
   ) {}
-  async upload(file: Express.Multer.File): Promise<any> {
+  async upload(file: Express.Multer.File): Promise<string> {
     if (!file) {
       throw new BadRequestError(PROFILE_MESSAGES.RESUME_REQUIRED);
     }
 
-    const upload = this.cloudinaryService.uploadFile(file, "resume");
+    const upload = this._cloudinaryService.uploadFile(file, "resume");
 
     return upload;
   }

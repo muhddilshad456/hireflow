@@ -321,7 +321,7 @@ export default function Job() {
   useEffect(() => {
     getJob();
     getApplicationStatus();
-  }, []);
+  }, [job]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
@@ -337,6 +337,7 @@ export default function Job() {
       <ApplyModal
         isOpen={isApplyModalOpen}
         jobId={jobId}
+        onRefresh={() => getJob()}
         onClose={() => setIsApplyModalOpen(false)}
       />
     </div>

@@ -7,7 +7,7 @@ export interface IMessageRepository extends IBaseRepository<IMessage> {
   findByConversation(
     conversationId: Types.ObjectId,
     cursor?: Types.ObjectId,
-    limit?: Number,
+    limit?: number,
   ): Promise<MessageEntity[]>;
   markReadByRecipient(
     conversationId: Types.ObjectId,

@@ -8,23 +8,30 @@ import { generateLink } from "../../../../utils/generateLink.js";
 import { generateToken } from "../../../../utils/token.util.js";
 import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation.js";
 import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
-import { IAuthEmailService } from "../interface/IAuthEmailService.js";
+import {
+  ChangeEmailResponse,
+  IAuthEmailService,
+  VerifyEmailChangeResponse,
+} from "../interface/IAuthEmailService.js";
 import { IEmailService } from "../../../email/interface/IEmailService.js";
 
 @injectable()
 export class AuthEmailService implements IAuthEmailService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
-    @inject(TYPES.EmailService) private emailService: IEmailService,
-    @inject(TYPES.Logger) private logger: Logger,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
+    @inject(TYPES.EmailService) private _emailService: IEmailService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
 
   //* change email
-  async changeEmail(userId: string, newEmail: string): Promise<any> {
-    const existingUser = await this.userRepository.findOne({ email: newEmail });
+  async changeEmail(
+    userId: string,
+    newEmail: string,
+  ): Promise<ChangeEmailResponse> {
+    const existingUser = await this._userRepository.findOne({ email: newEmail });
 
     if (existingUser) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.USER_ALREADY_EXIST,
       });
       throw new ConflictError(VALIDATION_MESSAGES.USER_ALREADY_EXIST);
@@ -34,11 +41,11 @@ export class AuthEmailService implements IAuthEmailService {
 
     const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) throw new Error("User not found");
 
-    await this.userRepository.update(userId, {
+    await this._userRepository.update(userId, {
       pendingEmail: newEmail,
       emailChangeToken: token,
       emailChangeTokenExpiry: expiry,
@@ -48,16 +55,16 @@ export class AuthEmailService implements IAuthEmailService {
 
     const resetLink = generateLink(baseUrl, "CHANGE_EMAIL", user.role, token);
 
-    this.logger.info({
+    this._logger.info({
       EVENT: "Reset link created..",
       Link: resetLink,
     });
 
     try {
-      await this.emailService.sendEmailChangeVerification(newEmail, resetLink);
-      this.logger.info({ newEmail }, "Email change verification sent");
+      await this._emailService.sendEmailChangeVerification(newEmail, resetLink);
+      this._logger.info({ newEmail }, "Email change verification sent");
     } catch (err) {
-      this.logger.error({ err }, "Failed to send reset email");
+      this._logger.error({ err }, "Failed to send reset email");
     }
 
     console.log("Verification link:", resetLink);
@@ -68,13 +75,13 @@ export class AuthEmailService implements IAuthEmailService {
     };
   }
   //* verify email change
-  async verifyEmailChange(token: string) {
-    const user = await this.userRepository.findOne({
+  async verifyEmailChange(token: string): Promise<VerifyEmailChangeResponse> {
+    const user = await this._userRepository.findOne({
       emailChangeToken: token,
     });
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         token,
         event: VALIDATION_MESSAGES.INVALIED_TOKEN,
       });
@@ -86,7 +93,7 @@ export class AuthEmailService implements IAuthEmailService {
       user.emailChangeTokenExpiry &&
       user.emailChangeTokenExpiry < new Date()
     ) {
-      this.logger.warn({
+      this._logger.warn({
         userId: user._id,
         event: VALIDATION_MESSAGES.EXPIRED_TOKEN,
       });
@@ -95,7 +102,7 @@ export class AuthEmailService implements IAuthEmailService {
     }
 
     if (!user.pendingEmail) {
-      this.logger.error({
+      this._logger.error({
         userId: user._id,
         event: AUTH_MESSAGES.INVALIED_EMAIL_CHANGE,
       });
@@ -103,14 +110,14 @@ export class AuthEmailService implements IAuthEmailService {
       throw new BadRequestError(AUTH_MESSAGES.INVALIED_EMAIL_CHANGE);
     }
 
-    await this.userRepository.update(user._id?.toString(), {
+    await this._userRepository.update(user._id?.toString(), {
       email: user.pendingEmail,
       pendingEmail: null,
       emailChangeToken: null,
       emailChangeTokenExpiry: null,
     });
 
-    this.logger.info({
+    this._logger.info({
       userId: user._id,
       newEmail: user.pendingEmail,
       event: AUTH_MESSAGES.EMAIL_CHANGE_SUCCESS,

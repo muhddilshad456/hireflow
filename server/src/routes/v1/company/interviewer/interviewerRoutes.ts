@@ -50,4 +50,11 @@ router.get(
   roleGuard([UserRole.COMPANY_INTERVIEWER]),
   interviewerController.getInterviews.bind(interviewerController),
 );
+//* get dashboard
+router.get(
+  "/dashboard",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_INTERVIEWER]),
+  interviewerController.getDashboard.bind(interviewerController),
+);
 export default router;

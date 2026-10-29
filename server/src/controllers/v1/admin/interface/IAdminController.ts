@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { AuthRequest } from "../../../../middlewares/auth.middleware";
 
 export interface IAdminController {
   getAllCompanyVerificationReq(
@@ -27,4 +28,10 @@ export interface IAdminController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  getAdminProfile(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getDashboard(req: Request, res: Response, next: NextFunction): Promise<void>;
 }

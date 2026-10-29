@@ -11,10 +11,15 @@ import {
   ExternalLink,
   CheckCircle,
   Clock,
+  XCircle,
 } from "lucide-react";
 import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
 import type { StageDetail } from "../StageRenderer";
-import { updateAssessmentTask } from "../../services/jobServices";
+import {
+  updateAssessmentTask,
+  updateJobApplicationStage,
+} from "../../services/jobServices";
+import toast from "react-hot-toast";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -182,27 +187,49 @@ function AssessmentModal({
 export function AssessmentStage({ stage }: StageComponentProps) {
   const { refetchJob } = useOutletContext<JobLayoutOutletContext>();
   const [modalOpen, setModalOpen] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const hasTask = Boolean(
     stage.assessmentTaskDescription || stage.assessmentTaskAttachmentUrl,
   );
 
-  const handleViewCV = (applicationStageId: string) => {
-    console.log("stage : ", stage);
-    const candidate = stage.candidates.find(
-      (c) => c.applicationStageId === applicationStageId,
-    );
-    if (candidate?.application?.resumeUrl) {
-      window.open(candidate.application.resumeUrl, "_blank");
+  const handleViewCV = (resumeUrl?: string) => {
+    if (resumeUrl) window.open(resumeUrl, "_blank");
+  };
+
+  const handleAccept = async (applicationStageId: string | null) => {
+    if (!applicationStageId) return;
+    try {
+      setUpdatingId(applicationStageId);
+      await updateJobApplicationStage(applicationStageId, "PASSED");
+      toast.success("Candidate Moved To Next Round.");
+      await refetchJob();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Something went wrong.");
+      console.log(err?.response);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleReject = async (applicationStageId: string | null) => {
+    if (!applicationStageId) return;
+    try {
+      setUpdatingId(applicationStageId);
+      await updateJobApplicationStage(applicationStageId, "FAILED");
+      toast.success("Candidate Rejected.");
+      await refetchJob();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? "Something went wrong.");
+      console.log(err?.response);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* ------------------------------------------------------------------ */}
-      {/* /* Stage Header & Assessment Task Overview */
-      /*
-      ------------------------------------------------------------------ */}
+      {/* Stage Header & Assessment Task Overview */}
       <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
@@ -262,10 +289,8 @@ export function AssessmentStage({ stage }: StageComponentProps) {
           )}
         </div>
       </div>
-      {/* ------------------------------------------------------------------ */}
-      {/* /* Candidates List & Submissions */
-      /*
-      ------------------------------------------------------------------ */}
+
+      {/* Candidates List & Submissions */}
       <div>
         <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
           Candidates ({stage.candidates.length})
@@ -279,11 +304,22 @@ export function AssessmentStage({ stage }: StageComponentProps) {
           <div className="divide-y divide-gray-100">
             {stage.candidates.map((c) => {
               const name = c.application?.userId?.name ?? "Unknown candidate";
-              const submission = (c as any).assessmentSubmission; // Adjust interface property path if different
+              const appStage = c.applicationStage;
+              const appStageId = appStage?._id;
+
+              const responseText = appStage?.assessmentResponseText;
+              const responseFileUrl = appStage?.assessmentResponseAttachmentUrl;
+              const submittedAt = appStage?.assessmentSubmittedAt;
+              const hasResponse = Boolean(
+                responseText || responseFileUrl || submittedAt,
+              );
+
+              const isUpdating = updatingId === appStageId;
+              const isDecided = c.status === "PASSED" || c.status === "FAILED";
 
               return (
                 <div
-                  key={c.applicationStageId}
+                  key={appStageId}
                   className="flex flex-col gap-4 py-6 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="flex-1 space-y-3">
@@ -301,13 +337,13 @@ export function AssessmentStage({ stage }: StageComponentProps) {
                       </p>
                     </div>
 
-                    {/* Candidate Submission Panel */}
+                    {/* Candidate Response Panel */}
                     <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-3">
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-600">
-                          Assessment Submission
+                          Candidate Response
                         </span>
-                        {submission ? (
+                        {hasResponse ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
                             <CheckCircle className="h-3 w-3" /> Submitted
                           </span>
@@ -318,37 +354,57 @@ export function AssessmentStage({ stage }: StageComponentProps) {
                         )}
                       </div>
 
-                      {submission ? (
+                      {hasResponse ? (
                         <div className="space-y-2 text-xs text-slate-700">
-                          {submission.text && (
-                            <p className="whitespace-pre-line rounded-md bg-white p-2 text-[11px] border border-slate-200">
-                              {submission.text}
+                          {submittedAt && (
+                            <p className="text-[11px] text-slate-500">
+                              Submitted on{" "}
+                              {new Date(submittedAt).toLocaleString("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })}
                             </p>
                           )}
-                          {submission.fileUrl && (
+
+                          {responseText ? (
+                            <p className="whitespace-pre-line rounded-md border border-slate-200 bg-white p-2 text-[11px]">
+                              {responseText}
+                            </p>
+                          ) : (
+                            <p className="text-[11px] italic text-slate-400">
+                              No written description provided.
+                            </p>
+                          )}
+
+                          {responseFileUrl ? (
                             <a
-                              href={submission.fileUrl}
+                              href={responseFileUrl}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:underline"
                             >
                               <Paperclip className="h-3.5 w-3.5" />
-                              View Submission Attachment
+                              View Response Attachment
                               <ExternalLink className="h-3 w-3" />
                             </a>
+                          ) : (
+                            <p className="text-[11px] italic text-slate-400">
+                              No file attached.
+                            </p>
                           )}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-slate-400 italic">
-                          Candidate has not submitted their task answer yet.
+                        <p className="text-[11px] italic text-slate-400">
+                          Candidate has not submitted a response for this
+                          assessment yet.
                         </p>
                       )}
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
-                        onClick={() => handleViewCV(c.applicationStageId)}
+                        onClick={() => handleViewCV(c.application?.resumeUrl)}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
                       >
                         <FileText className="h-3.5 w-3.5" /> View CV
@@ -356,6 +412,42 @@ export function AssessmentStage({ stage }: StageComponentProps) {
                       <button className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
                         <MessageCircle className="h-3.5 w-3.5" /> Chat
                       </button>
+
+                      {isDecided ? (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                            c.status === "PASSED"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-red-50 text-red-700"
+                          }`}
+                        >
+                          {c.status === "PASSED" ? (
+                            <CheckCircle className="h-3.5 w-3.5" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5" />
+                          )}
+                          {c.status === "PASSED" ? "Passed" : "Failed"}
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleAccept(appStageId)}
+                            disabled={isUpdating}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            {isUpdating ? "Updating..." : "Pass"}
+                          </button>
+                          <button
+                            onClick={() => handleReject(appStageId)}
+                            disabled={isUpdating}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            {isUpdating ? "Updating..." : "Fail"}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -371,6 +463,7 @@ export function AssessmentStage({ stage }: StageComponentProps) {
           </div>
         )}
       </div>
+
       {/* Modal for Creating / Editing Assessment Task */}
       {modalOpen && (
         <AssessmentModal

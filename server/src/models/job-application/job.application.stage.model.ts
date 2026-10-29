@@ -8,10 +8,10 @@ export interface IJobApplicationStage extends Document {
   feedback?: string;
   startedAt?: Date;
   completedAt?: Date;
+  reviewedBy?: Types.ObjectId;
+  reviewedAt?: Date;
   // ---- Offer stage only ----
   offerLetterUrl?: string;
-  offeredSalary?: number;
-  joiningDate?: Date;
   offerSentAt?: Date;
   offerSentBy?: Types.ObjectId;
   offerResponse?: "ACCEPTED" | "DECLINED";
@@ -20,6 +20,8 @@ export interface IJobApplicationStage extends Document {
   assessmentResponseText?: string;
   assessmentResponseAttachmentUrl?: string;
   assessmentSubmittedAt?: Date;
+  //---- Document verification stage only ----
+  documents: string[];
 }
 
 const jobApplicationStageSchema = new Schema<IJobApplicationStage>(
@@ -43,9 +45,9 @@ const jobApplicationStageSchema = new Schema<IJobApplicationStage>(
     },
 
     feedback: String,
+    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedAt: Date,
     offerLetterUrl: String,
-    offeredSalary: Number,
-    joiningDate: Date,
     offerSentAt: Date,
     offerSentBy: { type: Schema.Types.ObjectId, ref: "User" },
     offerResponse: { type: String, enum: ["ACCEPTED", "DECLINED"] },
@@ -55,6 +57,8 @@ const jobApplicationStageSchema = new Schema<IJobApplicationStage>(
     assessmentResponseText: String,
     assessmentResponseAttachmentUrl: String,
     assessmentSubmittedAt: Date,
+
+    documents: [String],
   },
   { timestamps: true },
 );

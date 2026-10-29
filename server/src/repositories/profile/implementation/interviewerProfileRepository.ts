@@ -5,7 +5,7 @@ import {
   InterviewerProfileModel,
 } from "../../../models/profiles/interviewer.profile.model";
 import { IInterviewerProfileRepository } from "../interface/IInterviewerProfileRepository";
-import { Types } from "mongoose";
+import { Types, PipelineStage } from "mongoose";
 import { InterviewerListItem } from "../../../interfaces/interviewer/interviewer";
 
 @injectable()
@@ -28,7 +28,7 @@ export class InterviewerProfileRepository
     const objectCompanyId =
       typeof companyId === "string" ? new Types.ObjectId(companyId) : companyId;
 
-    const pipeline: any[] = [
+    const pipeline: PipelineStage[] = [
       {
         $match: {
           isAvailable: true,

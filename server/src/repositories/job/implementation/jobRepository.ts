@@ -1,7 +1,7 @@
 import { injectable } from "inversify";
 import { IJob, JobModel } from "../../../models/job/job.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
-import { IJobRepository } from "../interface/IJobRepository";
+import { IJobRepository, PaginatedJobsResult } from "../interface/IJobRepository";
 import { JobFilters } from "../../../types/jobFilter";
 import { JobSubsetInfo } from "../../../interfaces/interview/interview";
 
@@ -14,8 +14,8 @@ export class JobRepository
     super(JobModel);
   }
   //* get jobs
-  async getJobs(filters: JobFilters) {
-    const query: any = {};
+  async getJobs(filters: JobFilters): Promise<PaginatedJobsResult> {
+    const query: Record<string, unknown> = {};
 
     if (filters.search) {
       query.title = { $regex: filters.search, $options: "i" };
@@ -90,14 +90,14 @@ export class JobRepository
     };
   }
   //* get a job
-  async getJobDetails(id: string): Promise<any> {
-    return await JobModel.findById(id)
+  async getJobDetails(id: string): Promise<IJob | null> {
+    return (await JobModel.findById(id)
       .populate("company", "name logo location")
       .populate("createdBy", "name email")
-      .lean();
+      .lean()) as unknown as IJob | null;
   }
   //* update status
-  async updateStatus(id: string, status: string): Promise<any> {
+  async updateStatus(id: string, status: string): Promise<void> {
     const isActive = status == "ACTIVE" ? true : false;
     await JobModel.findByIdAndUpdate(id, { isActive });
   }

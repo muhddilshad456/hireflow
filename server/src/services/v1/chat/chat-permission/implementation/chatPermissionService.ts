@@ -8,20 +8,20 @@ import { CreatorRole } from "../../../../../interfaces/chat/conversation";
 export class ChatPermissionService {
   constructor(
     @inject(TYPES.JobStageRepository)
-    private jobStageRepository: IJobStageRepository,
+    private _jobStageRepository: IJobStageRepository,
     @inject(TYPES.JobApplicationStageRepository)
-    private jobApplicationStageRepository: IJobApplicationStageRepository,
+    private _jobApplicationStageRepository: IJobApplicationStageRepository,
   ) {}
 
   async hasPassedResumeStage(
     applicationId: Types.ObjectId,
     jobId: Types.ObjectId,
   ): Promise<boolean> {
-    const resumeStage = await this.jobStageRepository.findFirstStage(jobId);
+    const resumeStage = await this._jobStageRepository.findFirstStage(jobId);
     if (!resumeStage) return false;
 
     const applicationResumeStage =
-      await this.jobApplicationStageRepository.findOne({
+      await this._jobApplicationStageRepository.findOne({
         applicationId,
         jobStageId: resumeStage._id,
       });

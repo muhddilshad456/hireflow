@@ -6,16 +6,15 @@ import { injectable, inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types.js";
 import { ResponseHandler } from "../../../../utils/responseHandler";
 import { IAuthController } from "../interface/IAuthController.js";
-import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
 
 @injectable()
 export class AuthController implements IAuthController {
-  constructor(@inject(TYPES.AuthService) private authService: IAuthService) {}
+  constructor(@inject(TYPES.AuthService) private _authService: IAuthService) {}
   //* signup
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
-      const result = await this.authService.signup(dto);
+      const result = await this._authService.signup(dto);
       ResponseHandler.success(res, "Otp send successfully", {
         email: result.email,
       });
@@ -28,7 +27,7 @@ export class AuthController implements IAuthController {
     try {
       const dto = req.body;
       const { user, accessToken, refreshToken } =
-        await this.authService.login(dto);
+        await this._authService.login(dto);
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
         secure: false,
@@ -47,7 +46,7 @@ export class AuthController implements IAuthController {
   async verifyOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto = req.body;
-      await this.authService.verifyOtp(dto);
+      await this._authService.verifyOtp(dto);
       ResponseHandler.success(res, "Otp verified successfully");
     } catch (error) {
       next(error);
@@ -57,7 +56,7 @@ export class AuthController implements IAuthController {
   async resendOtp(req: Request, res: Response, next: NextFunction) {
     try {
       const dto: ResendOtpDto = req.body;
-      await this.authService.resendOtp(dto.email);
+      await this._authService.resendOtp(dto.email);
       ResponseHandler.success(res, "Resend otp successfully");
     } catch (error) {
       next(error);
@@ -67,7 +66,7 @@ export class AuthController implements IAuthController {
   async refreshToken(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.cookies.refreshToken;
-      const result = await this.authService.refreshToken(token);
+      const result = await this._authService.refreshToken(token);
       res.json(result);
     } catch (error) {
       next(error);
@@ -77,7 +76,7 @@ export class AuthController implements IAuthController {
   async logout(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user.userId;
-      await this.authService.logout(userId);
+      await this._authService.logout(userId);
       res.clearCookie("refreshToken");
       res.json({ message: "Logged out successfully.." });
     } catch (error) {
@@ -89,7 +88,7 @@ export class AuthController implements IAuthController {
     try {
       const userId = req.user?.userId;
       console.log(userId);
-      const result = await this.authService.getCurrentUser(userId);
+      const result = await this._authService.getCurrentUser(userId);
       ResponseHandler.success(res, "Token Check successfull..", result);
     } catch (error) {
       next(error);
@@ -98,7 +97,7 @@ export class AuthController implements IAuthController {
   //* google auth url
   async getGoogleAuthUrl(req: Request, res: Response, next: NextFunction) {
     try {
-      const url = await this.authService.getGoogleAuthUrl();
+      const url = await this._authService.getGoogleAuthUrl();
       return res.redirect(url);
     } catch (error) {
       next(error);
@@ -114,7 +113,7 @@ export class AuthController implements IAuthController {
         return;
       }
 
-      const result = await this.authService.handleGoogleCallback(code);
+      const result = await this._authService.handleGoogleCallback(code);
 
       res.cookie("refreshToken", result.refreshToken, {
         httpOnly: true,
@@ -138,7 +137,7 @@ export class AuthController implements IAuthController {
   ): Promise<void> {
     try {
       const { id, token, password } = req.body;
-      const result = await this.authService.acceptInvite(id, token, password);
+      const result = await this._authService.acceptInvite(id, token, password);
       ResponseHandler.success(res, "account created successfull.", result);
     } catch (error) {
       next(error);

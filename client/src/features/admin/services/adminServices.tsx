@@ -54,3 +54,6 @@ export const rejectCompanyApi = async (
     .patch(`${ADMIN_BASE_ROUTE}/reject-company/${id}`, data)
     .then((res) => res.data);
 };
+export const getAdminDashboard = () => {
+  return api.get(`/${ADMIN_BASE_ROUTE}/dashboard`).then((res) => res.data);
+};

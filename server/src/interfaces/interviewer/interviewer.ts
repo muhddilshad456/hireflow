@@ -32,3 +32,24 @@ export interface PaginatedInterviewersResponse {
   page: number;
   totalPages: number;
 }
+
+export interface InterviewerDashboard {
+  stats: {
+    upcoming: number;
+    awaitingFeedback: number;
+    completed: number;
+    cancelled: number; // not a card, only used by the chart
+  };
+  upcomingInterviews: {
+    _id: string;
+    scheduledAt: string;
+    duration?: number;
+    candidateName: string;
+    jobTitle: string;
+    stageName: string;
+  }[];
+}
+
+export interface IInterviewerDashboardService {
+  getDashboard(interviewerId: string): Promise<InterviewerDashboard>;
+}

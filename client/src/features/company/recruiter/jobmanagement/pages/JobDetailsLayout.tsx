@@ -56,6 +56,7 @@ export interface ApiJobStage {
   order: number;
   assessmentTaskDescription?: string;
   assessmentTaskAttachmentUrl?: string;
+  documentVerificationDescription?: string;
   isMandatory: boolean;
   isActive: boolean;
 }
@@ -190,6 +191,7 @@ export const JobLayout: React.FC = () => {
       setLoading(true);
       const result = await jobDetails(jobId);
       const data = result?.data?.data ?? result?.data;
+      console.log("result of job details fetch : ", data);
       setJob(data.job);
       setApiStages(data.stages ?? []);
 

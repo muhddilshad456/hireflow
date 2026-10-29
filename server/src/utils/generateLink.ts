@@ -5,7 +5,7 @@ export function generateLink(
   token: string,
   id?: string,
 ) {
-  let path = "";
+  let path;
 
   if (type === "INVITE") {
     path = "/company/accept-invite";

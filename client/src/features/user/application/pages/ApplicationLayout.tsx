@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Header } from "../../shared/components/Header";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-import {
-  getMyApplication,
-  withdrawMyApplication,
-} from "../../../shared/services/applicationService";
+import { getMyApplication } from "../../../shared/services/applicationService";
+import { withdrawApplication } from "../services/applicatioServices";
+import toast from "react-hot-toast";
+import { ConfirmModal } from "../../shared/components/ConfirmModal";
 
 /* ----------------------------- Types ----------------------------- */
 interface ApiInterviewBasicUser {
@@ -96,8 +96,6 @@ export interface AppliedJobData {
   companyName: string;
   location: string;
   details: JobDetail[];
-  successTitle: string;
-  successSubtitle: string;
   appliedOn: string;
   applicationId: string;
   status: ApiApplication["status"];
@@ -189,17 +187,41 @@ const JobDetailRow: React.FC<JobDetail> = ({ label, value }) => (
 
 /* --------------------------- SuccessBanner --------------------------- */
 
-const SuccessBanner: React.FC<{ title: string; subtitle: string }> = ({
+interface StatusBannerProps {
+  title: string;
+  subtitle: string;
+  containerClass: string;
+  iconClass: string;
+  textClass: string;
+  icon: "check" | "alert" | "clock";
+}
+
+const StatusBanner: React.FC<StatusBannerProps> = ({
   title,
   subtitle,
+  containerClass,
+  iconClass,
+  textClass,
+  icon,
 }) => (
-  <div className="flex items-center gap-3 rounded-xl bg-emerald-100 px-4 py-3">
-    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-      <IconCheck className="h-4 w-4" />
+  <div
+    className={`flex items-center gap-3 rounded-xl px-4 py-3 ${containerClass}`}
+  >
+    <span
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${iconClass}`}
+    >
+      {icon === "check" ? (
+        <IconCheck className="h-4 w-4" />
+      ) : icon === "alert" ? (
+        <IconAlert className="h-4 w-4" />
+      ) : (
+        <span className="text-sm font-bold">…</span>
+      )}
     </span>
+
     <div>
-      <p className="text-sm font-semibold text-emerald-900">{title}</p>
-      <p className="text-xs text-emerald-800/80">{subtitle}</p>
+      <p className={`text-sm font-semibold ${textClass}`}>{title}</p>
+      <p className={`text-xs opacity-80 ${textClass}`}>{subtitle}</p>
     </div>
   </div>
 );
@@ -211,8 +233,6 @@ interface JobCardProps {
   companyName: string;
   location: string;
   details: JobDetail[];
-  successTitle: string;
-  successSubtitle: string;
   appliedOn: string;
   applicationId: string;
   status: string;
@@ -225,8 +245,6 @@ const JobCard: React.FC<JobCardProps> = ({
   companyName,
   location,
   details,
-  successTitle,
-  successSubtitle,
   appliedOn,
   applicationId,
   status,
@@ -256,15 +274,10 @@ const JobCard: React.FC<JobCardProps> = ({
       </div>
 
       <div className="my-5">
-        {status === "WITHDRAWN" ? (
-          <div className="rounded-xl bg-slate-100 px-4 py-3">
-            <p className="text-sm font-semibold text-slate-700">
-              Application Withdrawn
-            </p>
-          </div>
-        ) : (
-          <SuccessBanner title={successTitle} subtitle={successSubtitle} />
-        )}
+        <StatusBanner
+          {...(statusMessages[status as ApplicationStatus] ??
+            statusMessages.IN_PROGRESS)}
+        />
       </div>
 
       <div className="space-y-1">
@@ -507,6 +520,67 @@ function filenameFromUrl(url: string): string {
   }
 }
 
+type ApplicationStatus =
+  | "APPLIED"
+  | "IN_PROGRESS"
+  | "SELECTED"
+  | "REJECTED"
+  | "WITHDRAWN";
+
+const statusMessages: Record<
+  ApplicationStatus,
+  {
+    title: string;
+    subtitle: string;
+    containerClass: string;
+    iconClass: string;
+    textClass: string;
+    icon: "check" | "alert" | "clock";
+  }
+> = {
+  APPLIED: {
+    title: "Application Submitted",
+    subtitle: "Your application has been submitted successfully.",
+    containerClass: "bg-blue-100",
+    iconClass: "bg-blue-500 text-white",
+    textClass: "text-blue-900",
+    icon: "check",
+  },
+  IN_PROGRESS: {
+    title: "Application In Progress",
+    subtitle: "You will be notified when the next step is unlocked.",
+    containerClass: "bg-amber-100",
+    iconClass: "bg-amber-500 text-white",
+    textClass: "text-amber-900",
+    icon: "clock",
+  },
+  SELECTED: {
+    title: "Congratulations! You're Selected",
+    subtitle: "You have successfully completed the hiring process.",
+    containerClass: "bg-emerald-100",
+    iconClass: "bg-emerald-500 text-white",
+    textClass: "text-emerald-900",
+    icon: "check",
+  },
+  REJECTED: {
+    title: "Application Not Selected",
+    subtitle:
+      "Thank you for your interest. Unfortunately, your application was not selected this time.",
+    containerClass: "bg-red-100",
+    iconClass: "bg-red-500 text-white",
+    textClass: "text-red-900",
+    icon: "alert",
+  },
+  WITHDRAWN: {
+    title: "Application Withdrawn",
+    subtitle: "You have withdrawn your application for this position.",
+    containerClass: "bg-slate-100",
+    iconClass: "bg-slate-500 text-white",
+    textClass: "text-slate-800",
+    icon: "alert",
+  },
+};
+
 function mapApplicationToAppliedJobData(app: ApiApplication): AppliedJobData {
   const { job } = app;
 
@@ -545,11 +619,6 @@ function mapApplicationToAppliedJobData(app: ApiApplication): AppliedJobData {
         value: formatDate(job.applicationDeadline),
       },
     ],
-    successTitle:
-      app.status === "IN_PROGRESS"
-        ? "Application In Progress"
-        : "CV Submitted Successfully",
-    successSubtitle: "You will be notified once the next step is unlocked",
     appliedOn: formatDate(app.appliedAt),
     applicationId: app._id,
     status: app.status,
@@ -573,6 +642,7 @@ export const AppliedJobPage = () => {
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const loadData = async () => {
     if (!applicationId) {
@@ -604,17 +674,16 @@ export const AppliedJobPage = () => {
 
   const handleWithdraw = async () => {
     if (!applicationId) return;
-    const confirmed = window.confirm(
-      "Are you sure you want to withdraw this application?",
-    );
-    if (!confirmed) return;
 
     setIsWithdrawing(true);
+
     try {
-      await withdrawMyApplication(applicationId);
-      await loadData(); // refresh so status flips to WITHDRAWN
+      await withdrawApplication(applicationId);
+      setIsConfirmOpen(false);
+      await loadData();
+      toast.success("Application withdrawn successfully.");
     } catch (error: any) {
-      alert(
+      toast.error(
         error?.response?.data?.message ??
           error?.message ??
           "Failed to withdraw application",
@@ -655,12 +724,10 @@ export const AppliedJobPage = () => {
                 companyName={data.companyName}
                 location={data.location}
                 details={data.details}
-                successTitle={data.successTitle}
-                successSubtitle={data.successSubtitle}
                 appliedOn={data.appliedOn}
                 applicationId={data.applicationId}
                 status={data.status}
-                onWithdraw={handleWithdraw}
+                onWithdraw={() => setIsConfirmOpen(true)}
                 isWithdrawing={isWithdrawing}
               />
               <Outlet context={{ application: data }} />
@@ -675,6 +742,16 @@ export const AppliedJobPage = () => {
           </div>
         </main>
       )}
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        title="Withdraw Application?"
+        message="Are you sure you want to withdraw your application for this position? This action may not be reversible."
+        confirmText="Withdraw"
+        cancelText="Keep Application"
+        isLoading={isWithdrawing}
+        onConfirm={handleWithdraw}
+        onCancel={() => setIsConfirmOpen(false)}
+      />
     </div>
   );
 };

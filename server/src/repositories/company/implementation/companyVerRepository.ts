@@ -6,7 +6,10 @@ import {
   VerificationType,
 } from "../../../models/company/company.verification.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
-import { ICompanyVerRepository } from "../interface/ICompanyVerRepository";
+import {
+  ICompanyVerRepository,
+  GetAllVerificationReqResult,
+} from "../interface/ICompanyVerRepository";
 
 @injectable()
 export class CompanyVerRepository
@@ -21,12 +24,12 @@ export class CompanyVerRepository
     userId: string,
     type: VerificationType,
   ): Promise<ICompanyVerification | null> {
-    return await CompanyVerificationModel.findOne({
+    const result = await CompanyVerificationModel.findOne({
       adminId: userId,
       verificationType: type,
-    }).sort({
-      createdAt: -1,
-    });
+    }).sort({ createdAt: -1 });
+
+    return result;
   }
   //* get all verification request
   async getAllVerificationReq(
@@ -35,7 +38,7 @@ export class CompanyVerRepository
     search: string,
     status: string,
     type: VerificationType,
-  ): Promise<any> {
+  ): Promise<GetAllVerificationReqResult> {
     const skip = (page - 1) * limit;
 
     const filter: QueryFilter<ICompanyVerification> = {};

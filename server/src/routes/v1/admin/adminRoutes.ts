@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { container } from "../../dependency-injection/container";
-import { TYPES } from "../../dependency-injection/types";
-import { verifyAccessToken } from "../../middlewares/auth.middleware";
-import { roleGuard } from "../../middlewares/role.middleware";
-import { UserRole } from "../../constants/roles";
-import { IUserController } from "../../controllers/v1/users/interface/IUserController";
-import { IAdminController } from "../../controllers/v1/admin/interface/IAdminController";
-import { validateDto } from "../../middlewares/validate.middleware";
-import { CompanyRejectDto } from "../../dtos/v1/company/admin/request-dtos/companyRejectDto";
+import { container } from "../../../dependency-injection/container";
+import { TYPES } from "../../../dependency-injection/types";
+import { verifyAccessToken } from "../../../middlewares/auth.middleware";
+import { roleGuard } from "../../../middlewares/role.middleware";
+import { UserRole } from "../../../constants/roles";
+import { IUserController } from "../../../controllers/v1/users/interface/IUserController";
+import { IAdminController } from "../../../controllers/v1/admin/interface/IAdminController";
+import { validateDto } from "../../../middlewares/validate.middleware";
+import { CompanyRejectDto } from "../../../dtos/v1/company/admin/request-dtos/companyRejectDto";
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.get(
 router.patch(
   "/users/status/:userId",
   verifyAccessToken,
-  roleGuard([UserRole.ADMIN]),
+  roleGuard([UserRole.ADMIN, UserRole.COMPANY_ADMIN]),
   userController.updateUser.bind(userController),
 );
 router.get(
@@ -52,12 +52,22 @@ router.get(
   verifyAccessToken,
   adminController.getAllCompanies.bind(adminController),
 );
-
 router.get(
   "/company/:id",
   verifyAccessToken,
   roleGuard([UserRole.ADMIN]),
   adminController.getCompanyDetails.bind(adminController),
+);
+router.get(
+  "/profile",
+  verifyAccessToken,
+  adminController.getAdminProfile.bind(adminController),
+);
+router.get(
+  "/dashboard",
+  verifyAccessToken,
+  roleGuard([UserRole.ADMIN]),
+  adminController.getDashboard.bind(adminController),
 );
 
 export default router;

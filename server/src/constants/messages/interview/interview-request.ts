@@ -15,6 +15,7 @@ export const INTERVIEW_REQUEST_MESSAGES = {
   INTERVIEW_REQUEST_PENDING: "Interview request is still pending",
   INVALID_STATUS: "Invalid status filter",
   DECISION_SUCCESS: "Interview request updated successfully..",
+  DECISION_FAILED: "Interview request updated failed..",
   REQUEST_ALREADY_ACTIONED: "This interview request has already been actioned",
   NOT_AUTHORIZED: "You are not authorized to act on this interview request",
 } as const;

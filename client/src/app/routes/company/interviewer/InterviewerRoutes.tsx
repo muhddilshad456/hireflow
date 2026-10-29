@@ -1,5 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Dashboard } from "../../../../features/company/recruiter/dashboard/pages/Dashboard";
+import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "../../../../routes/ProtectedRoute";
 import { InterviewerLayout } from "./InterviewerLayout";
 import InterviewerProfilePage from "../../../../features/company/interviewer/profile/pages/InterviewerProfilePage";
@@ -7,6 +6,8 @@ import { InterviewRequestsPage } from "../../../../features/company/interviewer/
 import { InterviewsPage } from "../../../../features/company/interviewer/interviews/pages/Interviews";
 import { InterviewDetailsPage } from "../../../../features/company/interviewer/interviews/pages/InterviewDetails";
 import { InterviewerInterviewPage } from "../../../../features/company/interviewer/interviews/pages/InterviewerInterviewPage";
+import NotificationsPage from "../../../../features/shared/pages/NotificationPage";
+import { InterviewerDashboard } from "../../../../features/company/interviewer/dashboard/pages/Dashboard";
 
 const InterviewerRoutes = () => {
   return (
@@ -20,7 +21,7 @@ const InterviewerRoutes = () => {
         }
       >
         <Route path="/" element={<InterviewerLayout />}>
-          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="dashboard" element={<InterviewerDashboard />} />
           <Route path="interviews" element={<InterviewsPage />} />
           <Route path="interviews/:id" element={<InterviewDetailsPage />} />
           <Route
@@ -30,6 +31,7 @@ const InterviewerRoutes = () => {
           <Route path="profile" element={<InterviewerProfilePage />} />
         </Route>
         <Route path="interview/:id" element={<InterviewerInterviewPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
       </Route>
     </Routes>
   );

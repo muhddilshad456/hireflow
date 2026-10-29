@@ -4,6 +4,7 @@ import { ResumeReviewStage } from "./stages/ResumeReviewStage";
 import { AssessmentStage } from "./stages/AssessmentStage";
 import { DocumentVerificationStage } from "./stages/DocumentVerificationStage";
 import { InterviewStage } from "./stages/InterviewStage";
+import { OfferStage } from "./stages/OfferStage";
 
 /* --------------------------- Stage component registry --------------------------- */
 /* Keyed by the raw API stage name. Add one entry here per new stage type —
@@ -22,6 +23,9 @@ const STAGE_REGISTRY: Record<
   assessment: AssessmentStage,
   document_verification: DocumentVerificationStage,
   hr_interview: InterviewStage,
+  technical_interview: InterviewStage,
+  final_hr_interview: InterviewStage,
+  offer: OfferStage,
 };
 
 /* --------------------------- StageRenderer --------------------------- */

@@ -16,7 +16,7 @@ export class jobStageRepository
   async findByJobIdSorted(
     jobId: string,
     session?: ClientSession,
-  ): Promise<any> {
+  ): Promise<IJobStage[]> {
     return JobStageModel.find({ jobId, isActive: true })
       .sort({ order: 1 })
       .lean()

@@ -18,7 +18,7 @@ export interface IInvitation extends Document {
 
   status: InvitationStatus;
 
-  token: string; // hashed token
+  token: string;
   expiresAt: Date;
 
   createdAt: Date;

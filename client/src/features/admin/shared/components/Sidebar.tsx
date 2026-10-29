@@ -119,11 +119,6 @@ const NAV = [
   },
   { path: "/admin/users", label: "User Management", icon: <IcoUser /> },
   { path: "/admin/jobs", label: "Job Management", icon: <IcoJob /> },
-  {
-    path: "/admin/audit-report",
-    label: "Audit & Reports",
-    icon: <IcoAudit />,
-  },
 ];
 
 export function Sidebar({

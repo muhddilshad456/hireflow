@@ -22,6 +22,8 @@ export interface IJobStage extends Document {
   //-----Assesment stage only-----
   assessmentTaskDescription?: string;
   assessmentTaskAttachmentUrl?: string;
+  //---- Document verification stage only ----
+  documentVerificationDescription: string;
 }
 
 const jobStageSchema = new Schema<IJobStage>(
@@ -56,6 +58,7 @@ const jobStageSchema = new Schema<IJobStage>(
     assessmentTaskAttachmentUrl: {
       type: String,
     },
+    documentVerificationDescription: String,
   },
   { timestamps: true },
 );

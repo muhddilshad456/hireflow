@@ -5,6 +5,7 @@ import type { JobFilters } from "../../../../types/jobTypes";
 import { getMyApplications } from "../services/userJobService";
 import type { JobApplication } from "../../../../types/applicaionTypes";
 import { ApplicationCard } from "../components/ApplicationCard";
+import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -16,6 +17,14 @@ interface SearchBarProps {
 }
 
 function SearchBar({ filters, onChange }: SearchBarProps) {
+  const [searchText, setSearchText] = useState(filters.search ?? "");
+  const debouncedSearch = useDebounce(searchText, 400);
+
+  useEffect(() => {
+    if (debouncedSearch !== (filters.search ?? "")) {
+      onChange("search", debouncedSearch);
+    }
+  }, [debouncedSearch]);
   return (
     <div
       style={{
@@ -55,8 +64,8 @@ function SearchBar({ filters, onChange }: SearchBarProps) {
         <input
           type="text"
           placeholder="Job title, keywords…"
-          value={filters.search}
-          onChange={(e) => onChange("search", e.target.value)}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
           style={{
             background: "transparent",
             border: "none",

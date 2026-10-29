@@ -37,5 +37,16 @@ router.get(
   verifyAccessToken,
   recruiterController.getCompanyInterviewers.bind(recruiterController),
 );
+router.get(
+  "/profile",
+  verifyAccessToken,
+  recruiterController.getRecruiterProfile.bind(recruiterController),
+);
+router.get(
+  "/dashboard",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_RECRUITER]),
+  recruiterController.getDashboard.bind(recruiterController),
+);
 
 export default router;

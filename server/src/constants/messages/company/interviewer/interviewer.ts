@@ -1,5 +1,6 @@
 export const INTERVIEWER_MESSAGES = {
   PROFILE_FETCHED: "Interviewer profile fetched successfully",
+  INTERVIEWERS_FETCHED: "Interviewers fetched successfully",
   PROFILE_AUTO_CREATED: "Interviewer profile created successfully",
   PROFILE_UPDATED: "Interviewer profile updated successfully",
   PROFILE_CREATED: "Interviewer profile created successfully",

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { IProfileController } from "../interface/IProfileController";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
 import { inject } from "inversify";
@@ -10,7 +10,7 @@ import { ProfileArrayField } from "../../../../constants/profile/profile.consten
 
 export class ProfileController implements IProfileController {
   constructor(
-    @inject(TYPES.ProfileService) private profileService: IProfileService,
+    @inject(TYPES.ProfileService) private _profileService: IProfileService,
   ) {}
   //* get profile
   async getProfile(
@@ -20,7 +20,7 @@ export class ProfileController implements IProfileController {
   ): Promise<void> {
     try {
       const userId = req.user?.userId;
-      const result = await this.profileService.getProfile(userId);
+      const result = await this._profileService.getProfile(userId);
       ResponseHandler.success(res, PROFILE_MESSAGES.FETCH_SUCCESS, result);
     } catch (error) {
       next(error);
@@ -36,7 +36,7 @@ export class ProfileController implements IProfileController {
       const userId = req.user?.userId;
       const { name } = req.body;
       const file = req.file;
-      const result = await this.profileService.updateBasicInfo(
+      const result = await this._profileService.updateBasicInfo(
         userId,
         name,
         file,
@@ -47,6 +47,7 @@ export class ProfileController implements IProfileController {
         result,
       );
     } catch (error) {
+      console.log(error);
       next(error);
     }
   }
@@ -59,7 +60,7 @@ export class ProfileController implements IProfileController {
     try {
       const userId = req.user?.userId;
       const data = req.body;
-      const result = await this.profileService.updateBasicProfile(userId, data);
+      const result = await this._profileService.updateBasicProfile(userId, data);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -78,7 +79,7 @@ export class ProfileController implements IProfileController {
     try {
       const userId = req.user?.userId;
       const { skill } = req.body;
-      const result = await this.profileService.addSkill(userId, skill);
+      const result = await this._profileService.addSkill(userId, skill);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -97,7 +98,7 @@ export class ProfileController implements IProfileController {
     try {
       const userId = req.user?.userId;
       const skill = req.params?.skill as string;
-      const result = await this.profileService.removeSkill(userId, skill);
+      const result = await this._profileService.removeSkill(userId, skill);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -116,7 +117,7 @@ export class ProfileController implements IProfileController {
     try {
       const userId = req.user?.userId;
       const file = req.file;
-      const result = await this.profileService.addResume(userId, file);
+      const result = await this._profileService.addResume(userId, file);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -135,7 +136,7 @@ export class ProfileController implements IProfileController {
     try {
       const userId = req.user?.userId;
       const resumeId = req.params.resumeId as string;
-      const result = await this.profileService.removeResume(userId, resumeId);
+      const result = await this._profileService.removeResume(userId, resumeId);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -156,7 +157,7 @@ export class ProfileController implements IProfileController {
       const field = req.params.field as ProfileArrayField;
       const data = req.body;
 
-      const result = await this.profileService.addProfileItem(
+      const result = await this._profileService.addProfileItem(
         userId,
         field,
         data,
@@ -183,7 +184,7 @@ export class ProfileController implements IProfileController {
       const itemId = req.params.itemId as string;
       const data = req.body;
 
-      const result = await this.profileService.updateProfileItem(
+      const result = await this._profileService.updateProfileItem(
         userId,
         field,
         itemId,
@@ -210,7 +211,7 @@ export class ProfileController implements IProfileController {
       const field = req.params.field as ProfileArrayField;
       const itemId = req.params.itemId as string;
 
-      const result = await this.profileService.removeProfileItem(
+      const result = await this._profileService.removeProfileItem(
         userId,
         field,
         itemId,

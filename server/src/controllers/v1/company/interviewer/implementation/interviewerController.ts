@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { inject } from "inversify";
 import { TYPES } from "../../../../../dependency-injection/types";
 import { IInterviewerController } from "../interface/IInterviewerController";
@@ -9,11 +9,12 @@ import { INTERVIEWER_MESSAGES } from "../../../../../constants/messages/company/
 import { INTERVIEW_REQUEST_MESSAGES } from "../../../../../constants/messages/interview/interview-request";
 import { InterviewRequestDecisionDto } from "../../../../../dtos/v1/interview/interviewRequestDecisionDto";
 import { INTERVIEW_MESSAGES } from "../../../../../constants/messages/interview/interview";
+import { DASHBOARD_MESSAGES } from "../../../../../constants/messages/dashboard/dashboard";
 
 export class InterviewerController implements IInterviewerController {
   constructor(
     @inject(TYPES.InterviewerService)
-    private interviewerService: IInterviewerService,
+    private _interviewerService: IInterviewerService,
   ) {}
   //* toggle availability
   async toggleAvailability(
@@ -24,7 +25,7 @@ export class InterviewerController implements IInterviewerController {
     try {
       const userId = req.user?.userId;
       const { isAvailable } = req.body;
-      const result = await this.interviewerService.toggleAvailability(
+      const result = await this._interviewerService.toggleAvailability(
         userId,
         isAvailable,
       );
@@ -46,7 +47,7 @@ export class InterviewerController implements IInterviewerController {
     try {
       const userId = req.user?.userId;
       const dto = req.body;
-      const result = await this.interviewerService.updateInterviewerProfile(
+      const result = await this._interviewerService.updateInterviewerProfile(
         userId,
         dto,
       );
@@ -68,7 +69,7 @@ export class InterviewerController implements IInterviewerController {
     try {
       const userId = req.user?.userId;
       const result =
-        await this.interviewerService.getInterviewerProfile(userId);
+        await this._interviewerService.getInterviewerProfile(userId);
       ResponseHandler.success(
         res,
         INTERVIEWER_MESSAGES.PROFILE_FETCHED,
@@ -88,7 +89,7 @@ export class InterviewerController implements IInterviewerController {
       const userId = req.user?.userId;
       const { status, page, limit } = req.query;
 
-      const result = await this.interviewerService.getInterviewRequests(
+      const result = await this._interviewerService.getInterviewRequests(
         userId,
         {
           status: status as string | undefined,
@@ -117,7 +118,7 @@ export class InterviewerController implements IInterviewerController {
       const requestId = req.params.id as string;
       const dto: InterviewRequestDecisionDto = req.body;
 
-      const result = await this.interviewerService.updateIntReqDecision(
+      const result = await this._interviewerService.updateIntReqDecision(
         requestId,
         dto,
         userId,
@@ -142,7 +143,7 @@ export class InterviewerController implements IInterviewerController {
       const userId = req.user?.userId;
       const { search, status, page, limit } = req.query;
 
-      const result = await this.interviewerService.getInterviews(userId, {
+      const result = await this._interviewerService.getInterviews(userId, {
         search: search as string,
         status: status as string | undefined,
         page: Number(page) || 1,
@@ -154,6 +155,24 @@ export class InterviewerController implements IInterviewerController {
         INTERVIEW_MESSAGES.INTERVIEWS_FETCHED,
         result,
       );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get dashboard
+  async getDashboard(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const interviewerId = req.user?.userId;
+
+      const result = await this._interviewerService.getDashboard(
+        interviewerId as string,
+      );
+
+      ResponseHandler.success(res, DASHBOARD_MESSAGES.FETCHED, result);
     } catch (error) {
       next(error);
     }

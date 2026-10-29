@@ -8,6 +8,10 @@ import { InterviewerInvitations } from "../../../../features/company/admin/inter
 import { AdminHeaderLayout } from "./AdminHeaderLayout";
 import { SubscriptionCancelPage } from "../../../../features/company/admin/subscription/pages/SubscriptionCancel";
 import { SubscriptionSuccessPage } from "../../../../features/company/admin/subscription/pages/SubscriptionSuccess";
+import NotificationsPage from "../../../../features/shared/pages/NotificationPage";
+import { RecruiterManagement } from "../../../../features/company/admin/recruiter-management/pages/RecruiterManagement";
+import { InterviewerManagement } from "../../../../features/company/admin/interviewer-management/pages/InterviewerManagement";
+import { JobManagement } from "../../../../features/company/admin/job-management/pages/Jobs";
 
 const AdminRoutes = () => {
   return (
@@ -30,6 +34,9 @@ const AdminRoutes = () => {
             path="interviewer-invitations"
             element={<InterviewerInvitations />}
           />
+          <Route path="recruiters" element={<RecruiterManagement />} />
+          <Route path="interviewers" element={<InterviewerManagement />} />
+          <Route path="jobs" element={<JobManagement />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
         <Route element={<AdminHeaderLayout />}>
@@ -41,6 +48,7 @@ const AdminRoutes = () => {
             path="subscription/cancel"
             element={<SubscriptionCancelPage />}
           />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Route>
     </Routes>

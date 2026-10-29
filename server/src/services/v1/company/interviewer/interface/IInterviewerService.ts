@@ -9,6 +9,7 @@ import {
   UpdateInterviewRequestDecisionResult,
 } from "../../../../../interfaces/interview/interviewRequest";
 import {
+  InterviewerDashboard,
   InterviewerProfileResponse,
   UpdateInterviewerProfile,
 } from "../../../../../interfaces/interviewer/interviewer";
@@ -37,4 +38,5 @@ export interface IInterviewerService {
     userId: string,
     params: GetMyInterviewParams,
   ): Promise<GetMyInterviewsResult>;
+  getDashboard(interviewerId: string): Promise<InterviewerDashboard>;
 }

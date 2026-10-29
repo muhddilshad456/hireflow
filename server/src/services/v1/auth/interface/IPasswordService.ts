@@ -7,5 +7,5 @@ export interface IPasswordService {
     userId: string,
     currentPassword: string,
     newPassword: string,
-  ): Promise<any>;
+  ): Promise<void>;
 }

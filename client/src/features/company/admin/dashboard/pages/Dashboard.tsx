@@ -1,218 +1,220 @@
-import type { ReactNode } from "react";
-import { Ico } from "../../../../../assets/icons/CompanyIcons";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Briefcase,
+  ClipboardList,
+  FileText,
+  Sparkles,
+  UserCheck,
+  Users,
+} from "lucide-react";
+import type { CompanyAdminDashboardData } from "../../../../../types/company/admin/admin";
+import { getCompanyAdminDashboard } from "../services/comapanyServices";
+import {
+  StatCard,
+  StatCardSkeleton,
+} from "../../../../shared/components/StatCard";
+import { ApplicationsStatusChart } from "../../../../shared/components/Applicationsstatuschart";
 
-/* ═══════════════════════════ DASHBOARD DATA ═══════════════════════════ */
-const JOBS = [
-  {
-    title: "Senior Software Engineer",
-    cat: "Engineering",
-    status: "Open" as const,
-    apps: 120,
-  },
-  {
-    title: "Product Manager",
-    cat: "Product",
-    status: "Open" as const,
-    apps: 85,
-  },
-  {
-    title: "UX/UI Designer",
-    cat: "Design",
-    status: "Closed" as const,
-    apps: 60,
-  },
-  {
-    title: "Data Analyst",
-    cat: "Analytics",
-    status: "Open" as const,
-    apps: 95,
-  },
-];
-const FEED = [
-  {
-    ic: <Ico.Person />,
-    text: "New candidate applied for Senior Software Engineer",
-    t: "2 hours ago",
-    dot: "bg-emerald-400",
-  },
-  {
-    ic: <Ico.Mail />,
-    text: "Offer sent to candidate for Product Manager",
-    t: "4 hours ago",
-    dot: "bg-amber-400",
-  },
-  {
-    ic: <Ico.Code />,
-    text: "Candidate moved to Technical Round for UX/UI Designer",
-    t: "6 hours ago",
-    dot: "bg-violet-400",
-  },
-  {
-    ic: <Ico.Briefcase />,
-    text: "New job post created: Data Analyst",
-    t: "8 hours ago",
-    dot: "bg-sky-400",
-  },
-  {
-    ic: <Ico.Person />,
-    text: "Candidate rejected for Senior Software Engineer",
-    t: "10 hours ago",
-    dot: "bg-rose-400",
-  },
-];
-const CAT: Record<string, string> = {
-  Engineering: "text-emerald-700 bg-emerald-50 border-emerald-200",
-  Product: "text-amber-700 bg-amber-50 border-amber-200",
-  Design: "text-violet-700 bg-violet-50 border-violet-200",
-  Analytics: "text-sky-700 bg-sky-50 border-sky-200",
+const PROFILE_ROUTE = "/company/admin/profile"; // where your Upgrade card lives
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+const JOB_STATUS_STYLE: Record<string, string> = {
+  OPEN: "bg-emerald-50 text-emerald-600",
+  FILLED: "bg-blue-50 text-blue-600",
+  CLOSED: "bg-gray-100 text-gray-500",
 };
 
-/* ═══════════════════════ SMALL ATOMS ══════════════════════════════════ */
-function Pill({ c, children }: { c: string; children: ReactNode }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${c}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-/* ═══════════════════════ PAGES ════════════════════════════════════════ */
-function StatCard({
-  label,
-  value,
-  trend,
-}: {
-  label: string;
-  value: ReactNode;
-  trend?: string;
-}) {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-      <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-3">
-        {label}
-      </p>
-      <p className="text-3xl font-black text-slate-800 tabular-nums leading-none">
-        {value}
-      </p>
-      {trend && (
-        <p className="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-600">
-          <Ico.Trend />
-          {trend}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function Dashboard() {
-  return (
-    <div className="space-y-7">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Welcome back — here's what's happening today.
-          </p>
-        </div>
-        <button className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold px-4 py-2.5 rounded-xl shadow-sm shadow-emerald-200 transition-colors flex-shrink-0 hover:from-emerald-600 hover:to-teal-600">
-          <Ico.Plus />
-          Post a Job
+  const navigate = useNavigate();
+  const [data, setData] = useState<CompanyAdminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getCompanyAdminDashboard();
+      setData(res.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Failed to load the dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  if (error) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm text-red-500">{error}</p>
+        <button
+          onClick={fetchDashboard}
+          className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          Try again
         </button>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard label="Active Job Posts" value={15} trend="+3 this week" />
-        <StatCard label="Total Applications" value={350} trend="+28 today" />
-        <StatCard label="Shortlisted" value={75} />
-        <StatCard label="Candidates Hired" value={10} trend="This month" />
-      </div>
+  const stats = data?.stats;
+  const subscription = data?.subscription;
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
-          <h2 className="font-bold text-slate-700">Active Jobs Overview</h2>
-          <button className="text-xs font-semibold text-emerald-600 hover:underline">
-            View All Jobs
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100">
-                {["Job Title", "Category", "Status", "Applications", ""].map(
-                  (h) => (
-                    <th
-                      key={h}
-                      className="text-left px-5 py-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider first:pl-6 last:pr-6"
-                    >
-                      {h}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {JOBS.map((j, i) => (
-                <tr key={i} className="hover:bg-slate-50/60 transition-colors">
-                  <td className="px-5 pl-6 py-3.5 font-semibold text-slate-700">
-                    {j.title}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <Pill c={CAT[j.cat]}>{j.cat}</Pill>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${j.status === "Open" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"}`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${j.status === "Open" ? "bg-emerald-500" : "bg-slate-400"}`}
-                      />
-                      {j.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-semibold text-slate-600">
-                    {j.apps}
-                  </td>
-                  <td className="px-5 pr-6 py-3.5 text-right">
-                    <button className="text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-colors">
-                      View Job
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        A quick look at your company's hiring.
+      </p>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-50">
-          <h2 className="font-bold text-slate-700">Recent Activity Feed</h2>
-        </div>
-        <ul className="divide-y divide-slate-50">
-          {FEED.map((f, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-4 px-6 py-4 hover:bg-slate-50/50 transition-colors"
+      {/* ---------- stat cards ---------- */}
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {loading || !stats ? (
+          Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard
+              label="Open jobs"
+              value={stats.openJobs}
+              icon={<Briefcase size={18} />}
+            />
+            <StatCard
+              label="Total applications"
+              value={stats.totalApplications}
+              icon={<FileText size={18} />}
+            />
+            <StatCard
+              label="Selected candidates"
+              value={stats.selected}
+              icon={<UserCheck size={18} />}
+            />
+            <StatCard
+              label="Recruiters"
+              value={stats.recruiters}
+              icon={<Users size={18} />}
+            />
+            <StatCard
+              label="Interviewers"
+              value={stats.interviewers}
+              icon={<ClipboardList size={18} />}
+            />
+          </>
+        )}
+
+        {/* subscription */}
+        {loading || !subscription ? (
+          <StatCardSkeleton />
+        ) : (
+          <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div
+              className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${
+                subscription.isActive
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-slate-100 text-slate-600"
+              }`}
             >
-              <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 mt-0.5">
-                {f.ic}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-slate-700 font-medium leading-snug">
-                  {f.text}
+              <Sparkles size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900">
+                {subscription.isActive ? "Premium plan" : "Free plan"}
+              </p>
+              {subscription.isActive && subscription.endDate ? (
+                <p className="mt-0.5 truncate text-xs text-gray-500">
+                  {subscription.daysRemaining} days left ·{" "}
+                  {formatDate(subscription.endDate)}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">{f.t}</p>
+              ) : (
+                <button
+                  onClick={() => navigate(PROFILE_ROUTE)}
+                  className="mt-0.5 text-xs font-semibold text-emerald-600 hover:underline"
+                >
+                  Upgrade to Premium
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        {/* ---------- chart ---------- */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-gray-900">
+            Applications by status
+          </h2>
+          <div className="mt-4">
+            {loading || !data ? (
+              <div className="space-y-4 animate-pulse">
+                {[0, 1, 2].map((i) => (
+                  <div key={i}>
+                    <div className="mb-2 h-3 w-24 rounded bg-gray-200" />
+                    <div className="h-2.5 w-full rounded-full bg-gray-200" />
+                  </div>
+                ))}
               </div>
-              <span
-                className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${f.dot}`}
-              />
-            </li>
-          ))}
-        </ul>
+            ) : (
+              <ApplicationsStatusChart data={data.applicationsByStatus} />
+            )}
+          </div>
+        </section>
+
+        {/* ---------- latest jobs ---------- */}
+        <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-gray-900">Latest jobs</h2>
+          <div className="mt-4">
+            {loading || !data ? (
+              <div className="space-y-3 animate-pulse">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="h-10 rounded-lg bg-gray-100" />
+                ))}
+              </div>
+            ) : data.latestJobs.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-400">
+                No jobs posted yet.
+              </p>
+            ) : (
+              <ul className="divide-y divide-gray-50">
+                {data.latestJobs.map((job) => (
+                  <li
+                    key={job._id}
+                    className="flex items-center justify-between gap-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-gray-900">
+                        {job.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        {job.applicantsCount} applicant
+                        {job.applicantsCount === 1 ? "" : "s"} ·{" "}
+                        {formatDate(job.createdAt)}
+                      </p>
+                    </div>
+                    <span
+                      className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        JOB_STATUS_STYLE[job.status] ??
+                        "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {job.status.charAt(0) + job.status.slice(1).toLowerCase()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

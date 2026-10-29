@@ -5,7 +5,7 @@ import {
   JobApplicationStageModel,
 } from "../../../models/job-application/job.application.stage.model";
 import { IJobApplicationStageRepository } from "../interface/IJobApplicationStageRepository";
-import { Types } from "mongoose";
+import { Types, PipelineStage } from "mongoose";
 import { INTERVIEW_STAGE_NAMES } from "../../../constants/interview/interview";
 
 @injectable()
@@ -16,22 +16,8 @@ export class JobApplicationStageRepository
   constructor() {
     super(JobApplicationStageModel);
   }
-  // async findByStageIds(stageIds: string[]): Promise<any> {
-  //   return JobApplicationStageModel.find({ jobStageId: { $in: stageIds } })
-  //     .populate({
-  //       path: "applicationId",
-  //       select:
-  //         "userId status resumeUrl coverLetter appliedAt offerDetails currentStageId",
-  //       populate: {
-  //         path: "userId",
-  //         select: "_id name email",
-  //       },
-  //     })
-  //     .populate("interviewerId", "name email")
-  //     .lean();
-  // }
   //* find by stage id paginated
-  async findByStageIdPaginated(
+  async findByStageIdPaginated<T = unknown>(
     stageId: Types.ObjectId,
     stageName: string,
     {
@@ -40,11 +26,11 @@ export class JobApplicationStageRepository
       page,
       limit,
     }: { search?: string; status?: string; page: number; limit: number },
-  ): Promise<{ data: any[]; total: number }> {
+  ): Promise<{ data: T[]; total: number }> {
     const objectStageId =
       typeof stageId === "string" ? new Types.ObjectId(stageId) : stageId;
 
-    const pipeline: any[] = [
+    const pipeline: PipelineStage[] = [
       { $match: { jobStageId: objectStageId } },
       {
         $lookup: {
@@ -81,14 +67,15 @@ export class JobApplicationStageRepository
 
     const isInterviewStage = INTERVIEW_STAGE_NAMES.includes(stageName);
     const isOfferStage = stageName === "offer";
+    const isAssessmentStage = stageName === "assessment";
 
-    const dataStages: any[] = [
+    const dataStages: PipelineStage[] = [
       { $sort: { "application.appliedAt": -1 } },
       { $skip: (page - 1) * limit },
       { $limit: limit },
     ];
 
-    // ---- Only attach interview lookups for interview-type stages ----
+    // ---- Interview lookups (interview-type stages only) ----
     if (isInterviewStage) {
       dataStages.push(
         {
@@ -250,9 +237,71 @@ export class JobApplicationStageRepository
       );
     }
 
-    // ---- Build projection depending on stage type ----
-    const baseProjection: any = {
-      applicationStageId: "$_id",
+    // ---- Offer stage: resolve offerSentBy user ----
+    if (isOfferStage) {
+      dataStages.push(
+        {
+          $lookup: {
+            from: "users",
+            localField: "offerSentBy",
+            foreignField: "_id",
+            as: "offerSentByUser",
+          },
+        },
+        {
+          $unwind: {
+            path: "$offerSentByUser",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      );
+    }
+
+    // ---- Build applicationStage details depending on stage type ----
+    const applicationStageProjection: Record<string, unknown> = {
+      _id: "$_id",
+      applicationId: "$applicationId",
+      jobStageId: "$jobStageId",
+      status: "$status",
+      feedback: "$feedback",
+      documents: "$documents",
+      startedAt: "$startedAt",
+      completedAt: "$completedAt",
+      createdAt: "$createdAt",
+      updatedAt: "$updatedAt",
+    };
+
+    if (isInterviewStage) {
+      applicationStageProjection.interviewProgress = "$interviewProgress";
+    } else if (isOfferStage) {
+      applicationStageProjection.offerLetterUrl = "$offerLetterUrl";
+      applicationStageProjection.offeredSalary = "$offeredSalary";
+      applicationStageProjection.joiningDate = "$joiningDate";
+      applicationStageProjection.offerSentAt = "$offerSentAt";
+      applicationStageProjection.offerSentBy = {
+        $cond: [
+          { $ifNull: ["$offerSentByUser._id", false] },
+          {
+            _id: "$offerSentByUser._id",
+            name: "$offerSentByUser.name",
+            email: "$offerSentByUser.email",
+          },
+          null,
+        ],
+      };
+      applicationStageProjection.offerResponse = "$offerResponse";
+      applicationStageProjection.offerRespondedAt = "$offerRespondedAt";
+    } else if (isAssessmentStage) {
+      applicationStageProjection.assessmentResponseText =
+        "$assessmentResponseText";
+      applicationStageProjection.assessmentResponseAttachmentUrl =
+        "$assessmentResponseAttachmentUrl";
+      applicationStageProjection.assessmentSubmittedAt =
+        "$assessmentSubmittedAt";
+    }
+    // resume_review, document_verification: only the common fields (incl. feedback)
+
+    const baseProjection: Record<string, unknown> = {
       status: 1,
       startedAt: 1,
       completedAt: 1,
@@ -265,30 +314,14 @@ export class JobApplicationStageRepository
         appliedAt: "$application.appliedAt",
         currentStageId: "$application.currentStageId",
       },
+      applicationStage: applicationStageProjection, // replaces applicationStageId
     };
-
-    if (isInterviewStage) {
-      baseProjection.interviewProgress = 1;
-    } else if (isOfferStage) {
-      baseProjection.offerLetterUrl = 1;
-      baseProjection.offeredSalary = 1;
-      baseProjection.joiningDate = 1;
-      baseProjection.offerSentAt = 1;
-      baseProjection.offerSentBy = 1;
-      baseProjection.offerResponse = 1;
-      baseProjection.offerRespondedAt = 1;
-    } else {
-      // resume_review, assessment, document_verification
-      baseProjection.feedback = 1;
-      baseProjection.reviewedBy = 1;
-      baseProjection.reviewedAt = 1;
-    }
 
     dataStages.push({ $project: baseProjection });
 
     pipeline.push({
       $facet: {
-        data: dataStages,
+        data: dataStages as PipelineStage.FacetPipelineStage[],
         totalCount: [{ $count: "count" }],
       },
     });

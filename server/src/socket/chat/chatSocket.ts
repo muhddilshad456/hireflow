@@ -4,6 +4,7 @@ import { TYPES } from "../../dependency-injection/types";
 import { IConversationService } from "../../services/v1/chat/conversation/interface/IConversationService";
 import { IMessageService } from "../../services/v1/chat/message/interface/IMessageService";
 import { AuthedSocket } from "../middleware/socketAuth";
+import { SenderRole } from "../../interfaces/chat/message";
 
 export function initChatSocket(socket: AuthedSocket) {
   const conversationService = container.get<IConversationService>(
@@ -44,7 +45,7 @@ export function initChatSocket(socket: AuthedSocket) {
         await messageService.sendMessage({
           conversationId: new Types.ObjectId(data.conversationId),
           senderId: new Types.ObjectId(socket.user!.id),
-          senderRole: socket.user!.role,
+          senderRole: socket.user!.role as SenderRole,
           content: data.content,
         });
       } catch (err: any) {

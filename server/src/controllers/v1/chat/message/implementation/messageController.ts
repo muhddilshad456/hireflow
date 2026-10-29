@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { inject, injectable } from "inversify";
 import { Types } from "mongoose";
 import { IMessageController } from "../interface/IMessageController";
@@ -11,7 +11,7 @@ import { IMessageService } from "../../../../../services/v1/chat/message/interfa
 @injectable()
 export class MessageController implements IMessageController {
   constructor(
-    @inject(TYPES.MessageService) private messageService: IMessageService,
+    @inject(TYPES.MessageService) private _messageService: IMessageService,
   ) {}
   //* send message
   async sendMessage(
@@ -23,7 +23,7 @@ export class MessageController implements IMessageController {
       const conversationId = new Types.ObjectId(req.params.id as string);
       const attachment = req.file;
 
-      const message = await this.messageService.sendMessage({
+      const message = await this._messageService.sendMessage({
         conversationId,
         senderId: new Types.ObjectId(req.user!.userId),
         senderRole: req.user!.role,
@@ -44,7 +44,7 @@ export class MessageController implements IMessageController {
   ): Promise<void> {
     try {
       const conversationId = req.params.id as string;
-      const messages = await this.messageService.getMessages(
+      const messages = await this._messageService.getMessages(
         new Types.ObjectId(conversationId),
         new Types.ObjectId(req.user!.userId),
         req.query.cursor as string | undefined,
@@ -62,7 +62,7 @@ export class MessageController implements IMessageController {
   ): Promise<void> {
     try {
       const conversationId = req.params.id as string;
-      await this.messageService.markAsRead(
+      await this._messageService.markAsRead(
         new Types.ObjectId(conversationId),
         new Types.ObjectId(req.user!.userId),
       );

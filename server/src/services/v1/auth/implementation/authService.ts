@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { Types } from "mongoose";
 import type { Logger } from "pino";
 import querystring from "querystring";
 import axios from "axios";
@@ -22,40 +23,42 @@ import { SignupDto, UserRole } from "../../../../dtos/v1/auth/signup.dto.js";
 import { AuthMapper } from "../../../../mapper/auth/authMapper.js";
 import { LoginDto } from "../../../../dtos/v1/auth/login.dto.js";
 import { VerifyOtpDto } from "../../../../dtos/v1/auth/verify-otp.dto.js";
-import { ResetPasswordDto } from "../../../../dtos/v1/auth/reset-password.dto.js";
-import { generateLink } from "../../../../utils/generateLink.js";
 import { IUser } from "../../../../models/user.model.js";
 import { TokenPair } from "../../../../types/tokenPair.js";
-import { generateToken } from "../../../../utils/token.util.js";
 import { IInvitationRepository } from "../../../../repositories/company/interface/IInvitationRepository.js";
 import { InvitationStatus } from "../../../../models/recruiter.invitation.model.js";
-import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation.js";
-import { AUTH_MESSAGES } from "../../../../constants/messages/auth.js";
+import { INotificationService } from "../../notification/interface/INotificationService.js";
+import { ICompanyRepository } from "../../../../repositories/company/interface/ICompanyRepository.js";
+import { COMPANY_MESSAGES } from "../../../../constants/messages/company.js";
 
 @injectable()
 export class AuthService implements IAuthService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
     @inject(TYPES.InvitationRepository)
-    private invitationRepository: IInvitationRepository,
-    @inject(TYPES.EmailService) private emailService: IEmailService,
-    @inject(TYPES.RedisService) private redisService: IRedisService,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _invitationRepository: IInvitationRepository,
+    @inject(TYPES.NotificationService)
+    private _notificationService: INotificationService,
+    @inject(TYPES.CompanyRepository)
+    private _companyRepository: ICompanyRepository,
+    @inject(TYPES.EmailService) private _emailService: IEmailService,
+    @inject(TYPES.RedisService) private _redisService: IRedisService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
 
   //* signup
   async signup(dto: SignupDto): Promise<{ email: string }> {
-    this.logger.info({
+    this._logger.info({
       event: "SIGNUP_STARTED",
       email: dto.email,
     });
 
     const userData = AuthMapper.toUserEntity(dto);
 
-    const existingUser = await this.userRepository.findByEmail(userData.email);
+    const existingUser = await this._userRepository.findByEmail(userData.email);
 
     if (existingUser) {
-      this.logger.warn({
+      this._logger.warn({
         event: "SIGNUP_FAILED_USER_EXISTS",
         email: userData.email,
       });
@@ -67,9 +70,9 @@ export class AuthService implements IAuthService {
     userData.password = hashedPassword;
 
     // create user
-    const user = await this.userRepository.create(userData);
+    const user = await this._userRepository.create(userData);
 
-    this.logger.info({
+    this._logger.info({
       event: "USER_CREATED",
       userId: user._id,
       email: user.email,
@@ -80,18 +83,18 @@ export class AuthService implements IAuthService {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    await this.redisService.set(`otp:${userData.email}`, hashedOtp, 120);
+    await this._redisService.set(`otp:${userData.email}`, hashedOtp, 120);
 
     // send email
-    await this.emailService.sendOtpEmail(userData.email, otp);
+    await this._emailService.sendOtpEmail(userData.email, otp);
 
-    this.logger.info({
+    this._logger.info({
       event: "OTP_SENT",
       email: user.email,
       otp,
     });
 
-    this.logger.info({
+    this._logger.info({
       event: "SIGNUP_COMPLETED",
       userId: user._id,
       email: user.email,
@@ -104,17 +107,17 @@ export class AuthService implements IAuthService {
 
   // * login
   async login(dto: LoginDto) {
-    this.logger.info({
+    this._logger.info({
       event: "LOGIN_STARTED",
       email: dto.email,
     });
 
     const { email, password } = dto;
 
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this._userRepository.findByEmail(email);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      this.logger.warn({
+      this._logger.warn({
         event: "LOGIN_FAILED_INVALID_CREDENTIALS",
         email,
       });
@@ -122,7 +125,7 @@ export class AuthService implements IAuthService {
     }
 
     if (user.isBlocked) {
-      this.logger.warn({
+      this._logger.warn({
         event: "User Blocked",
         email,
       });
@@ -130,7 +133,7 @@ export class AuthService implements IAuthService {
     }
 
     if (!user.isVerified) {
-      this.logger.warn({
+      this._logger.warn({
         event: "LOGIN_FAILED_NOT_VERIFIED",
         email,
       });
@@ -145,11 +148,11 @@ export class AuthService implements IAuthService {
       userId: user._id,
     });
 
-    await this.userRepository.update(user._id.toString(), {
+    await this._userRepository.update(user._id.toString(), {
       refreshToken,
     });
 
-    this.logger.info({
+    this._logger.info({
       event: "LOGIN_SUCCESS",
       userId: user._id,
       email,
@@ -161,6 +164,7 @@ export class AuthService implements IAuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        profilePicture: user.profilePicture,
       },
       accessToken,
       refreshToken,
@@ -171,25 +175,25 @@ export class AuthService implements IAuthService {
   async verifyOtp(dto: VerifyOtpDto) {
     const { email, otp } = dto;
 
-    this.logger.info({
+    this._logger.info({
       event: "VERIFY_OTP_STARTED",
       email,
     });
 
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this._userRepository.findByEmail(email);
 
     if (!user || user.isVerified) {
-      this.logger.warn({
+      this._logger.warn({
         event: "VERIFY_OTP_INVALID_USER_OR_ALREADY_VERIFIED",
         email,
       });
       throw new BadRequestError("Invalid or expired OTP");
     }
 
-    const redisOtp = await this.redisService.get(`otp:${email}`);
+    const redisOtp = await this._redisService.get(`otp:${email}`);
 
     if (!redisOtp) {
-      this.logger.warn({
+      this._logger.warn({
         event: "VERIFY_OTP_NOT_FOUND",
         email,
       });
@@ -199,20 +203,20 @@ export class AuthService implements IAuthService {
     const isMatch = await bcrypt.compare(otp, redisOtp!);
 
     if (!isMatch) {
-      this.logger.warn({
+      this._logger.warn({
         event: "VERIFY_OTP_MISMATCH",
         email,
       });
       throw new BadRequestError("Invalid or expired OTP");
     }
 
-    await this.userRepository.update(user._id.toString(), {
+    await this._userRepository.update(user._id.toString(), {
       isVerified: true,
     });
 
-    await this.redisService.del(`otp:${email}`);
+    await this._redisService.del(`otp:${email}`);
 
-    this.logger.info({
+    this._logger.info({
       event: "VERIFY_OTP_SUCCESS",
       userId: user._id,
       email,
@@ -221,7 +225,7 @@ export class AuthService implements IAuthService {
 
   // * resend otp
   async resendOtp(email: string) {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this._userRepository.findByEmail(email);
     if (!user) throw new NotFoundError("User not found");
 
     if (user.isVerified) throw new BadRequestError("User already verified");
@@ -231,7 +235,7 @@ export class AuthService implements IAuthService {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
 
-    await this.redisService.set(`otp:${email}`, hashedOtp, 120);
+    await this._redisService.set(`otp:${email}`, hashedOtp, 120);
 
     console.log(`otp : ${otp} send to ${email}`);
   }
@@ -241,7 +245,7 @@ export class AuthService implements IAuthService {
     if (!token) {
       throw new NotFoundError("token is missing");
     }
-    const user = await this.userRepository.findByRefreshToken(token);
+    const user = await this._userRepository.findByRefreshToken(token);
     if (!user) {
       throw new ForbiddenError("invalied refresh token ..!");
     }
@@ -254,19 +258,19 @@ export class AuthService implements IAuthService {
 
   // * logout
   async logout(userId: string): Promise<void> {
-    await this.userRepository.removeRefreshToken(userId);
+    await this._userRepository.removeRefreshToken(userId);
   }
 
   // * Token check
   async getCurrentUser(userId: string): Promise<Partial<IUser>> {
-    this.logger.info({
+    this._logger.info({
       event: "TOKEN_CHECK_STARTED",
     });
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         event: "EXPIRED_INVALID_TOKEN",
       });
       throw new BadRequestError("Invalid or expired token");
@@ -303,7 +307,7 @@ export class AuthService implements IAuthService {
 
   // * handle google callback
   async handleGoogleCallback(code: string): Promise<TokenPair> {
-    this.logger.info({
+    this._logger.info({
       event: "GOOGLE_LOGIN_STARTED",
       message: "Google login process started",
     });
@@ -339,26 +343,26 @@ export class AuthService implements IAuthService {
     const googleUser = userResponse.data;
 
     if (!googleUser.email) {
-      this.logger.error({
+      this._logger.error({
         event: "GOOGLE_EMAIL_MISSING",
         message: "Google did not return email",
       });
       throw new NotFoundError("Email not provided by Google");
     }
 
-    this.logger.info({
+    this._logger.info({
       event: "GOOGLE_USER_FETCHED",
       email: googleUser.email,
     });
 
-    const existingUser = await this.userRepository.findByEmail(
+    const existingUser = await this._userRepository.findByEmail(
       googleUser.email,
     );
 
     let user = existingUser;
 
     if (!existingUser) {
-      this.logger.info({
+      this._logger.info({
         event: "GOOGLE_SIGNUP",
         email: googleUser.email,
       });
@@ -369,9 +373,9 @@ export class AuthService implements IAuthService {
         password: "null",
         role: UserRole.USER,
       });
-      user = await this.userRepository.create(userData);
+      user = await this._userRepository.create(userData);
     } else {
-      this.logger.info({
+      this._logger.info({
         event: "GOOGLE_LOGIN",
         email: googleUser.email,
       });
@@ -386,9 +390,9 @@ export class AuthService implements IAuthService {
       userId: user!._id,
     });
 
-    await this.userRepository.update(user!._id.toString(), { refreshToken });
+    await this._userRepository.update(user!._id.toString(), { refreshToken });
 
-    this.logger.info({
+    this._logger.info({
       event: "GOOGLE_LOGIN_SUCCESS",
       userId: user!._id,
     });
@@ -403,10 +407,10 @@ export class AuthService implements IAuthService {
     id: string,
     token: string,
     password: string,
-  ): Promise<any> {
-    const invitation = await this.invitationRepository.findById(id);
+  ): Promise<{ message: string; userId: Types.ObjectId }> {
+    const invitation = await this._invitationRepository.findById(id);
     if (!invitation) {
-      this.logger.info({
+      this._logger.info({
         event: "Invalid invitation",
       });
       throw new BadRequestError("Invalid invitation");
@@ -414,37 +418,37 @@ export class AuthService implements IAuthService {
 
     const isValidToken = await bcrypt.compare(token, invitation.token);
     if (!isValidToken) {
-      this.logger.info({
+      this._logger.info({
         event: "Invalid Token",
       });
       throw new BadRequestError("Invalid token");
     }
 
-    const existingUser = await this.userRepository.findByEmail(
+    const existingUser = await this._userRepository.findByEmail(
       invitation.email,
     );
     if (existingUser) {
-      this.logger.info({
+      this._logger.info({
         event: "User already exist",
       });
       throw new ConflictError("User already exists");
     }
 
     if (invitation.status == InvitationStatus.ACCEPTED) {
-      this.logger.info({
+      this._logger.info({
         event: "Invitation already accepted",
       });
       throw new ConflictError("Invite already accepted");
     }
     if (invitation.status == InvitationStatus.CANCELLED) {
-      this.logger.info({
+      this._logger.info({
         event: "Invitation canceled",
       });
       throw new ConflictError("Invite canceled");
     }
 
     if (invitation.expiresAt < new Date()) {
-      this.logger.info({
+      this._logger.info({
         event: "Invitation expired",
       });
       throw new BadRequestError("Invite expired");
@@ -460,16 +464,34 @@ export class AuthService implements IAuthService {
       company: invitation.companyId,
     };
 
-    const user = await this.userRepository.create(userData);
+    const user = await this._userRepository.create(userData);
 
-    this.logger.info({
+    this._logger.info({
       event: "USER_CREATED",
       userId: user._id,
       email: user.email,
     });
 
-    await this.invitationRepository.update(invitation._id.toString(), {
+    await this._invitationRepository.update(invitation._id.toString(), {
       status: InvitationStatus.ACCEPTED,
+    });
+
+    const company = await this._companyRepository.findById(
+      invitation.companyId.toString(),
+    );
+
+    if (!company) {
+      this._logger.info({
+        event: COMPANY_MESSAGES.COMPANY_NOT_FOUND,
+      });
+      throw new BadRequestError(COMPANY_MESSAGES.COMPANY_NOT_FOUND);
+    }
+
+    await this._notificationService.notify(company?.adminId?.toString(), {
+      type: "INVITATION ACCEPTED",
+      title: "Invitation request accepted.",
+      message: `Your invitation request accepted by ${invitation.role}`,
+      link: `/dashboard`,
     });
 
     return {

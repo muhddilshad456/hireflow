@@ -9,8 +9,6 @@ import {
 import {
   getMyInterviewerProfile,
   updateMyInterviewerProfile,
-  updateMyBasicInfo,
-  changeMyPassword,
   setMyAvailability,
 } from "../services/interviewerProfileService";
 import toast from "react-hot-toast";
@@ -149,7 +147,7 @@ const EditBasicInfoModal: React.FC<{
     try {
       const formData = new FormData();
       formData.append("name", name.trim());
-      if (file) formData.append("profilePicture", file);
+      if (file) formData.append("avatar", file);
       await changeBasicInfo(formData);
       toast.success("Basic Profile Updated.");
       onSaved();

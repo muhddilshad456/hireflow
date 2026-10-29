@@ -6,6 +6,7 @@ import {
 } from "../../../../../constents/jobStages";
 import type { JobStageName } from "../../../../../constents/jobStages";
 import type { JobFormData } from "../../../../../types/job/job/jobForm";
+import LocationInput from "../../../../shared/components/LocationInput";
 
 type CreateJobModalProps = {
   onClose?: () => void;
@@ -467,12 +468,11 @@ export default function CreateJobModal({
 
               <div>
                 <Label required>Location</Label>
-                <input
-                  name="location"
+                <LocationInput
                   value={form.location}
-                  onChange={handleChange}
+                  onChange={(v) => set("location", v)}
                   placeholder="e.g. Bangalore, India · Remote"
-                  className={inputCls(errors.location)}
+                  inputClassName={`${inputCls(errors.location)} pr-10`}
                 />
                 <ErrorMsg msg={errors.location} />
               </div>

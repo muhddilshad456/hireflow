@@ -8,12 +8,12 @@ import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
 
 export class UploadController implements IUploadController {
   constructor(
-    @inject(TYPES.UploadService) private uploadService: IUploadService,
+    @inject(TYPES.UploadService) private _uploadService: IUploadService,
   ) {}
   async upload(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const file = req.file;
-      const result = await this.uploadService.upload(file);
+      const result = await this._uploadService.upload(file);
       ResponseHandler.success(res, CLOUDINARY_MESSAGES.UPLOAD_SUCCESS, result);
     } catch (error) {
       next(error);

@@ -1,10 +1,8 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "../../../features/admin/auth/pages/Login";
 import { AdminLayout } from "./AdminLayout";
-import { Dashboard } from "../../../features/company/admin/dashboard/pages/Dashboard";
 import { CompanyManagement } from "../../../features/admin/company-management/pages/CompanyMangement";
 import { UserManagement } from "../../../features/admin/user-management/pages/UserManagement";
-import { AuditReports } from "../../../features/admin/dashboard/pages/AuditReport";
 import { NotFound } from "../../../features/shared/pages/NotFound";
 import ForgotPassword from "../../../features/admin/auth/pages/ForgotPassword";
 import ResetPassword from "../../../features/admin/auth/pages/ResetPassword";
@@ -16,6 +14,9 @@ import { CompanyEditReqManagement } from "../../../features/admin/company-manage
 import JobDetailsPage from "../../../features/admin/job-management/pages/JobDetails";
 import { CompanyDetailsPage } from "../../../features/admin/company-management/pages/CompanyDetails";
 import { JobManagement } from "../../../features/admin/job-management/pages/JobManagement";
+import NotificationsPage from "../../../features/shared/pages/NotificationPage";
+import AdminProfilePage from "../../../features/admin/profile/pages/AdminProfilePage";
+import { Dashboard } from "../../../features/admin/dashboard/pages/DashBoard";
 
 const AdminRoutes = () => {
   return (
@@ -53,7 +54,8 @@ const AdminRoutes = () => {
             <Route path="users" element={<UserManagement />} />
             <Route path="jobs" element={<JobManagement />} />
             <Route path="job/:id" element={<JobDetailsPage />} />
-            <Route path="audit-report" element={<AuditReports />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="profile" element={<AdminProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Route>

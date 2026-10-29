@@ -5,7 +5,7 @@ import {
   InterviewModel,
 } from "../../../models/interview/interview";
 import { IInterviewRepository } from "../interface/IInterviewRepository";
-import { Types } from "mongoose";
+import { Types, PipelineStage } from "mongoose";
 import {
   GetMyInterviewParams,
   InterviewListItem,
@@ -23,7 +23,7 @@ export class InterviewRepository
     interviewerId: Types.ObjectId,
     { search, status, page, limit }: GetMyInterviewParams,
   ): Promise<{ data: InterviewListItem[]; total: number }> {
-    const pipeline: any[] = [
+    const pipeline: PipelineStage[] = [
       { $match: { interviewerId } },
 
       {

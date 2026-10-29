@@ -47,5 +47,33 @@ router.get(
   roleGuard([UserRole.COMPANY_ADMIN]),
   companyController.getCompanyProfile.bind(companyController),
 );
+//* get dashboard details
+router.get(
+  "/dashboard",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_ADMIN]),
+  companyController.getDashboard.bind(companyController),
+);
+router.get(
+  "/invitations",
+  verifyAccessToken,
+  companyController.getAllInvitations.bind(companyController),
+);
+router.get(
+  "/recruiters",
+  verifyAccessToken,
+  companyController.getRecruiters.bind(companyController),
+);
+router.get(
+  "/interviewers",
+  verifyAccessToken,
+  companyController.getInterviewers.bind(companyController),
+);
+//* cancel request
+router.patch(
+  "/cancel-invitation/:id",
+  verifyAccessToken,
+  companyController.cancelInvitation.bind(companyController),
+);
 
 export default router;

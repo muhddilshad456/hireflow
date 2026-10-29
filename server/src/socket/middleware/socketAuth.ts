@@ -1,12 +1,12 @@
-import { NextFunction } from "express";
 import { Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import { VALIDATION_MESSAGES } from "../../constants/messages/validation";
+import { UserRole } from "../../constants/roles";
 
 export interface AuthedSocket extends Socket {
   user?: {
     id: string;
-    role: "company_recruiter" | "user" | "company_interviewer";
+    role: UserRole;
   };
 }
 
@@ -20,7 +20,7 @@ export function socketAuth(socket: AuthedSocket, next: any) {
 
     const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as {
       userId: string;
-      role: "company_recruiter" | "user" | "company_interviewer";
+      role: UserRole;
     };
 
     socket.user = {

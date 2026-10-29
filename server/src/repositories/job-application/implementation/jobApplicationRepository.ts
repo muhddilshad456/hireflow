@@ -15,7 +15,9 @@ export class JobApplicationRepository
   constructor() {
     super(JobApplicationModel);
   }
-  async getMyApplicationsAggregate(pipeline: PipelineStage[]): Promise<any[]> {
-    return JobApplicationModel.aggregate(pipeline);
+  async getMyApplicationsAggregate<T = unknown>(
+    pipeline: PipelineStage[],
+  ): Promise<T[]> {
+    return JobApplicationModel.aggregate<T>(pipeline);
   }
 }

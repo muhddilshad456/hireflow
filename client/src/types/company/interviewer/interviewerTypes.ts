@@ -22,3 +22,20 @@ export interface PaginatedInterviewersResponse {
   page: number;
   totalPages: number;
 }
+
+export interface InterviewerDashboardData {
+  stats: {
+    upcoming: number;
+    awaitingFeedback: number;
+    completed: number;
+    cancelled: number;
+  };
+  upcomingInterviews: {
+    _id: string;
+    scheduledAt: string;
+    duration?: number;
+    candidateName: string;
+    jobTitle: string;
+    stageName: string;
+  }[];
+}

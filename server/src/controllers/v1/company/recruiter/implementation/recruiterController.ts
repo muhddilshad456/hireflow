@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { IRecruiterController } from "../interface/IRecruiterController";
 import { inject } from "inversify";
 import { TYPES } from "../../../../../dependency-injection/types";
@@ -8,10 +8,13 @@ import { ResponseHandler } from "../../../../../utils/responseHandler";
 import { JOB_MESSAGES } from "../../../../../constants/messages/jobs";
 import { AI_SCREENING_MESSAGES } from "../../../../../constants/messages/ai-screening-messages";
 import { INTERVIEWER_MESSAGES } from "../../../../../constants/messages/company/interviewer/interviewer";
+import { RECRUITER_MESSAGES } from "../../../../../constants/messages/company/recruiter/recruiter";
+import { DASHBOARD_MESSAGES } from "../../../../../constants/messages/dashboard/dashboard";
 
 export class RecruiterController implements IRecruiterController {
   constructor(
-    @inject(TYPES.RecruiterService) private recruiterService: IRecruiterService,
+    @inject(TYPES.RecruiterService)
+    private _recruiterService: IRecruiterService,
   ) {}
   //* create job
   async createJob(
@@ -22,7 +25,7 @@ export class RecruiterController implements IRecruiterController {
     try {
       const dto = req.body;
       const recruiterId = req.user?.userId;
-      const result = await this.recruiterService.createJob(dto, recruiterId);
+      const result = await this._recruiterService.createJob(dto, recruiterId);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_CREATED, result);
     } catch (error) {
       next(error);
@@ -38,7 +41,7 @@ export class RecruiterController implements IRecruiterController {
       const dto = req.body;
       const jobId = req.params.jobId as string;
       const recruiterId = req.user?.userId;
-      const result = await this.recruiterService.updateJob(
+      const result = await this._recruiterService.updateJob(
         jobId,
         dto,
         recruiterId,
@@ -57,7 +60,7 @@ export class RecruiterController implements IRecruiterController {
     try {
       const jobId = req?.params?.jobId as string;
       const userId = req?.user?.userId;
-      const result = await this.recruiterService.aiFilterCandidates(
+      const result = await this._recruiterService.aiFilterCandidates(
         userId,
         jobId,
       );
@@ -80,7 +83,7 @@ export class RecruiterController implements IRecruiterController {
       const recruiterId = req.user?.userId;
       const { search, capability, page, limit } = req.query;
 
-      const result = await this.recruiterService.getCompanyInterviewers(
+      const result = await this._recruiterService.getCompanyInterviewers(
         recruiterId,
         {
           search: search as string | undefined,
@@ -95,6 +98,38 @@ export class RecruiterController implements IRecruiterController {
         INTERVIEWER_MESSAGES.AVAILABLE_INTERVIEWERS_FETCHED,
         result,
       );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get recruiter profile
+  async getRecruiterProfile(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+      const result = await this._recruiterService.getRecruiterProfile(userId);
+      ResponseHandler.success(res, RECRUITER_MESSAGES.PROFILE_FETCHED, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get dashboard
+  async getDashboard(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const recruiterId = req.user?.userId;
+
+      const result = await this._recruiterService.getDashboard(
+        recruiterId as string,
+      );
+
+      ResponseHandler.success(res, DASHBOARD_MESSAGES.FETCHED, result);
     } catch (error) {
       next(error);
     }

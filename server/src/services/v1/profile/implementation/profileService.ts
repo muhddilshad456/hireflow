@@ -1,5 +1,9 @@
 import { injectable, inject } from "inversify";
-import { IProfileService } from "../interface/IProfileService";
+import {
+  IProfileService,
+  UserProfileResponse,
+} from "../interface/IProfileService";
+import { IUser } from "../../../../models/user.model";
 import { TYPES } from "../../../../dependency-injection/types";
 import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
 import { IUserProfileRepository } from "../../../../repositories/profile/interface/IUserProfileRepository";
@@ -14,8 +18,7 @@ import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation";
 import { InternalServerError } from "../../../../errors/internal-server.error";
 import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
 import { IUserProfile } from "../../../../models/profiles/user.profile.model";
-import e from "express";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { ProfileMapper } from "../../../../mapper/profile/profileMapper";
 import { ProfileArrayField } from "../../../../constants/profile/profile.constents";
 import { UPLOAD_MESSAGES } from "../../../../constants/messages/upload";
@@ -23,35 +26,68 @@ import { UPLOAD_MESSAGES } from "../../../../constants/messages/upload";
 @injectable()
 export class ProfileService implements IProfileService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
     @inject(TYPES.UserProfileRepository)
-    private userProfileRepository: IUserProfileRepository,
+    private _userProfileRepository: IUserProfileRepository,
     @inject(TYPES.CloudinaryService)
-    private cloudinaryService: ICloudinaryService,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _cloudinaryService: ICloudinaryService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
+  //* is profile complete
+  private async updateProfileCompletion(userId: string): Promise<void> {
+    const [user, profile] = await Promise.all([
+      this._userRepository.findById(userId),
+      this._userProfileRepository.findOne({ userId }),
+    ]);
+
+    if (!user || !profile) return;
+
+    const preference = profile.jobPreference;
+
+    const isCompleted =
+      !!user.name?.trim() &&
+      !!user.profilePicture &&
+      !!profile.phone?.trim() &&
+      !!profile.location?.trim() &&
+      !!profile.summary?.trim() &&
+      profile.skills.length > 0 &&
+      !!profile.education?.length &&
+      profile.experience.length > 0 &&
+      !!preference?.role?.trim() &&
+      !!preference?.type &&
+      !!preference?.location?.trim() &&
+      !!preference?.workMode &&
+      profile.resumes.length > 0;
+
+    if (profile.profileCompleted !== isCompleted) {
+      await this._userProfileRepository.findOneAndUpdate(
+        { userId },
+        { $set: { profileCompleted: isCompleted } },
+      );
+    }
+  }
   //* get profile
-  async getProfile(userId: string): Promise<any> {
+  async getProfile(userId: string): Promise<UserProfileResponse> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: USER_MESSAGES.USER_ID_MISSING,
       });
       throw new BadRequestError(USER_MESSAGES.USER_ID_MISSING);
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: USER_MESSAGES.USER_NOT_FOUND,
       });
       throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
     }
 
-    const profile = await this.userProfileRepository.findOne({ userId });
+    const profile = await this._userProfileRepository.findOne({ userId });
 
-    this.logger.info({
+    this._logger.info({
       userId,
       event: PROFILE_MESSAGES.FETCH_SUCCESS,
     });
@@ -74,17 +110,17 @@ export class ProfileService implements IProfileService {
     file?: Express.Multer.File,
   ): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: "UPDATE_PROFILE_UNAUTHORIZED",
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     // 🔍 2. Find user
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: USER_MESSAGES.USER_NOT_FOUND,
       });
@@ -92,14 +128,14 @@ export class ProfileService implements IProfileService {
     }
 
     if (!name && !file) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: PROFILE_MESSAGES.REQUIRED_PROFILE_FIELDS,
       });
       throw new BadRequestError(PROFILE_MESSAGES.REQUIRED_PROFILE_FIELDS);
     }
 
-    let updateData: any = {};
+    const updateData: Partial<IUser> = {};
 
     if (name) {
       updateData.name = name;
@@ -107,13 +143,13 @@ export class ProfileService implements IProfileService {
 
     if (file) {
       try {
-        const uploaded = await this.cloudinaryService.uploadFile(
+        const uploaded = await this._cloudinaryService.uploadFile(
           file,
           "profile-picture",
         );
         updateData.profilePicture = uploaded;
       } catch (error) {
-        this.logger.error({
+        this._logger.error({
           userId,
           event: CLOUDINARY_MESSAGES.UPLOAD_FAILED,
           error,
@@ -122,9 +158,11 @@ export class ProfileService implements IProfileService {
       }
     }
 
-    await this.userRepository.update(userId, updateData);
+    await this._userRepository.update(userId, updateData);
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       userId,
       event: PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
     });
@@ -135,39 +173,39 @@ export class ProfileService implements IProfileService {
   async updateBasicProfile(
     userId: string,
     data: Partial<IUserProfile>,
-  ): Promise<any> {
+  ): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: "UPDATE_PROFILE_UNAUTHORIZED",
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     if (!data || Object.keys(data).length === 0) {
-      this.logger.warn({ event: VALIDATION_MESSAGES.REQUIRED_FIELDS });
+      this._logger.warn({ event: VALIDATION_MESSAGES.REQUIRED_FIELDS });
       throw new BadRequestError(VALIDATION_MESSAGES.REQUIRED_FIELDS);
     }
 
-    const existingProfile = await this.userProfileRepository.findOne({
+    const existingProfile = await this._userProfileRepository.findOne({
       userId,
     });
 
-    let result;
-
     if (!existingProfile) {
       const objectId = new mongoose.Types.ObjectId(userId);
-      result = await this.userProfileRepository.create({
+      await this._userProfileRepository.create({
         userId: objectId,
         ...data,
       });
     } else {
-      result = await this.userProfileRepository.findOneAndUpdate(
+      await this._userProfileRepository.findOneAndUpdate(
         { userId: userId },
         data,
       );
     }
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       event: PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
       userId,
     });
@@ -175,16 +213,16 @@ export class ProfileService implements IProfileService {
     return true;
   }
   //* add skill
-  async addSkill(userId: string, skill: string): Promise<any> {
+  async addSkill(userId: string, skill: string): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.USER_ID_REQUIRED,
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     if (!skill || !skill.trim()) {
-      this.logger.warn({
+      this._logger.warn({
         event: PROFILE_MESSAGES.SKILL_REQUIRED,
         userId,
         message: "Skill is required",
@@ -192,26 +230,31 @@ export class ProfileService implements IProfileService {
       throw new BadRequestError(PROFILE_MESSAGES.SKILL_REQUIRED);
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         event: USER_MESSAGES.USER_NOT_FOUND,
         userId,
       });
       throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
     }
 
-    const profile = await this.userProfileRepository.findOne({ userId });
+    const profile = await this._userProfileRepository.findOne({ userId });
 
     if (!profile) {
       const objectId = new mongoose.Types.ObjectId(userId);
-      await this.userProfileRepository.create({ userId: objectId, skills: [] });
+      await this._userProfileRepository.create({
+        userId: objectId,
+        skills: [],
+      });
     }
 
-    await this.userProfileRepository.addToSet({ userId }, "skills", skill);
+    await this._userProfileRepository.addToSet({ userId }, "skills", skill);
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       event: PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
       userId,
     });
@@ -219,16 +262,16 @@ export class ProfileService implements IProfileService {
     return true;
   }
   //* remove skill
-  async removeSkill(userId: string, skill: string): Promise<any> {
+  async removeSkill(userId: string, skill: string): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.USER_ID_REQUIRED,
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     if (!skill || !skill.trim()) {
-      this.logger.warn({
+      this._logger.warn({
         event: PROFILE_MESSAGES.SKILL_REQUIRED,
         userId,
         message: "Skill is required",
@@ -236,20 +279,20 @@ export class ProfileService implements IProfileService {
       throw new BadRequestError(PROFILE_MESSAGES.SKILL_REQUIRED);
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         event: USER_MESSAGES.USER_NOT_FOUND,
         userId,
       });
       throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
     }
 
-    const profile = await this.userProfileRepository.findOne({ userId });
+    const profile = await this._userProfileRepository.findOne({ userId });
 
     if (!profile) {
-      this.logger.warn({
+      this._logger.warn({
         event: PROFILE_MESSAGES.PROFILE_NOT_FOUND,
         userId,
       });
@@ -257,16 +300,22 @@ export class ProfileService implements IProfileService {
     }
 
     if (!profile.skills || !profile.skills.includes(skill)) {
-      this.logger.warn({
+      this._logger.warn({
         event: PROFILE_MESSAGES.SKILL_NOT_FOUND,
         userId,
       });
       throw new NotFoundError(PROFILE_MESSAGES.SKILL_NOT_FOUND);
     }
 
-    await this.userProfileRepository.pullFromArray({ userId }, "skills", skill);
+    await this._userProfileRepository.pullFromArray(
+      { userId },
+      "skills",
+      skill,
+    );
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       event: PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
       userId,
     });
@@ -274,12 +323,15 @@ export class ProfileService implements IProfileService {
     return true;
   }
   //* resume
-  async addResume(userId: string, file: Express.Multer.File): Promise<any> {
+  async addResume(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
     }
@@ -291,14 +343,14 @@ export class ProfileService implements IProfileService {
     let uploaded;
 
     try {
-      uploaded = await this.cloudinaryService.uploadFile(file, "resume");
-    } catch (error) {
+      uploaded = await this._cloudinaryService.uploadFile(file, "resume");
+    } catch (_error) {
       throw new InternalServerError(UPLOAD_MESSAGES.UPLOAD_FAILED);
     }
 
     const resumeData = ProfileMapper.toResumeEntity(file, uploaded);
 
-    const existingProfile = await this.userProfileRepository.findOne({
+    const existingProfile = await this._userProfileRepository.findOne({
       userId,
     });
 
@@ -306,40 +358,42 @@ export class ProfileService implements IProfileService {
 
     if (!existingProfile) {
       const objId = new mongoose.Types.ObjectId(userId);
-      result = await this.userProfileRepository.create({
+      result = await this._userProfileRepository.create({
         userId: objId,
         resumes: [resumeData],
       });
     } else {
-      result = await this.userProfileRepository.findOneAndUpdate(
+      result = await this._userProfileRepository.findOneAndUpdate(
         { userId },
         { $push: { resumes: resumeData } },
       );
     }
+
+    await this.updateProfileCompletion(userId);
 
     return result;
   }
   //* delete resume
   async removeResume(userId: string, resumeId: string): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.USER_ID_REQUIRED,
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     if (!resumeId) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: VALIDATION_MESSAGES.ID_REQUIRED,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
 
-    const profile = await this.userProfileRepository.findOne({ userId });
+    const profile = await this._userProfileRepository.findOne({ userId });
 
     if (!profile) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: PROFILE_MESSAGES.PROFILE_NOT_FOUND,
       });
@@ -348,7 +402,7 @@ export class ProfileService implements IProfileService {
 
     const objectResumeId = new mongoose.Types.ObjectId(resumeId);
 
-    const result = await this.userProfileRepository.findOneAndUpdate(
+    await this._userProfileRepository.findOneAndUpdate(
       { userId },
       {
         $pull: {
@@ -357,7 +411,9 @@ export class ProfileService implements IProfileService {
       },
     );
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       userId,
       resumeId,
       event: PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -370,19 +426,19 @@ export class ProfileService implements IProfileService {
     userId: string,
     field: ProfileArrayField,
     data: any,
-  ): Promise<any> {
+  ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError("User ID required");
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError("User not found");
     }
 
     const entityData = ProfileMapper.toArrayItemEntity(field, data);
 
-    const existingProfile = await this.userProfileRepository.findOne({
+    const existingProfile = await this._userProfileRepository.findOne({
       userId,
     });
 
@@ -390,16 +446,18 @@ export class ProfileService implements IProfileService {
 
     if (!existingProfile) {
       const objId = new mongoose.Types.ObjectId(userId);
-      result = await this.userProfileRepository.create({
+      result = await this._userProfileRepository.create({
         userId: objId,
         [field]: [entityData],
       });
     } else {
-      result = await this.userProfileRepository.findOneAndUpdate(
+      result = await this._userProfileRepository.findOneAndUpdate(
         { userId },
         { $push: { [field]: entityData } },
       );
     }
+
+    await this.updateProfileCompletion(userId);
 
     return result;
   }
@@ -409,7 +467,7 @@ export class ProfileService implements IProfileService {
     field: ProfileArrayField,
     itemId: string,
     data: any,
-  ): Promise<any> {
+  ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError("User ID required");
     }
@@ -418,16 +476,16 @@ export class ProfileService implements IProfileService {
       throw new BadRequestError("Invalid item id");
     }
 
-    const existingProfile = await this.userProfileRepository.findOne({
+    const existingProfile = await this._userProfileRepository.findOne({
       userId,
     });
     if (!existingProfile) {
       throw new NotFoundError("Profile not found");
     }
 
-    const itemExists = (existingProfile[field] as any[]).some(
-      (item: any) => item._id?.toString() === itemId,
-    );
+    const itemExists = (
+      existingProfile[field] as Array<{ _id?: Types.ObjectId }>
+    ).some((item) => item._id?.toString() === itemId);
     if (!itemExists) {
       throw new NotFoundError(`${field} item not found`);
     }
@@ -438,15 +496,17 @@ export class ProfileService implements IProfileService {
       throw new BadRequestError("No valid fields provided to update");
     }
 
-    const setPayload: Record<string, any> = {};
+    const setPayload: Record<string, unknown> = {};
     for (const key of Object.keys(updateFields)) {
       setPayload[`${field}.$.${key}`] = updateFields[key];
     }
 
-    const result = await this.userProfileRepository.findOneAndUpdate(
+    const result = await this._userProfileRepository.findOneAndUpdate(
       { userId, [`${field}._id`]: itemId },
       { $set: setPayload },
     );
+
+    await this.updateProfileCompletion(userId);
 
     return result;
   }
@@ -457,24 +517,24 @@ export class ProfileService implements IProfileService {
     itemId: string,
   ): Promise<boolean> {
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.USER_ID_REQUIRED,
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
 
     if (!itemId) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: VALIDATION_MESSAGES.ID_REQUIRED,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
 
-    const profile = await this.userProfileRepository.findOne({ userId });
+    const profile = await this._userProfileRepository.findOne({ userId });
 
     if (!profile) {
-      this.logger.warn({
+      this._logger.warn({
         userId,
         event: PROFILE_MESSAGES.PROFILE_NOT_FOUND,
       });
@@ -483,7 +543,7 @@ export class ProfileService implements IProfileService {
 
     const objectItemId = new mongoose.Types.ObjectId(itemId);
 
-    const result = await this.userProfileRepository.findOneAndUpdate(
+    await this._userProfileRepository.findOneAndUpdate(
       { userId },
       {
         $pull: {
@@ -492,7 +552,9 @@ export class ProfileService implements IProfileService {
       },
     );
 
-    this.logger.info({
+    await this.updateProfileCompletion(userId);
+
+    this._logger.info({
       userId,
       field,
       itemId,

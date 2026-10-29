@@ -13,6 +13,7 @@ import { DocumentVerificationStage } from "./stages/DocumentVerificationStage";
 import { getStageCandidates } from "../services/jobServices";
 import type { JobStageName } from "../../../../../constents/jobStages";
 import type { ApiStageCandidate } from "../../../../../types/applicaionTypes";
+import { OfferStage } from "./stages/OfferStage";
 
 export interface StageDetail {
   _id: string;
@@ -22,6 +23,7 @@ export interface StageDetail {
   isActive: boolean;
   assessmentTaskDescription?: string;
   assessmentTaskAttachmentUrl?: string;
+  documentVerificationDescription?: string;
   candidates: ApiStageCandidate[];
   total: number;
   page: number;
@@ -49,6 +51,7 @@ const STAGE_REGISTRY: Partial<
   hr_interview: HRRoundStage,
   technical_interview: TechnicalRoundStage,
   final_hr_interview: FinalHRStage,
+  offer: OfferStage,
 };
 
 /* -------------------------- application status -------------------------- */
@@ -131,6 +134,8 @@ export function StageRenderer() {
           order: stageMeta.order,
           isMandatory: stageMeta.isMandatory,
           isActive: stageMeta.isActive,
+          documentVerificationDescription:
+            stageMeta?.documentVerificationDescription ?? "",
           assessmentTaskDescription: stageMeta.assessmentTaskDescription ?? "",
           assessmentTaskAttachmentUrl:
             stageMeta.assessmentTaskAttachmentUrl ?? "",

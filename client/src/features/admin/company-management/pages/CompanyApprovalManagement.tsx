@@ -17,6 +17,7 @@ interface CompanyRequestData {
 export function CompanyApprovalManagement() {
   const [requests, setRequests] = useState<CompanyRequestData[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filter, setFilter] = useState<CompanyFilterType>("All");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -30,7 +31,7 @@ export function CompanyApprovalManagement() {
         const result = await getAllCompanyRequests(
           page,
           limit,
-          search,
+          debouncedSearch,
           filter,
           "NEW",
         );
@@ -42,7 +43,15 @@ export function CompanyApprovalManagement() {
       }
     }
     fetchCompanies();
-  }, [page, search, filter]);
+  }, [page, debouncedSearch, filter]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     let value = e.target.value;

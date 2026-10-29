@@ -295,7 +295,7 @@ const FilterBar = ({
       </svg>
       <input
         type="text"
-        placeholder="by job title, category, or location"
+        placeholder="Search by job"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
         className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition"
@@ -418,6 +418,7 @@ const Pagination = ({ current, total, onChange }: PaginationProps) => {
 export default function JobManagement() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -441,7 +442,7 @@ export default function JobManagement() {
   const getJobs = async () => {
     try {
       const result = await getJobsApi({
-        search,
+        search: debouncedSearch,
         status: statusFilter,
         category: categoryFilter ? [categoryFilter] : [],
         page: currentPage,
@@ -459,13 +460,20 @@ export default function JobManagement() {
   const closeJobModal = () => setJobModalOpen(false);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     setCurrentPage(1);
-    getJobs();
-  }, [categoryFilter, statusFilter, search]);
+  }, [categoryFilter, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     getJobs();
-  }, [currentPage]);
+  }, [categoryFilter, statusFilter, debouncedSearch, currentPage]);
 
   return (
     <>

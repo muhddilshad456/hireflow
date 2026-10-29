@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types, QueryFilter } from "mongoose";
 import { MessageEntity } from "../../../../interfaces/chat/message";
 import { IMessage, MessageModel } from "../../../../models/chat/message";
 import { BaseRepository } from "../../../base/implementation/base.repository";
@@ -19,7 +19,7 @@ export class MessageRepository
     cursor?: Types.ObjectId,
     limit = 30,
   ): Promise<MessageEntity[]> {
-    const query: any = { conversationId };
+    const query: QueryFilter<IMessage> = { conversationId };
     if (cursor) query._id = { $lt: cursor };
     return MessageModel.find(query).sort({ _id: 1 }).limit(limit).lean();
   }

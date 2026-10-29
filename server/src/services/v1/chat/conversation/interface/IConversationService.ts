@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
 import {
   CandidateConversationView,
-  ConversationEntity,
   CreatorRole,
   RecruiterConversationView,
 } from "../../../../../interfaces/chat/conversation";
+import { IConversation } from "../../../../../models/chat/conversation";
 
 export interface IConversationService {
   getOrCreateConversation(
@@ -16,7 +16,7 @@ export interface IConversationService {
     actorId: Types.ObjectId,
     actorRole: CreatorRole,
     jobId: Types.ObjectId,
-  ): Promise<any>;
+  ): Promise<RecruiterConversationView[] | CandidateConversationView[]>;
   isParticipant(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
@@ -24,5 +24,5 @@ export interface IConversationService {
   assertActiveAndParticipant(
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
-  ): Promise<any>;
+  ): Promise<IConversation>;
 }

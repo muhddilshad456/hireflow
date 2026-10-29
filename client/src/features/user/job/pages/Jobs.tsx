@@ -6,6 +6,8 @@ import type { JobFilters } from "../../../../types/jobTypes";
 import { JobCard } from "../components/jobCard";
 import type { Job } from "../../../../types/jobTypes";
 import { FilterSidebar } from "../components/filterSidebar";
+import LocationInput from "../../../shared/components/LocationInput";
+import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -16,7 +18,41 @@ interface SearchBarProps {
   loading: boolean;
 }
 
+const pillStyle: React.CSSProperties = {
+  position: "relative", // dropdown + spinner anchor to the pill
+  flex: 1,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  background: "#f8f8f8",
+  borderRadius: 10,
+  padding: "9px 14px",
+};
+
+const inputStyle: React.CSSProperties = {
+  background: "transparent",
+  border: "none",
+  outline: "none",
+  fontSize: 13,
+  color: "#333",
+  width: "100%",
+};
+
 function SearchBar({ filters, onChange }: SearchBarProps) {
+  const [searchText, setSearchText] = useState(filters.search ?? "");
+  const [locationText, setLocationText] = useState(filters.location ?? "");
+
+  const debouncedSearch = useDebounce(searchText, 400);
+  const debouncedLocation = useDebounce(locationText, 400);
+
+  useEffect(() => {
+    onChange("search", debouncedSearch);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    onChange("location", debouncedLocation);
+  }, [debouncedLocation]);
+
   return (
     <div
       style={{
@@ -31,17 +67,7 @@ function SearchBar({ filters, onChange }: SearchBarProps) {
       }}
     >
       {/* Job search */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          background: "#f8f8f8",
-          borderRadius: 10,
-          padding: "9px 14px",
-        }}
-      >
+      <div style={pillStyle}>
         <svg
           width="14"
           height="14"
@@ -56,30 +82,14 @@ function SearchBar({ filters, onChange }: SearchBarProps) {
         <input
           type="text"
           placeholder="Job title, keywords…"
-          value={filters.search}
-          onChange={(e) => onChange("search", e.target.value)}
-          style={{
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            fontSize: 13,
-            color: "#333",
-            width: "100%",
-          }}
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={inputStyle}
         />
       </div>
+
       {/* Location */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          background: "#f8f8f8",
-          borderRadius: 10,
-          padding: "9px 14px",
-        }}
-      >
+      <div style={pillStyle}>
         <svg
           width="14"
           height="14"
@@ -91,21 +101,14 @@ function SearchBar({ filters, onChange }: SearchBarProps) {
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
           <circle cx="12" cy="10" r="3" />
         </svg>
-        <input
-          type="text"
-          placeholder="City, country…"
-          value={filters.location}
-          onChange={(e) => onChange("location", e.target.value)}
-          style={{
-            background: "transparent",
-            border: "none",
-            outline: "none",
-            fontSize: 13,
-            color: "#333",
-            width: "100%",
-          }}
+        <LocationInput
+          value={locationText}
+          onChange={setLocationText}
+          wrapperClassName="flex-1 min-w-0"
+          inputClassName="w-full bg-transparent border-0 p-0 text-[13px] text-[#333] placeholder:text-gray-400 outline-none focus:outline-none focus:ring-0 shadow-none"
         />
       </div>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -337,8 +340,6 @@ export function Jobs() {
       try {
         setLoading(true);
         const res = await getJobsApi(filters);
-        console.log("filter for get jobs : ", filters);
-        console.log("result of job fetch : ", res);
         setJobs(res?.data?.data);
         setTotalPages(res.data.totalPages);
       } catch (error: any) {

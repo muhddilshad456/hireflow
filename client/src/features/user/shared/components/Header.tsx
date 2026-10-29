@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/reduxHooks";
 import { ProfileDropdown } from "../../../shared/components/ProfileDropdown";
 import { ConfirmModal } from "../../../shared/components/ConfirmationModal";
+import { NotificationBell } from "../../../shared/components/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -30,15 +31,15 @@ export const Header: React.FC = () => {
   const dispatch = useAppDispatch();
   const logoutUser = () => setShowLogoutModal(true);
   const cancelModal = () => setShowLogoutModal(false);
-  const userId = useAppSelector((state) => state.auth.user?.id);
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = async () => {
-    if (!userId) {
+    if (!user?.id) {
       console.log("userId not accesible");
       return;
     }
     try {
-      await logoutApi({ id: userId });
+      await logoutApi({ id: user?.id });
       dispatch(logout());
       toast.success("Logged out");
       navigate("/admin/login");
@@ -77,30 +78,20 @@ export const Header: React.FC = () => {
               ))}
             </nav>
 
-            {/* Search */}
-            {/* <div className="hidden sm:flex flex-1 max-w-xs items-center bg-gray-50 border border-gray-200 rounded-full px-3 py-1.5 gap-2 focus-within:border-[#F4522A] focus-within:ring-1 focus-within:ring-[#F4522A] transition-all">
-              <Search size={14} className="text-gray-400 flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Search for jobs"
-                value={searchVal}
-                onChange={(e) => setSearchVal(e.target.value)}
-                className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-full"
-              />
-            </div> */}
-
             {/* Icons */}
             <div className="flex items-center gap-2">
               <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]">
                 <Heart size={18} />
               </button>
-              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]">
-                <Bell size={18} />
-              </button>
+              <NotificationBell
+                viewAllRoute="/notifications"
+                buttonClassName="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+              />
               <ProfileDropdown
-                avatarUrl="https://i.pravatar.cc/40?img=12"
+                avatarUrl={user?.profilePicture ?? ""}
                 onProfile={() => navigate("/profile")}
                 onLogout={logoutUser}
+                name={user?.name ?? ""}
               />
 
               {/* Mobile Menu Toggle */}

@@ -31,7 +31,7 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
 
   const handleViewCV = (applicationStageId: string) => {
     const candidate = stage.candidates.find(
-      (c) => c.applicationStageId === applicationStageId,
+      (c) => c?.applicationStage?._id === applicationStageId,
     );
     if (candidate?.application?.resumeUrl) {
       window.open(candidate.application.resumeUrl, "_blank");
@@ -76,7 +76,7 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
           const name = c.application?.userId?.name ?? "Unknown candidate";
           return (
             <div
-              key={c.applicationStageId}
+              key={c?.applicationStage?._id}
               className="flex flex-col gap-4 border-b border-gray-100 py-6 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex-1">
@@ -92,7 +92,7 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    onClick={() => handleViewCV(c.applicationStageId)}
+                    onClick={() => handleViewCV(c?.applicationStage?._id)}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
                   >
                     <FileText className="h-3.5 w-3.5" /> View CV
@@ -102,13 +102,17 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
-                    onClick={() => handleAccept(c?.applicationStageId ?? null)}
+                    onClick={() =>
+                      handleAccept(c?.applicationStage?._id ?? null)
+                    }
                     className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
                   >
                     Accept CV
                   </button>
                   <button
-                    onClick={() => handleReject(c?.applicationStageId ?? null)}
+                    onClick={() =>
+                      handleReject(c?.applicationStage?._id ?? null)
+                    }
                     className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
                   >
                     Reject CV

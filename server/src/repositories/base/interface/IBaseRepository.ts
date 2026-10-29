@@ -1,4 +1,9 @@
-import { ClientSession, QueryFilter } from "mongoose";
+import {
+  ClientSession,
+  QueryFilter,
+  UpdateQuery,
+  UpdateWriteOpResult,
+} from "mongoose";
 
 export interface IBaseRepository<T> {
   create(data: Partial<T>, session?: ClientSession): Promise<T>;
@@ -8,14 +13,22 @@ export interface IBaseRepository<T> {
   findAll(): Promise<T[]>;
   update(id: string, data: Partial<T>): Promise<T | null>;
   findOneAndUpdate(
-    filter: any,
-    data: any,
+    filter: QueryFilter<T>,
+    data: UpdateQuery<T> | Record<string, unknown>,
     session?: ClientSession,
   ): Promise<T | null>;
   delete(id: string): Promise<T | null>;
   findOne(filter: QueryFilter<T>, session?: ClientSession): Promise<T | null>;
-  addToSet(filter: any, field: keyof T, value: string): Promise<T | null>;
-  pullFromArray(filter: any, field: keyof T, value: string): Promise<any>;
+  addToSet(
+    filter: QueryFilter<T>,
+    field: keyof T,
+    value: string,
+  ): Promise<T | null>;
+  pullFromArray(
+    filter: QueryFilter<T>,
+    field: keyof T,
+    value: string,
+  ): Promise<UpdateWriteOpResult>;
   deleteMany(
     filter: QueryFilter<T>,
     session?: ClientSession,

@@ -35,34 +35,56 @@ export interface JobApplication {
   job: ApplicationJob;
 }
 
-export interface ApiStageCandidate {
-  applicationStageId: string;
-  status: "IN_PROGRESS" | "PASSED" | "FAILED";
+export type StageStatus = "IN_PROGRESS" | "PASSED" | "FAILED";
+
+export interface UserSummary {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+export interface ApplicationStageDetail {
+  _id: string;
+  applicationId: string;
+  jobStageId: string;
+  status: StageStatus;
   feedback?: string;
-  reviewedBy?: string;
-  reviewedAt?: string;
+  documents?: string[];
   startedAt?: string;
   completedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+
+  // ---- Interview stages only ----
   interviewProgress?: InterviewProgress;
+
   // ---- Offer stage only ----
   offerLetterUrl?: string;
   offeredSalary?: number;
   joiningDate?: string;
   offerSentAt?: string;
-  offerSentBy?: string;
+  offerSentBy?: UserSummary | null;
   offerResponse?: "ACCEPTED" | "DECLINED";
   offerRespondedAt?: string;
+
+  // ---- Assessment stage only ----
+  assessmentResponseText?: string;
+  assessmentResponseAttachmentUrl?: string;
+  assessmentSubmittedAt?: string;
+}
+
+export interface ApiStageCandidate {
+  _id: string; // same as applicationStage._id
+  status: StageStatus;
+  startedAt?: string;
+  completedAt?: string;
+  applicationStage: ApplicationStageDetail;
   application: {
     _id: string;
-    userId: { _id: string; name: string; email: string } | null;
+    userId: UserSummary | null;
     resumeUrl: string;
     coverLetter: string;
-    status:
-      | "IN_PROGRESS"
-      | "REJECTED"
-      | "SELECTED"
-      | "OFFER_SENT"
-      | "WITHDRAWN";
+    status: ApplicationStatus | "WITHDRAWN";
     appliedAt: string;
     currentStageId?: string;
   } | null;

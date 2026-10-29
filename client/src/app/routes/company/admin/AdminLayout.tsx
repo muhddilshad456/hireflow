@@ -13,6 +13,7 @@ import {
   getStatusApi,
   verifyRequestApi,
 } from "../../../../features/company/admin/dashboard/services/comapanyServices";
+import { NotificationBell } from "../../../../features/shared/components/NotificationBell";
 
 type Status = "unverified" | "form" | "pending" | "approved" | "rejected";
 type Page =
@@ -47,21 +48,20 @@ const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
     id: "recruiter",
     label: "Recruiter Management",
     icon: <Ico.Users />,
-    path: "/recruiters",
+    path: "/company/admin/recruiters",
   },
   {
     id: "reviewer",
-    label: "Reviewer Management",
+    label: "Interviewer Management",
     icon: <Ico.Clipboard />,
-    path: "/reviewers",
+    path: "/company/admin/interviewers",
   },
   {
     id: "jobs",
     label: "Jobs Management",
     icon: <Ico.Briefcase />,
-    path: "/jobs",
+    path: "/company/admin/jobs",
   },
-  { id: "report", label: "Report", icon: <Ico.Chart />, path: "/report" },
 ];
 
 /* ═══════════════════════ HEADER ════════════════════════════════════════ */
@@ -72,35 +72,17 @@ export function Header({
   onMenu?: () => void;
   status?: Status;
 }) {
-  const chip =
-    status === "approved"
-      ? null
-      : status === "pending"
-        ? {
-            text: "Pending Verification",
-            cls: "text-amber-700 bg-amber-50 border-amber-200",
-          }
-        : status === "rejected"
-          ? {
-              text: "Verification Rejected",
-              cls: "text-rose-700 bg-rose-50 border-rose-200",
-            }
-          : {
-              text: "Company Unverified",
-              cls: "text-slate-600 bg-slate-100 border-slate-200",
-            };
-
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const logoutUser = () => setShowLogoutModal(true);
   const cancelModal = () => setShowLogoutModal(false);
-  const userId = useAppSelector((state) => state.auth.user?.id);
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = async () => {
-    if (!userId) return;
+    if (!user?.id) return;
     try {
-      await logoutApi({ id: userId });
+      await logoutApi({ id: user?.id });
       dispatch(logout());
       toast.success("Logged out");
       navigate("/company/login");
@@ -135,43 +117,18 @@ export function Header({
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-2.5">
-          {/* Verification chip — hidden on small screens */}
-          {chip && (
-            <span
-              className={`hidden lg:flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${chip.cls}`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  status === "pending"
-                    ? "bg-amber-400 animate-pulse"
-                    : status === "rejected"
-                      ? "bg-rose-400"
-                      : "bg-slate-400"
-                }`}
-              />
-              {chip.text}
-            </span>
-          )}
-
           {/* Bell — outline style, no dot */}
-          <button
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-            style={{ color: "#555550" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.06)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
-          >
-            <Ico.Bell />
-          </button>
+          <NotificationBell
+            viewAllRoute="/company/admin/notifications"
+            buttonClassName="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+          />
 
           {/* Dark avatar circle */}
           <ProfileDropdown
-            avatarUrl={"https://i.pravatar.cc/40?img=12"}
+            avatarUrl={user?.profilePicture ?? ""}
             onProfile={() => navigate("/company/admin/profile")}
             onLogout={logoutUser}
+            name={user?.name ?? ""}
           />
         </div>
       </header>

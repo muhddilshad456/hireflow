@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 
 export interface IInterviewerController {
@@ -28,6 +28,11 @@ export interface IInterviewerController {
     next: NextFunction,
   ): Promise<void>;
   getInterviews(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getDashboard(
     req: AuthRequest,
     res: Response,
     next: NextFunction,

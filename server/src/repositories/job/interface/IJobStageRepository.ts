@@ -3,6 +3,9 @@ import { IJobStage } from "../../../models/job/job.stage.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
 
 export interface IJobStageRepository extends BaseRepository<IJobStage> {
-  findByJobIdSorted(jobId: string, session?: ClientSession): Promise<any>;
+  findByJobIdSorted(
+    jobId: string,
+    session?: ClientSession,
+  ): Promise<IJobStage[]>;
   findFirstStage(jobId: Types.ObjectId): Promise<Partial<IJobStage> | null>;
 }

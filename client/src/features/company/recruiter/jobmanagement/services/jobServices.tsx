@@ -8,6 +8,7 @@ import api from "../../../../../services/api";
 import type { GetStageCandidatesParams } from "../../../../../types/jobTypes";
 import type { JobFormData } from "../../../../../types/job/job/jobForm";
 import type { Decision } from "../../../../../types/applicaionTypes";
+import { JOB_ACTIONS } from "../../../../../constents/actions/jobActions";
 
 export const createJobApi = (data: JobFormData) => {
   return api
@@ -56,11 +57,24 @@ export const updateAssessmentTask = (
 export const updateJobApplicationStage = (
   applicationStageId: string,
   decision: Decision,
+  feedback?: string,
 ) => {
   return api
     .patch(
       `/${APPLICATION_BASE_ROUTE}/application-stages/${applicationStageId}/decision`,
-      { decision },
+      { decision, feedback },
+    )
+    .then((res) => res.data);
+};
+
+export const setDocumentVerificationDescription = (
+  jobStageId: string,
+  description: string,
+) => {
+  return api
+    .patch(
+      `/${JOB_BASE_ROUTE}/${JOB_ACTIONS.JOB_STAGES}/${jobStageId}/${JOB_ACTIONS.DOCUMENT_VERIFICATION_DESCRIPTION}`,
+      { description },
     )
     .then((res) => res.data);
 };

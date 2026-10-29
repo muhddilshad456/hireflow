@@ -6,6 +6,7 @@ import { INTERVIEWER_MESSAGES } from "../../../../../constants/messages/company/
 import { BadRequestError } from "../../../../../errors/bad-request.error";
 import { IInterviewerProfileRepository } from "../../../../../repositories/profile/interface/IInterviewerProfileRepository";
 import {
+  InterviewerDashboard,
   InterviewerProfileResponse,
   UpdateInterviewerProfile,
 } from "../../../../../interfaces/interviewer/interviewer";
@@ -35,7 +36,7 @@ import {
 } from "../../../../../dtos/v1/interview/interviewRequestDecisionDto";
 import { ConflictError } from "../../../../../errors/conflict.error";
 import { ForbiddenError } from "../../../../../errors/forbidden.error";
-import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application";
+import { APPLICATION_MESSAGES } from "../../../../../constants/messages/application/application";
 import { IInterviewRepository } from "../../../../../repositories/interview/interface/IInterviewRepository";
 import { IJobApplicationStageRepository } from "../../../../../repositories/job-application/interface/IJobApplicationStageRepository";
 import { InterviewMapper } from "../../../../../mapper/interview/interview/interviewMapper";
@@ -48,21 +49,27 @@ import {
   InterviewStatus,
 } from "../../../../../models/interview/interview";
 import { INTERVIEW_MESSAGES } from "../../../../../constants/messages/interview/interview";
+import { INotificationService } from "../../../notification/interface/INotificationService";
+import { IDashboardRepository } from "../../../../../repositories/dashboard/interface/IDashboardRepository";
 
 @injectable()
 export class InterviewerService implements IInterviewerService {
   constructor(
     @inject(TYPES.InterviewerProfileRepository)
-    private interviewerProfileRepository: IInterviewerProfileRepository,
+    private _interviewerProfileRepository: IInterviewerProfileRepository,
     @inject(TYPES.UserRepository)
-    private userRepository: IUserRepository,
+    private _userRepository: IUserRepository,
     @inject(TYPES.InterviewRequestRepository)
-    private interviewRequestRepository: IInterviewRequestRepository,
+    private _interviewRequestRepository: IInterviewRequestRepository,
     @inject(TYPES.InterviewRepository)
-    private interviewRepository: IInterviewRepository,
+    private _interviewRepository: IInterviewRepository,
     @inject(TYPES.JobApplicationStageRepository)
-    private jobApplicationStageRepository: IJobApplicationStageRepository,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _jobApplicationStageRepository: IJobApplicationStageRepository,
+    @inject(TYPES.NotificationService)
+    private _notificationService: INotificationService,
+    @inject(TYPES.DashboardRepository)
+    private _dashboardRepository: IDashboardRepository,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* toggle availability
   async toggleAvailability(
@@ -75,10 +82,12 @@ export class InterviewerService implements IInterviewerService {
       );
     }
 
-    const profile = await this.interviewerProfileRepository.findOne({ userId });
+    const profile = await this._interviewerProfileRepository.findOne({
+      userId,
+    });
 
     if (!profile) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEWER_MESSAGES.PROFILE_NOT_FOUND,
         userId,
       });
@@ -90,20 +99,20 @@ export class InterviewerService implements IInterviewerService {
     );
 
     if (!isProfileComplete) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEWER_MESSAGES.PROFILE_INCOMPLETE,
         userId,
       });
       throw new BadRequestError(INTERVIEWER_MESSAGES.PROFILE_INCOMPLETE);
     }
 
-    const updated = await this.interviewerProfileRepository.findOneAndUpdate(
+    const updated = await this._interviewerProfileRepository.findOneAndUpdate(
       { userId },
       { isAvailable },
     );
 
     if (!updated) {
-      this.logger.error({
+      this._logger.error({
         event: INTERVIEWER_MESSAGES.PROFILE_UPDATE_FAILED,
         userId,
       });
@@ -111,7 +120,7 @@ export class InterviewerService implements IInterviewerService {
       throw new BadRequestError(INTERVIEWER_MESSAGES.PROFILE_UPDATE_FAILED);
     }
 
-    this.logger.info({
+    this._logger.info({
       event: INTERVIEWER_MESSAGES.AVAILABILITY_UPDATED,
       userId,
       isAvailable,
@@ -150,12 +159,12 @@ export class InterviewerService implements IInterviewerService {
 
     const userObjectId = new Types.ObjectId(userId);
 
-    let profile = await this.interviewerProfileRepository.findOne({
+    let profile = await this._interviewerProfileRepository.findOne({
       userId,
     });
 
     if (!profile) {
-      profile = await this.interviewerProfileRepository.create(
+      profile = await this._interviewerProfileRepository.create(
         InterviewerProfileMapper.toNewInterviewerProfileEntity({
           userId: userObjectId,
           capabilities: dto.capabilities ?? [],
@@ -163,7 +172,7 @@ export class InterviewerService implements IInterviewerService {
         }),
       );
 
-      this.logger.info({
+      this._logger.info({
         event: INTERVIEWER_MESSAGES.PROFILE_CREATED,
         userId,
       });
@@ -182,13 +191,13 @@ export class InterviewerService implements IInterviewerService {
         bio,
       });
 
-    profile = await this.interviewerProfileRepository.findOneAndUpdate(
+    profile = await this._interviewerProfileRepository.findOneAndUpdate(
       { userId },
       updateData,
     );
 
     if (!profile) {
-      this.logger.error({
+      this._logger.error({
         event: INTERVIEWER_MESSAGES.PROFILE_UPDATE_FAILED,
         userId,
       });
@@ -196,7 +205,7 @@ export class InterviewerService implements IInterviewerService {
       throw new BadRequestError(INTERVIEWER_MESSAGES.PROFILE_UPDATE_FAILED);
     }
 
-    this.logger.info({
+    this._logger.info({
       event: INTERVIEWER_MESSAGES.PROFILE_UPDATED,
       userId,
     });
@@ -207,10 +216,10 @@ export class InterviewerService implements IInterviewerService {
   async getInterviewerProfile(
     userId: string,
   ): Promise<InterviewerProfileResponse> {
-    const user = await this.userRepository.findByIdWithCompany(userId);
+    const user = await this._userRepository.findByIdWithCompany(userId);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         event: USER_MESSAGES.USER_NOT_FOUND,
         userId,
       });
@@ -219,19 +228,19 @@ export class InterviewerService implements IInterviewerService {
 
     const userObjectId = new Types.ObjectId(userId);
 
-    let profile = await this.interviewerProfileRepository.findOne({
+    let profile = await this._interviewerProfileRepository.findOne({
       userId: userObjectId,
     });
 
     if (!profile) {
-      profile = await this.interviewerProfileRepository.create({
+      profile = await this._interviewerProfileRepository.create({
         userId: userObjectId,
         capabilities: [],
         bio: "",
         isAvailable: false,
       });
 
-      this.logger.info({
+      this._logger.info({
         event: INTERVIEWER_MESSAGES.PROFILE_AUTO_CREATED,
         userId,
       });
@@ -258,11 +267,13 @@ export class InterviewerService implements IInterviewerService {
     if (!userId) {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
-    const interviewerProfile = await this.interviewerProfileRepository.findOne({
-      userId,
-    });
+    const interviewerProfile = await this._interviewerProfileRepository.findOne(
+      {
+        userId,
+      },
+    );
     if (!interviewerProfile) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEWER_MESSAGES.PROFILE_NOT_FOUND,
         userId,
       });
@@ -275,7 +286,7 @@ export class InterviewerService implements IInterviewerService {
         params.status as InterviewRequestStatus,
       )
     ) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_REQUEST_MESSAGES.INVALID_STATUS,
         status: params.status,
       });
@@ -283,7 +294,7 @@ export class InterviewerService implements IInterviewerService {
     }
 
     const { data, total } =
-      await this.interviewRequestRepository.findByInterviewerPaginated(
+      await this._interviewRequestRepository.findByInterviewerPaginated(
         new Types.ObjectId(userId),
         params,
       );
@@ -311,12 +322,12 @@ export class InterviewerService implements IInterviewerService {
       let result!: UpdateInterviewRequestDecisionResult;
 
       await session.withTransaction(async () => {
-        const request = await this.interviewRequestRepository.findById(
+        const request = await this._interviewRequestRepository.findById(
           requestId,
           session,
         );
         if (!request) {
-          this.logger.warn({
+          this._logger.warn({
             event: INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_NOT_FOUND,
             requestId,
           });
@@ -326,7 +337,7 @@ export class InterviewerService implements IInterviewerService {
         }
 
         if (request.status !== "PENDING") {
-          this.logger.warn({
+          this._logger.warn({
             event: INTERVIEW_REQUEST_MESSAGES.REQUEST_ALREADY_ACTIONED,
             requestId,
           });
@@ -336,10 +347,10 @@ export class InterviewerService implements IInterviewerService {
         }
 
         const interviewerProfile =
-          await this.interviewerProfileRepository.findOne({ userId }, session);
+          await this._interviewerProfileRepository.findOne({ userId }, session);
 
         if (!interviewerProfile) {
-          this.logger.warn({
+          this._logger.warn({
             event: INTERVIEW_REQUEST_MESSAGES.NOT_AUTHORIZED,
             userId,
           });
@@ -347,7 +358,7 @@ export class InterviewerService implements IInterviewerService {
         }
 
         if (userId !== request.interviewerId.toString()) {
-          this.logger.warn({
+          this._logger.warn({
             event: INTERVIEW_REQUEST_MESSAGES.NOT_AUTHORIZED,
             userId,
             requestId,
@@ -357,32 +368,62 @@ export class InterviewerService implements IInterviewerService {
 
         if (dto.decision === InterviewRequestDecision.REJECTED) {
           const updatedRequest =
-            await this.interviewRequestRepository.findOneAndUpdate(
+            await this._interviewRequestRepository.findOneAndUpdate(
               { _id: request._id.toString() },
               { status: "REJECTED", rejectionReason: dto.rejectionReason },
               session,
             );
 
+          if (!updatedRequest) {
+            this._logger.warn({
+              event: INTERVIEW_REQUEST_MESSAGES.DECISION_FAILED,
+              userId,
+              requestId,
+            });
+            throw new ForbiddenError(
+              INTERVIEW_REQUEST_MESSAGES.DECISION_FAILED,
+            );
+          }
+
           result = {
             request: updatedRequest as IInterviewRequest,
             interview: null,
           };
+
+          await this._notificationService.notify(
+            updatedRequest?.requestedBy?.toString(),
+            {
+              type: "INTERVIEW REQUEST",
+              title: "Interview request rejected.",
+              message: "Your interview request rejected",
+              link: `/job-management`,
+            },
+          );
           return;
         }
 
         const updatedRequest =
-          await this.interviewRequestRepository.findOneAndUpdate(
+          await this._interviewRequestRepository.findOneAndUpdate(
             { _id: request._id.toString() },
             { status: "ACCEPTED" },
             session,
           );
 
-        const appStage = await this.jobApplicationStageRepository.findById(
+        if (!updatedRequest) {
+          this._logger.warn({
+            event: INTERVIEW_REQUEST_MESSAGES.DECISION_FAILED,
+            userId,
+            requestId,
+          });
+          throw new ForbiddenError(INTERVIEW_REQUEST_MESSAGES.DECISION_FAILED);
+        }
+
+        const appStage = await this._jobApplicationStageRepository.findById(
           request.jobApplicationStageId.toString(),
           session,
         );
         if (!appStage) {
-          this.logger.warn({
+          this._logger.warn({
             event: APPLICATION_MESSAGES.STAGE_NOT_FOUND,
             jobApplicationStageId: request.jobApplicationStageId,
           });
@@ -395,9 +436,19 @@ export class InterviewerService implements IInterviewerService {
           interviewerProfile.userId as Types.ObjectId,
         );
 
-        const interview = await this.interviewRepository.create(
+        const interview = await this._interviewRepository.create(
           interviewEntity,
           session,
+        );
+
+        await this._notificationService.notify(
+          updatedRequest?.requestedBy?.toString(),
+          {
+            type: "INTERVIEW REQUEST",
+            title: "Interview request accepted.",
+            message: "Your interview request accepted",
+            link: `/job-management`,
+          },
         );
 
         result = { request: updatedRequest as IInterviewRequest, interview };
@@ -416,11 +467,13 @@ export class InterviewerService implements IInterviewerService {
     if (!userId) {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
-    const interviewerProfile = await this.interviewerProfileRepository.findOne({
-      userId,
-    });
+    const interviewerProfile = await this._interviewerProfileRepository.findOne(
+      {
+        userId,
+      },
+    );
     if (!interviewerProfile) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEWER_MESSAGES.PROFILE_NOT_FOUND,
         userId,
       });
@@ -431,7 +484,7 @@ export class InterviewerService implements IInterviewerService {
       params.status &&
       !INTERVIEW_STATUS.includes(params.status as InterviewStatus)
     ) {
-      this.logger.warn({
+      this._logger.warn({
         event: INTERVIEW_MESSAGES.INVALID_STATUS,
         status: params.status,
       });
@@ -439,7 +492,7 @@ export class InterviewerService implements IInterviewerService {
     }
 
     const { data, total } =
-      await this.interviewRepository.findByInterviewerPaginated(
+      await this._interviewRepository.findByInterviewerPaginated(
         new Types.ObjectId(userId),
         params,
       );
@@ -449,6 +502,32 @@ export class InterviewerService implements IInterviewerService {
       total,
       page: params.page,
       totalPages: Math.max(1, Math.ceil(total / params.limit)),
+    };
+  }
+  //* get dashboard
+  async getDashboard(interviewerId: string): Promise<InterviewerDashboard> {
+    if (!interviewerId) {
+      throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
+    }
+
+    // One "now" for both queries, so the counts and the list agree
+    const now = new Date();
+
+    const [counts, upcoming] = await Promise.all([
+      this._dashboardRepository.getInterviewCounts(interviewerId, now),
+      this._dashboardRepository.getUpcomingInterviews(interviewerId, now, 5),
+    ]);
+
+    return {
+      stats: counts,
+      upcomingInterviews: upcoming.map((i) => ({
+        _id: i._id,
+        scheduledAt: i.scheduledAt.toISOString(),
+        duration: i.duration,
+        candidateName: i.candidateName,
+        jobTitle: i.jobTitle,
+        stageName: i.stageName,
+      })),
     };
   }
 }

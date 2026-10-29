@@ -5,7 +5,7 @@ import {
   InterviewRequestModel,
 } from "../../../models/interview/interview.request";
 import { IInterviewRequestRepository } from "../interface/IInterviewRequestRepository";
-import { Types } from "mongoose";
+import { Types, PipelineStage } from "mongoose";
 import { InterviewRequestListItem } from "../../../interfaces/interview/interviewRequest";
 
 @injectable()
@@ -20,12 +20,12 @@ export class InterviewRequestRepository
     interviewerProfileId: Types.ObjectId,
     { status, page, limit }: { status?: string; page: number; limit: number },
   ): Promise<{ data: InterviewRequestListItem[]; total: number }> {
-    const match: Record<string, any> = { interviewerId: interviewerProfileId };
+    const match: Record<string, unknown> = { interviewerId: interviewerProfileId };
     if (status) {
       match.status = status;
     }
 
-    const pipeline: any[] = [
+    const pipeline: PipelineStage[] = [
       { $match: match },
       { $sort: { createdAt: -1 } },
 

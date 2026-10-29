@@ -4,7 +4,10 @@ import { IJobRepository } from "../../../../repositories/job/interface/IJobRepos
 import { VALIDATION_MESSAGES } from "../../../../constants/messages/validation";
 import { Logger } from "pino";
 import { UnauthorizedError } from "../../../../errors/unauthorized.error";
-import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
+import {
+  IJobApplicationRepository,
+  AggregateFacetResult,
+} from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 import mongoose, { PipelineStage, Types } from "mongoose";
 import { IJobStageRepository } from "../../../../repositories/job/interface/IJobStageRepository";
 import { IJobApplicationStageRepository } from "../../../../repositories/job-application/interface/IJobApplicationStageRepository";
@@ -14,20 +17,31 @@ import {
   GetMyApplicationsFilters,
   MyApplicationDetailsResult,
   UpdateApplicationStageResult,
+  MyApplicationItem,
+  MyApplicationsResponse,
 } from "../../../../interfaces/application/application";
 import { BadRequestError } from "../../../../errors/bad-request.error";
 import { NotFoundError } from "../../../../errors/not-found.error";
-import { APPLICATION_MESSAGES } from "../../../../constants/messages/application";
+import { APPLICATION_MESSAGES } from "../../../../constants/messages/application/application";
 import { ConflictError } from "../../../../errors/conflict.error";
 import { ForbiddenError } from "../../../../errors/forbidden.error";
 import { JobStageName } from "../../../../models/job/job.stage.model";
 import { JOB_MESSAGES } from "../../../../constants/messages/jobs";
 import { IJobApplicationStage } from "../../../../models/job-application/job.application.stage.model";
+import { IJobStage } from "../../../../models/job/job.stage.model";
+import { IJobApplication } from "../../../../models/job-application/job.application.model";
 import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinaryService";
 import { InternalServerError } from "../../../../errors/internal-server.error";
 import { UPLOAD_MESSAGES } from "../../../../constants/messages/upload";
 import { AddAssessmentResponseDto } from "../../../../dtos/v1/application/assessment-responce-dto";
 import { ApplicationStageMapper } from "../../../../mapper/application/applicationStageMapper";
+import { DOCUMENT_VERIFICATION_MESSAGES } from "../../../../constants/messages/docVer";
+import { CLOUDINARY_MESSAGES } from "../../../../constants/messages/cloudinary";
+import { INotificationService } from "../../notification/interface/INotificationService";
+import { formatStageName } from "../../../../constants/notification/notification";
+import { CreateNotificationData } from "../../../../interfaces/notification/notification";
+import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
+import { USER_MESSAGES } from "../../../../constants/messages/user";
 
 @injectable()
 export class JobApplicationService implements IJobApplicationService {
@@ -39,6 +53,10 @@ export class JobApplicationService implements IJobApplicationService {
     private _jobStageRepository: IJobStageRepository,
     @inject(TYPES.JobApplicationStageRepository)
     private _jobApplicationStageRepository: IJobApplicationStageRepository,
+    @inject(TYPES.NotificationService)
+    private _notificationService: INotificationService,
+    @inject(TYPES.UserRepository)
+    private _userRepository: IUserRepository,
     @inject(TYPES.Logger) private _logger: Logger,
     @inject(TYPES.CloudinaryService)
     private _cloudinaryService: ICloudinaryService,
@@ -47,7 +65,7 @@ export class JobApplicationService implements IJobApplicationService {
   async getMyApplications(
     filters: GetMyApplicationsFilters,
     userId: string,
-  ): Promise<any> {
+  ): Promise<MyApplicationsResponse> {
     if (!userId) {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
     }
@@ -115,13 +133,15 @@ export class JobApplicationService implements IJobApplicationService {
     );
 
     const result =
-      await this._jobApplicationRepository.getMyApplicationsAggregate(pipeline);
+      await this._jobApplicationRepository.getMyApplicationsAggregate<
+        AggregateFacetResult<MyApplicationItem>
+      >(pipeline);
 
     const data = result[0]?.data ?? [];
     const total = result[0]?.totalCount[0]?.count ?? 0;
 
     return {
-      applications: data,
+      applications: data as MyApplicationItem[],
       pagination: {
         total,
         page: safePage,
@@ -326,7 +346,9 @@ export class JobApplicationService implements IJobApplicationService {
     ];
 
     const result =
-      await this._jobApplicationRepository.getMyApplicationsAggregate(pipeline);
+      await this._jobApplicationRepository.getMyApplicationsAggregate<MyApplicationDetailsResult>(
+        pipeline,
+      );
 
     const application = result?.[0];
 
@@ -340,7 +362,12 @@ export class JobApplicationService implements IJobApplicationService {
   private async moveApplicationToNextStage(
     applicationId: string,
     feedback?: string,
-  ): Promise<any> {
+  ): Promise<{
+    message: string;
+    application: IJobApplication;
+    nextStage: IJobStage | null;
+    stageRecord?: IJobApplicationStage;
+  }> {
     if (!Types.ObjectId.isValid(applicationId)) {
       throw new BadRequestError(APPLICATION_MESSAGES.INVALID_APPLICATION_ID);
     }
@@ -386,7 +413,7 @@ export class JobApplicationService implements IJobApplicationService {
       );
     }
 
-    const currentIndex = jobStages.findIndex((s: any) =>
+    const currentIndex = jobStages.findIndex((s: IJobStage) =>
       s._id.equals(currentAppStage.jobStageId),
     );
 
@@ -480,10 +507,14 @@ export class JobApplicationService implements IJobApplicationService {
 
     const session = await mongoose.startSession();
 
+    let pendingNotification = null as CreateNotificationData | null;
+
     try {
       let result: any;
 
       await session.withTransaction(async () => {
+        pendingNotification = null;
+
         const currentAppStage =
           await this._jobApplicationStageRepository.findById(
             appStageId,
@@ -575,14 +606,11 @@ export class JobApplicationService implements IJobApplicationService {
           throw new NotFoundError(APPLICATION_MESSAGES.JOB_STAGE_NOT_FOUND);
         }
 
-        if (currentJobStage.name === ("offer" as JobStageName)) {
-          this._logger.warn({
-            event: APPLICATION_MESSAGES.OFFER_STAGE_NOT_ALLOWED,
-          });
-          throw new BadRequestError(
-            APPLICATION_MESSAGES.OFFER_STAGE_NOT_ALLOWED,
-          );
-        }
+        const isOfferStage = currentJobStage.name === ("offer" as JobStageName);
+
+        const candidateUserId = application.userId.toString();
+        const applicationLink = `/application/${application._id}`;
+        const stageLabel = formatStageName(currentJobStage.name);
 
         await this._jobApplicationStageRepository.findOneAndUpdate(
           { _id: currentAppStage._id.toString() },
@@ -596,13 +624,22 @@ export class JobApplicationService implements IJobApplicationService {
           session,
         );
 
+        // ── REJECTED ──────────────────────────────────────────────────────────
         if (decision === "FAILED") {
           const updatedApplication =
             await this._jobApplicationRepository.findOneAndUpdate(
-              application._id.toString(),
+              { _id: application._id.toString() },
               { status: "REJECTED", finalizedAt: new Date() },
               session,
             );
+
+          pendingNotification = {
+            userId: candidateUserId,
+            type: "APPLICATION_REJECTED",
+            title: "Application update",
+            message: `Your application for ${job.title} was not taken forward at the ${stageLabel} stage.`,
+            link: applicationLink,
+          };
 
           result = {
             application: updatedApplication,
@@ -612,15 +649,19 @@ export class JobApplicationService implements IJobApplicationService {
           return;
         }
 
-        const nextJobStage = await this._jobStageRepository.findOne(
-          { jobId: job._id.toString(), order: currentJobStage.order + 1 },
-          session,
-        );
+        // ── PASSED ────────────────────────────────────────────────────────────
+        const nextJobStage = isOfferStage
+          ? null
+          : await this._jobStageRepository.findOne(
+              { jobId: job._id.toString(), order: currentJobStage.order + 1 },
+              session,
+            );
 
+        // ── SELECTED (offer stage, or no stage left) ─────────────────────────
         if (!nextJobStage) {
           const updatedApplication =
             await this._jobApplicationRepository.findOneAndUpdate(
-              application._id.toString(),
+              { _id: application._id.toString() },
               {
                 currentStageId: null,
                 status: "SELECTED",
@@ -629,6 +670,14 @@ export class JobApplicationService implements IJobApplicationService {
               session,
             );
 
+          pendingNotification = {
+            userId: candidateUserId,
+            type: "APPLICATION_SELECTED",
+            title: "Congratulations! You're selected",
+            message: `You have been selected for ${job.title}.`,
+            link: applicationLink,
+          };
+
           result = {
             application: updatedApplication,
             stageId: currentAppStage._id,
@@ -637,6 +686,7 @@ export class JobApplicationService implements IJobApplicationService {
           return;
         }
 
+        // ── NEXT STAGE ────────────────────────────────────────────────────────
         const newAppStage = await this._jobApplicationStageRepository.create(
           {
             applicationId: application._id,
@@ -654,12 +704,25 @@ export class JobApplicationService implements IJobApplicationService {
             session,
           );
 
+        pendingNotification = {
+          userId: candidateUserId,
+          type: "APPLICATION_STAGE_UPDATED",
+          title: "You moved to the next round",
+          message: `You passed ${stageLabel} for ${job.title}. Your next stage is ${formatStageName(nextJobStage.name)}.`,
+          link: applicationLink,
+        };
+
         result = {
           application: updatedApplication,
           stageId: currentAppStage._id,
           nextStage: newAppStage,
         };
       });
+
+      if (pendingNotification) {
+        const { userId, ...payload } = pendingNotification;
+        await this._notificationService.notify(userId, payload);
+      }
 
       return result;
     } catch (error) {
@@ -674,10 +737,11 @@ export class JobApplicationService implements IJobApplicationService {
     applicationIds: string[],
     feedback?: string,
   ): Promise<{
-    succeeded: { applicationId: string; nextStage: any }[];
+    succeeded: { applicationId: string; nextStage: IJobStage | null }[];
     failed: { applicationId: string; reason: string }[];
   }> {
-    const succeeded: { applicationId: string; nextStage: any }[] = [];
+    const succeeded: { applicationId: string; nextStage: IJobStage | null }[] =
+      [];
     const failed: { applicationId: string; reason: string }[] = [];
 
     for (const applicationId of applicationIds) {
@@ -687,10 +751,13 @@ export class JobApplicationService implements IJobApplicationService {
           feedback,
         );
         succeeded.push({ applicationId, nextStage: result.nextStage });
-      } catch (error: any) {
+      } catch (error: unknown) {
         failed.push({
           applicationId,
-          reason: error?.message ?? "Failed to move application",
+          reason:
+            error instanceof Error
+              ? error.message
+              : "Failed to move application",
         });
       }
     }
@@ -851,7 +918,7 @@ export class JobApplicationService implements IJobApplicationService {
           file,
           "assessment-response",
         );
-      } catch (error) {
+      } catch (_error) {
         throw new InternalServerError(UPLOAD_MESSAGES.UPLOAD_FAILED);
       }
       attachmentUrl = uploaded;
@@ -874,5 +941,308 @@ export class JobApplicationService implements IJobApplicationService {
     );
 
     return updated as IJobApplicationStage;
+  }
+
+  //* udpate verification documents
+  async updateDocumentsForVerification(
+    userId: string,
+    applicationStageId: string,
+    keepUrls: string[],
+    files: Express.Multer.File[],
+  ): Promise<string[]> {
+    if (!userId) {
+      throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
+    }
+
+    const applicationStage =
+      await this._jobApplicationStageRepository.findById(applicationStageId);
+
+    if (!applicationStage)
+      throw new NotFoundError(APPLICATION_MESSAGES.STAGE_NOT_FOUND);
+
+    if (applicationStage.status !== "IN_PROGRESS") {
+      throw new ForbiddenError(
+        DOCUMENT_VERIFICATION_MESSAGES.STAGE_ALREADY_DECIDED,
+      );
+    }
+
+    const application = await this._jobApplicationRepository.findById(
+      applicationStage?.applicationId.toString(),
+    );
+    if (!application)
+      throw new NotFoundError(
+        DOCUMENT_VERIFICATION_MESSAGES.APPLICATION_NOT_FOUND,
+      );
+    if (application.userId.toString() !== userId.toString()) {
+      this._logger.warn({
+        event: DOCUMENT_VERIFICATION_MESSAGES.NOT_AUTHORIZED,
+        userId,
+        applicationId: application?._id,
+      });
+      throw new ForbiddenError(DOCUMENT_VERIFICATION_MESSAGES.NOT_AUTHORIZED);
+    }
+    if (application.status !== "IN_PROGRESS") {
+      throw new ForbiddenError(
+        DOCUMENT_VERIFICATION_MESSAGES.APPLICATION_NOT_ACTIVE,
+      );
+    }
+
+    // Stage must be a document verification stage of the same job
+    const stage = await this._jobStageRepository.findById(
+      applicationStage?.jobStageId.toString(),
+    );
+    if (!stage)
+      throw new NotFoundError(DOCUMENT_VERIFICATION_MESSAGES.STAGE_NOT_FOUND);
+    if (stage.name !== "document_verification") {
+      throw new BadRequestError(
+        DOCUMENT_VERIFICATION_MESSAGES.NOT_DOCUMENT_VERIFICATION_STAGE,
+      );
+    }
+    if (stage.jobId.toString() !== application.jobId.toString()) {
+      throw new BadRequestError(DOCUMENT_VERIFICATION_MESSAGES.STAGE_MISMATCH);
+    }
+
+    // Kept URLs must already be on this stage (no injecting arbitrary links)
+    const current = applicationStage.documents ?? [];
+    const keep = [...new Set(keepUrls)];
+    if (keep.some((url) => !current.includes(url))) {
+      throw new BadRequestError(
+        DOCUMENT_VERIFICATION_MESSAGES.UNKNOWN_DOCUMENT,
+      );
+    }
+
+    // Upload new files first; if any upload fails, nothing is saved
+    let uploaded: string[];
+    try {
+      uploaded = await Promise.all(
+        files.map((file) =>
+          this._cloudinaryService.uploadFile(file, "verification-documents"),
+        ),
+      );
+    } catch (error) {
+      this._logger.error({
+        userId,
+        applicationId: application._id,
+        event: CLOUDINARY_MESSAGES.UPLOAD_FAILED,
+        error,
+      });
+      throw new InternalServerError(CLOUDINARY_MESSAGES.UPLOAD_FAILED);
+    }
+
+    const documents = [...keep, ...uploaded];
+    await this._jobApplicationStageRepository.findOneAndUpdate(
+      { _id: applicationStage._id },
+      { documents },
+    );
+
+    return documents;
+  }
+  //* upload offer letter
+  async uploadOfferLetter(
+    appStageId: string,
+    recruiterId: string,
+    file: Express.Multer.File | undefined,
+  ): Promise<{ offerLetterUrl: string }> {
+    if (!file) {
+      throw new BadRequestError(APPLICATION_MESSAGES.OFFER_LETTER_REQUIRED);
+    }
+
+    const appStage =
+      await this._jobApplicationStageRepository.findById(appStageId);
+    if (!appStage) {
+      throw new NotFoundError(APPLICATION_MESSAGES.STAGE_NOT_FOUND);
+    }
+
+    const application = await this._jobApplicationRepository.findById(
+      appStage.applicationId.toString(),
+    );
+    if (!application) {
+      throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
+    }
+
+    const job = await this._jobRepository.findById(
+      application.jobId.toString(),
+    );
+    if (!job) {
+      throw new NotFoundError(APPLICATION_MESSAGES.JOB_NOT_FOUND);
+    }
+
+    if (job.createdBy.toString() !== recruiterId.toString()) {
+      this._logger.warn({
+        event: APPLICATION_MESSAGES.NOT_AUTHORIZED,
+        recruiterId,
+        jobId: job._id,
+      });
+      throw new ForbiddenError(APPLICATION_MESSAGES.NOT_AUTHORIZED);
+    }
+
+    const jobStage = await this._jobStageRepository.findById(
+      appStage.jobStageId.toString(),
+    );
+    if (!jobStage) {
+      throw new NotFoundError(APPLICATION_MESSAGES.JOB_STAGE_NOT_FOUND);
+    }
+    if (jobStage.name !== ("offer" as JobStageName)) {
+      throw new BadRequestError(APPLICATION_MESSAGES.NOT_OFFER_STAGE);
+    }
+
+    if (appStage.offerResponse) {
+      throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
+    }
+
+    let offerLetterUrl: string;
+    try {
+      offerLetterUrl = await this._cloudinaryService.uploadFile(
+        file,
+        "offer-letters",
+      );
+    } catch (error) {
+      this._logger.error({
+        recruiterId,
+        appStageId,
+        event: CLOUDINARY_MESSAGES.UPLOAD_FAILED,
+        error,
+      });
+      throw new InternalServerError(CLOUDINARY_MESSAGES.UPLOAD_FAILED);
+    }
+
+    const updated = await this._jobApplicationStageRepository.findOneAndUpdate(
+      { _id: appStage._id.toString(), offerResponse: null },
+      { offerLetterUrl },
+    );
+    if (!updated) {
+      throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
+    }
+
+    return { offerLetterUrl };
+  }
+  //* candidate: accept or decline the offer
+  async updateOfferResponse(
+    appStageId: string,
+    userId: string,
+    response: string,
+  ): Promise<{ offerResponse: "ACCEPTED" | "DECLINED" }> {
+    if (response !== "ACCEPTED" && response !== "DECLINED") {
+      throw new BadRequestError(APPLICATION_MESSAGES.INVALID_OFFER_RESPONSE);
+    }
+
+    const appStage =
+      await this._jobApplicationStageRepository.findById(appStageId);
+    if (!appStage) {
+      throw new NotFoundError(APPLICATION_MESSAGES.STAGE_NOT_FOUND);
+    }
+
+    const application = await this._jobApplicationRepository.findById(
+      appStage.applicationId.toString(),
+    );
+    if (!application) {
+      throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
+    }
+
+    if (application.userId.toString() !== userId.toString()) {
+      this._logger.warn({
+        event: APPLICATION_MESSAGES.NOT_AUTHORIZED,
+        userId,
+        appStageId,
+      });
+      throw new ForbiddenError(APPLICATION_MESSAGES.NOT_AUTHORIZED);
+    }
+
+    const jobStage = await this._jobStageRepository.findById(
+      appStage.jobStageId.toString(),
+    );
+    if (!jobStage) {
+      throw new NotFoundError(APPLICATION_MESSAGES.JOB_STAGE_NOT_FOUND);
+    }
+    if (jobStage.name !== ("offer" as JobStageName)) {
+      throw new BadRequestError(APPLICATION_MESSAGES.NOT_OFFER_STAGE);
+    }
+
+    if (!appStage.offerLetterUrl) {
+      throw new BadRequestError(APPLICATION_MESSAGES.OFFER_LETTER_NOT_SENT);
+    }
+
+    if (appStage.offerResponse) {
+      throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
+    }
+
+    const updated = await this._jobApplicationStageRepository.findOneAndUpdate(
+      { _id: appStage._id.toString(), offerResponse: null },
+      { offerResponse: response },
+    );
+    if (!updated) {
+      throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
+    }
+
+    return { offerResponse: response };
+  }
+  //* candidate: withdraw application
+  async withdrawApplication(
+    appId: string,
+    userId: string,
+  ): Promise<IJobApplication> {
+    const user = await this._userRepository.findById(userId);
+    if (!user) {
+      this._logger.warn({
+        event: USER_MESSAGES.USER_NOT_FOUND,
+        userId,
+      });
+      throw new NotFoundError(USER_MESSAGES.USER_NOT_FOUND);
+    }
+
+    const application = await this._jobApplicationRepository.findById(appId);
+    if (!application) {
+      throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
+    }
+
+    if (application.userId.toString() !== userId.toString()) {
+      this._logger.warn({
+        event: APPLICATION_MESSAGES.NOT_AUTHORIZED,
+        userId,
+      });
+      throw new ForbiddenError(APPLICATION_MESSAGES.NOT_AUTHORIZED);
+    }
+
+    const job = await this._jobRepository.findById(
+      application?.jobId?.toString(),
+    );
+    if (!job) {
+      this._logger.warn({
+        event: JOB_MESSAGES.JOB_NOT_FOUND,
+        userId,
+      });
+      throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
+    }
+
+    if (application?.status != "IN_PROGRESS") {
+      this._logger.warn({
+        event: APPLICATION_MESSAGES.APPLICATION_NOT_IN_PROGRESS,
+        userId,
+      });
+      throw new ForbiddenError(
+        APPLICATION_MESSAGES.APPLICATION_NOT_IN_PROGRESS,
+      );
+    }
+
+    const updatedApplication =
+      await this._jobApplicationRepository.findOneAndUpdate(
+        { _id: appId },
+        { status: "WITHDRAWN" },
+      );
+
+    if (!updatedApplication) {
+      throw new ForbiddenError(
+        APPLICATION_MESSAGES.APPLICATION_NOT_IN_PROGRESS,
+      );
+    }
+
+    await this._notificationService.notify(job.createdBy.toString(), {
+      type: "APPLICATION_WITHDRAWN",
+      title: "Application Withdrawn",
+      message: `Application withdrawn by ${user.name}`,
+      link: `/application/${application._id}`,
+    });
+
+    return updatedApplication ?? application;
   }
 }

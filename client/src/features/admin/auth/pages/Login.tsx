@@ -55,6 +55,7 @@ export default function Login() {
           token,
         }),
       );
+      console.log("login reponse : ", res);
       toast.success("Logged in");
       navigate("/admin/dashboard");
     } catch (error: any) {

@@ -3,7 +3,7 @@ import { IJobApplicationStage } from "../../../models/job-application/job.applic
 import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
 export interface IJobApplicationStageRepository extends IBaseRepository<IJobApplicationStage> {
-  findByStageIdPaginated(
+  findByStageIdPaginated<T = unknown>(
     stageId: Types.ObjectId,
     stageName: string,
     {
@@ -12,5 +12,5 @@ export interface IJobApplicationStageRepository extends IBaseRepository<IJobAppl
       page,
       limit,
     }: { search?: string; status?: string; page: number; limit: number },
-  ): Promise<{ data: any[]; total: number }>;
+  ): Promise<{ data: T[]; total: number }>;
 }

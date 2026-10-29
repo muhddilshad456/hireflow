@@ -6,6 +6,7 @@ import { ConfirmModal } from "../../../shared/components/ConfirmationModal";
 import { logout } from "../../../../redux/slice/authSlice";
 import { logoutApi } from "../../../shared/services/authService";
 import toast from "react-hot-toast";
+import { NotificationBell } from "../../../shared/components/NotificationBell";
 
 const IcoBell = () => (
   <svg
@@ -42,7 +43,6 @@ const IcoMenu = () => (
 
 export function Header({
   onMenuClick,
-  avatarUrl = "https://i.pravatar.cc/40?img=12",
   notifications = 3,
 }: {
   onMenuClick: () => void;
@@ -55,15 +55,15 @@ export function Header({
   const dispatch = useAppDispatch();
   const logoutUser = () => setShowLogoutModal(true);
   const cancelModal = () => setShowLogoutModal(false);
-  const userId = useAppSelector((state) => state.auth.user?.id);
+  const user = useAppSelector((state) => state.auth.user);
 
   const handleLogout = async () => {
-    if (!userId) {
+    if (!user?.id) {
       console.log("userId not accesible");
       return;
     }
     try {
-      await logoutApi({ id: userId });
+      await logoutApi({ id: user?.id });
       dispatch(logout());
       toast.success("Logged out");
       navigate("/admin/login");
@@ -84,18 +84,15 @@ export function Header({
           </button>
         </div>
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500">
-            <IcoBell />
-            {notifications > 0 && (
-              <span className="absolute top-0.5 right-0.5 w-[15px] h-[15px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
-                {notifications > 9 ? "9+" : notifications}
-              </span>
-            )}
-          </button>
+          <NotificationBell
+            viewAllRoute="/admin/notifications"
+            buttonClassName="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+          />
           <ProfileDropdown
-            avatarUrl={avatarUrl}
-            onProfile={() => navigate("/profile")}
+            avatarUrl={user?.profilePicture ?? ""}
+            onProfile={() => navigate("/admin/profile")}
             onLogout={logoutUser}
+            name={user?.name ?? ""}
           />
         </div>
       </header>

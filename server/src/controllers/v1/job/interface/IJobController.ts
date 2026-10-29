@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Response, NextFunction } from "express";
 import { AuthRequest } from "../../../../middlewares/auth.middleware";
 
 export interface IJobController {
@@ -26,6 +26,11 @@ export interface IJobController {
     next: NextFunction,
   ): Promise<void>;
   applicationStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  setDocVerDescription(
     req: AuthRequest,
     res: Response,
     next: NextFunction,

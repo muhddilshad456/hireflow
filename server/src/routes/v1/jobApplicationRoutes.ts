@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Response, NextFunction, Router } from "express";
 import { TYPES } from "../../dependency-injection/types";
 import { container } from "../../dependency-injection/container";
 import { verifyAccessToken } from "../../middlewares/auth.middleware";
@@ -9,6 +9,14 @@ import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
 import { MoveMultipleToNextStageDto } from "../../dtos/v1/application/move-to-next-stage-bulk-dto";
 import { upload } from "../../config/multer";
+import { BadRequestError } from "../../errors/bad-request.error";
+
+const uploadDocuments = (req: Request, res: Response, next: NextFunction) => {
+  upload.array("documents")(req, res, (err: unknown) => {
+    if (err) return next(new BadRequestError("Invalid form data"));
+    next();
+  });
+};
 
 const router = Router();
 
@@ -66,4 +74,37 @@ router.post(
     jobApplicationController,
   ),
 );
+//* add or remove verification documents
+router.put(
+  "/:applicationStageId/verification-documents",
+  verifyAccessToken,
+  roleGuard([UserRole.USER]),
+  uploadDocuments,
+  jobApplicationController.updateDocumentsForVerification.bind(
+    jobApplicationController,
+  ),
+);
+//* upload or replace the offer letter
+router.put(
+  "/:applicationStageId/offer-letter",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_RECRUITER]),
+  upload.single("offerLetter"),
+  jobApplicationController.uploadOfferLetter.bind(jobApplicationController),
+);
+//* accept or decline the offer
+router.patch(
+  "/:applicationStageId/offer-response",
+  verifyAccessToken,
+  roleGuard([UserRole.USER]),
+  jobApplicationController.updateOfferResponse.bind(jobApplicationController),
+);
+//* withdraw application
+router.patch(
+  "/:applicationId/withdraw",
+  verifyAccessToken,
+  roleGuard([UserRole.USER]),
+  jobApplicationController.withdrawApplication.bind(jobApplicationController),
+);
+
 export default router;

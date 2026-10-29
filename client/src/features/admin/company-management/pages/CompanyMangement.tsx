@@ -22,6 +22,7 @@ interface CompanyItem {
 export function CompanyManagement() {
   const [companies, setCompanies] = useState<CompanyItem[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filter, setFilter] = useState<CompanyFilterType>("All");
@@ -44,7 +45,12 @@ export function CompanyManagement() {
 
   const fetchCompanies = async () => {
     try {
-      const result = await getAllCompaniesApi(page, limit, search, filter);
+      const result = await getAllCompaniesApi(
+        page,
+        limit,
+        debouncedSearch,
+        filter,
+      );
       console.log("result of company fetch : ", result);
       setCompanies(result?.data?.result?.companies);
       setTotalPages(result?.data?.result?.totalPages);
@@ -67,8 +73,20 @@ export function CompanyManagement() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, debouncedSearch]);
+
+  useEffect(() => {
     fetchCompanies();
-  }, [page, filter, search]);
+  }, [page, filter, debouncedSearch]);
 
   return (
     <div className="space-y-5">

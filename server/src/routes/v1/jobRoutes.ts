@@ -4,6 +4,8 @@ import { container } from "../../dependency-injection/container";
 import { IJobController } from "../../controllers/v1/job/interface/IJobController";
 import { verifyAccessToken } from "../../middlewares/auth.middleware";
 import { upload } from "../../config/multer";
+import { roleGuard } from "../../middlewares/role.middleware";
+import { UserRole } from "../../constants/roles";
 
 const router = Router();
 
@@ -41,5 +43,12 @@ router.get(
   "/:jobId/application-status",
   verifyAccessToken,
   jobController.applicationStatus.bind(jobController),
+);
+//* add document verifitcation description
+router.patch(
+  "/job-stages/:jobStageId/document-verification-description",
+  verifyAccessToken,
+  roleGuard([UserRole.COMPANY_RECRUITER]),
+  jobController.setDocVerDescription.bind(jobController),
 );
 export default router;

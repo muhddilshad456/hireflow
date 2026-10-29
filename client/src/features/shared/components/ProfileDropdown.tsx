@@ -5,12 +5,14 @@ interface UserDropdownProps {
   avatarUrl: string;
   onProfile: () => void;
   onLogout: () => void;
+  name: string;
 }
 
 export function ProfileDropdown({
   avatarUrl,
   onProfile,
   onLogout,
+  name,
 }: UserDropdownProps) {
   const [open, setOpen] = useState(false);
 
@@ -21,11 +23,17 @@ export function ProfileDropdown({
       onMouseLeave={() => setOpen(false)}
     >
       {/* Avatar */}
-      <img
-        src={avatarUrl}
-        alt="avatar"
-        className="w-9 h-9 rounded-full object-cover ring-2 ring-violet-200 hover:ring-violet-400 transition-all cursor-pointer"
-      />
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt={name}
+          className="w-9 h-9 rounded-full object-cover ring-2 ring-violet-200"
+        />
+      ) : (
+        <div className="w-9 h-9 rounded-full bg-violet-600 text-white flex items-center justify-center font-semibold uppercase">
+          {name?.trim().charAt(0) || "U"}
+        </div>
+      )}
 
       {/* Dropdown */}
       {open &&

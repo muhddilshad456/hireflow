@@ -14,7 +14,7 @@ export const InterviewResultCard: React.FC<{
   onSubmitResult: (result: "PASS" | "FAIL", feedback: string) => Promise<void>;
 }> = ({ candidate, title, feedbackLabel, onSubmitResult }) => {
   const name = candidate.application?.userId?.name ?? "Unknown candidate";
-  const progress = candidate.interviewProgress;
+  const progress = candidate?.applicationStage?.interviewProgress;
   const [result, setResult] = useState<"PASS" | "FAIL" | null>(null);
   const [feedback, setFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);

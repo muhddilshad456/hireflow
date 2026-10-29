@@ -18,6 +18,7 @@ import { AppliedJobPage } from "../../../features/user/application/pages/Applica
 import { StageRenderer } from "../../../features/user/application/components/StageRenderer";
 import { ChatPage } from "../../../features/user/chat/pages/chat";
 import CandidateInterviewPage from "../../../features/user/application/interview/pages/CandidateInterviewPage";
+import UserNotificationsPage from "../../../features/user/notificaiton/pages/UserNotificationPage";
 
 const UserRoutes = () => {
   return (
@@ -49,6 +50,7 @@ const UserRoutes = () => {
             element={<ChatPage />}
           />
           <Route path="interview/:id" element={<CandidateInterviewPage />} />
+          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

@@ -7,7 +7,7 @@ import { IUserController } from "../interface/IUserController";
 
 @injectable()
 export class UserController implements IUserController {
-  constructor(@inject(TYPES.UserService) private userService: IUserService) {}
+  constructor(@inject(TYPES.UserService) private _userService: IUserService) {}
   //* get all users
   async getAllUsers(
     req: Request,
@@ -20,7 +20,7 @@ export class UserController implements IUserController {
       const search = (req.query.search as string) || "";
       const status = (req.query.status as string) || "";
 
-      const result = await this.userService.getAllUser(
+      const result = await this._userService.getAllUser(
         page,
         limit,
         search,
@@ -42,7 +42,7 @@ export class UserController implements IUserController {
       const id = req.params.userId as string;
       const status = req.body.status as string;
       console.log();
-      await this.userService.updateStatus(id, status);
+      await this._userService.updateStatus(id, status);
       ResponseHandler.success(res, "Status updated successfully");
     } catch (error) {
       next(error);

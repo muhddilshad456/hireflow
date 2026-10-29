@@ -20,6 +20,7 @@ export function JobManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [status, setStatus] = useState<UserFilterType>("All");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmJob, setConfirmJob] = useState<Job | null>(null);
 
@@ -56,8 +57,16 @@ export function JobManagement() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchJobs();
-  }, [search, page, status]);
+  }, [debouncedSearch, page, status]);
 
   function handleSearch(e: React.ChangeEvent<HTMLInputElement>) {
     let value = e.target.value;

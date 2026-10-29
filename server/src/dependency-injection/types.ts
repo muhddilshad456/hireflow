@@ -17,6 +17,7 @@ export const TYPES = {
   InterviewerController: Symbol.for("InterviewerController"),
   SubscriptionController: Symbol.for("SubscriptionController"),
   SubscriptionwebhookController: Symbol.for("SubscriptionwebhookController"),
+  NotificationController: Symbol.for("NotificationController"),
   //service
   CompanyService: Symbol.for("CompanyService"),
   AuthService: Symbol.for("AuthService"),
@@ -35,6 +36,7 @@ export const TYPES = {
   InterviewService: Symbol.for("InterviewService"),
   InterviewerService: Symbol.for("InterviewerService"),
   SubscriptionService: Symbol.for("SubscriptionService"),
+  NotificationService: Symbol.for("NotificationService"),
   //repository
   UserRepository: Symbol.for("UserRepository"),
   CompanyVerRepository: Symbol.for("CompanyVerRepository"),
@@ -51,6 +53,8 @@ export const TYPES = {
   InterviewRequestRepository: Symbol.for("InterviewRequestRepository"),
   InterviewerProfileRepository: Symbol.for("InterviewerProfileRepository"),
   SubscriptionRepository: Symbol.for("SubscriptionRepository"),
+  NotificationRepository: Symbol.for("NotificationRepository"),
+  DashboardRepository: Symbol.for("DashboardRepository"),
   //other
   EmailService: Symbol.for("EmailService"),
   RedisService: Symbol.for("RedisService"),

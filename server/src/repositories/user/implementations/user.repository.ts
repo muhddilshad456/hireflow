@@ -1,12 +1,17 @@
-import { IUserRepository } from "../interfaces/IUserRepository.js";
+import {
+  IUserRepository,
+  GetAllCompaniesResult,
+} from "../interfaces/IUserRepository.js";
 import { BaseRepository } from "../../base/implementation/base.repository.js";
 import { UserModel, IUser } from "../../../models/user.model.js";
 import { injectable } from "inversify";
-import { QueryFilter } from "mongoose";
+import { QueryFilter, Types } from "mongoose";
 import { GetUsersResponse } from "../../../types/userRepo.js";
 import { IUserWithCompany } from "../../../types/userWithCompany.js";
 import { ICompany } from "../../../models/company/company.model.js";
 import { UserBasicInfo } from "../../../interfaces/interview/interview.js";
+import { UserRole } from "../../../constants/roles.js";
+import { GetAllCompanyMembersResult } from "../../../interfaces/company/admin/company.js";
 
 @injectable()
 export class UserRepository
@@ -68,7 +73,7 @@ export class UserRepository
     limit: number,
     search: string,
     status: string,
-  ): Promise<any> {
+  ): Promise<GetAllCompaniesResult> {
     const skip = (page - 1) * limit;
 
     const filter: QueryFilter<IUser> = {};
@@ -112,5 +117,47 @@ export class UserRepository
     fields: string,
   ): Promise<UserBasicInfo | null> {
     return await UserModel.findById(id).select(fields);
+  }
+  //* get company members
+  async getAllCompanyMembers(
+    page: number,
+    limit: number,
+    search: string,
+    status: string,
+    role: UserRole,
+    companyId: string,
+  ): Promise<GetAllCompanyMembersResult> {
+    const skip = (page - 1) * limit;
+
+    const filter: QueryFilter<IUser> = {
+      company: new Types.ObjectId(companyId),
+      role,
+    };
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (status && status !== "all") {
+      filter.isBlocked = status === "blocked";
+    }
+
+    const [members, totalMembers] = await Promise.all([
+      UserModel.find(filter)
+        .select("-password -refreshToken -emailLinkToken -emailChangeToken")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+
+      UserModel.countDocuments(filter),
+    ]);
+
+    return {
+      members,
+      totalCount: totalMembers,
+    };
   }
 }

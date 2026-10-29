@@ -6,10 +6,11 @@ import { JOB_MESSAGES } from "../../../../constants/messages/jobs";
 import { inject } from "inversify";
 import { TYPES } from "../../../../dependency-injection/types";
 import { IJobService } from "../../../../services/v1/job/interface/IJobService";
-import { APPLICATION_MESSAGES } from "../../../../constants/messages/application";
+import { APPLICATION_MESSAGES } from "../../../../constants/messages/application/application";
+import { DOCUMENT_VERIFICATION_MESSAGES } from "../../../../constants/messages/docVer";
 
 export class JobController implements IJobController {
-  constructor(@inject(TYPES.JobService) private jobService: IJobService) {}
+  constructor(@inject(TYPES.JobService) private _jobService: IJobService) {}
   //* get jobs
   async getJobs(
     req: AuthRequest,
@@ -33,7 +34,7 @@ export class JobController implements IJobController {
       };
       const user = req?.user;
 
-      const result = await this.jobService.getJobs(filters, user);
+      const result = await this._jobService.getJobs(filters, user);
       ResponseHandler.success(res, JOB_MESSAGES.JOBS_FETCHED, result);
     } catch (error) {
       next(error);
@@ -47,7 +48,7 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const jobId = req.params.id as string;
-      const result = await this.jobService.getJob(jobId);
+      const result = await this._jobService.getJob(jobId);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_FETCHED, result);
     } catch (error) {
       next(error);
@@ -62,7 +63,7 @@ export class JobController implements IJobController {
     try {
       const jobId = req.params.id as string;
       const status = req.body.status;
-      await this.jobService.updateStatus(jobId, status);
+      await this._jobService.updateStatus(jobId, status);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_UPDATED);
     } catch (error) {
       next(error);
@@ -78,7 +79,7 @@ export class JobController implements IJobController {
       const userId = req.user?.userId;
       const jobId = req.params.jobId as string;
       const data = req.body.data;
-      const result = await this.jobService.applyJob(userId, jobId, data);
+      const result = await this._jobService.applyJob(userId, jobId, data);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_APPLIED_SUCCESS, result);
     } catch (error) {
       next(error);
@@ -92,7 +93,7 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const jobId = req.params.jobId as string;
-      const data = await this.jobService.getJobWithDetails(jobId);
+      const data = await this._jobService.getJobWithDetails(jobId);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_FETCHED, data);
     } catch (error) {
       next(error);
@@ -109,7 +110,7 @@ export class JobController implements IJobController {
       const stageId = req.params.stageId as string;
       const { search, status, page = "1", limit = "6" } = req.query;
 
-      const data = await this.jobService.getStageCandidates(jobId, stageId, {
+      const data = await this._jobService.getStageCandidates(jobId, stageId, {
         search: search as string | undefined,
         status: status as string | undefined,
         page: Number(page),
@@ -133,7 +134,7 @@ export class JobController implements IJobController {
       const description = req.body.description;
       const file = req.file;
 
-      const data = await this.jobService.addAssesmentTask(
+      const data = await this._jobService.addAssesmentTask(
         jobId,
         stageId,
         description,
@@ -159,12 +160,40 @@ export class JobController implements IJobController {
       const jobId = req.params.jobId as string;
       const userId = req.user.userId;
 
-      const data = await this.jobService.applicationStatus(jobId, userId);
+      const data = await this._jobService.applicationStatus(jobId, userId);
 
       ResponseHandler.success(
         res,
         APPLICATION_MESSAGES.APPLICATION_STATUS,
         data,
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* set description for documets verificaion
+  async setDocVerDescription(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const userId = req?.user?.userId;
+      const { jobStageId } = req.params;
+      const description = req?.body?.description || undefined;
+
+      const saved = await this._jobService.setDocVerDescription(
+        userId as string,
+        jobStageId as string,
+        description,
+      );
+
+      ResponseHandler.success(
+        res,
+        DOCUMENT_VERIFICATION_MESSAGES.DESCRIPTION_SAVED,
+        {
+          documentVerificationDescription: saved,
+        },
       );
     } catch (error) {
       next(error);

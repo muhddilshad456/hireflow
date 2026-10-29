@@ -15,28 +15,28 @@ import { IPasswordService } from "../interface/IPasswordService.js";
 @injectable()
 export class PasswordService implements IPasswordService {
   constructor(
-    @inject(TYPES.UserRepository) private userRepository: IUserRepository,
+    @inject(TYPES.UserRepository) private _userRepository: IUserRepository,
     @inject(TYPES.EmailService)
-    private emailService: IEmailService,
-    @inject(TYPES.Logger) private logger: Logger,
+    private _emailService: IEmailService,
+    @inject(TYPES.Logger) private _logger: Logger,
   ) {}
 
   // * forgot password
   async forgotPassword(email: string): Promise<void> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this._userRepository.findByEmail(email);
 
     if (!user) {
-      this.logger.warn({ email }, "Forgot password: user not found");
+      this._logger.warn({ email }, "Forgot password: user not found");
       return;
     }
 
-    this.logger.info({ email }, "Processing forgot password");
+    this._logger.info({ email }, "Processing forgot password");
 
     const resetToken = generateToken();
 
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
 
-    await this.userRepository.update(user._id.toString(), {
+    await this._userRepository.update(user._id.toString(), {
       emailLinkToken: resetToken,
       emailLinkTokenExpiry: expiry,
     });
@@ -50,37 +50,37 @@ export class PasswordService implements IPasswordService {
       resetToken,
     );
 
-    this.logger.info({
+    this._logger.info({
       EVENT: "Reset link created..",
       Link: resetLink,
     });
 
     try {
-      await this.emailService.sendPassResetEmail(email, resetLink);
-      this.logger.info({ email }, "Reset email sent");
+      await this._emailService.sendPassResetEmail(email, resetLink);
+      this._logger.info({ email }, "Reset email sent");
     } catch (err) {
-      this.logger.error({ err }, "Failed to send reset email");
+      this._logger.error({ err }, "Failed to send reset email");
     }
   }
 
   // * reset password
   async resetPassword(tdo: ResetPasswordDto): Promise<void> {
     const { password, token } = tdo;
-    this.logger.info({
+    this._logger.info({
       event: "RESET_PASSWORD_STARTED",
     });
 
-    const user = await this.userRepository.findByResetToken(token);
+    const user = await this._userRepository.findByResetToken(token);
 
     if (!user) {
-      this.logger.warn({
+      this._logger.warn({
         event: "RESET_PASSWORD_INVALID_TOKEN",
       });
       throw new BadRequestError("Invalid or expired token");
     }
 
     if (!user.emailLinkTokenExpiry || user.emailLinkTokenExpiry < new Date()) {
-      this.logger.warn({
+      this._logger.warn({
         event: "RESET_PASSWORD_TOKEN_EXPIRED",
         userId: user._id,
       });
@@ -89,13 +89,13 @@ export class PasswordService implements IPasswordService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await this.userRepository.update(user._id.toString(), {
+    await this._userRepository.update(user._id.toString(), {
       password: hashedPassword,
       emailLinkToken: null,
       emailLinkTokenExpiry: null,
     });
 
-    this.logger.info({
+    this._logger.info({
       event: "RESET_PASSWORD_SUCCESS",
       userId: user._id,
     });
@@ -106,20 +106,20 @@ export class PasswordService implements IPasswordService {
     userId: string,
     currentPassword: string,
     newPassword: string,
-  ): Promise<any> {
+  ): Promise<void> {
     console.log("userId : ", userId);
     console.log(currentPassword, newPassword);
     if (!userId) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.ID_REQUIRED,
       });
       throw new UnauthorizedError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
 
-    const user = await this.userRepository.findById(userId);
+    const user = await this._userRepository.findById(userId);
 
     if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
-      this.logger.warn({
+      this._logger.warn({
         event: VALIDATION_MESSAGES.INVALID_CURRENT_PASSWORD,
       });
       throw new BadRequestError(VALIDATION_MESSAGES.INVALID_CURRENT_PASSWORD);
@@ -127,6 +127,6 @@ export class PasswordService implements IPasswordService {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.userRepository.update(userId, { password: hashedPassword });
+    await this._userRepository.update(userId, { password: hashedPassword });
   }
 }

@@ -4,6 +4,11 @@ import {
 } from "../../../models/company/company.verification.model";
 import { IBaseRepository } from "../../base/interface/IBaseRepository";
 
+export interface GetAllVerificationReqResult {
+  verificationRequests: ICompanyVerification[];
+  totalVerificationRequests: number;
+}
+
 export interface ICompanyVerRepository extends IBaseRepository<ICompanyVerification> {
   findLatestVerificationReq(
     userId: string,
@@ -15,5 +20,5 @@ export interface ICompanyVerRepository extends IBaseRepository<ICompanyVerificat
     search: string,
     status: string,
     type: VerificationType,
-  ): Promise<any>;
+  ): Promise<GetAllVerificationReqResult>;
 }
