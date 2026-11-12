@@ -1,4 +1,4 @@
-import { Socket } from "socket.io";
+import { ExtendedError, Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import { VALIDATION_MESSAGES } from "../../constants/messages/validation";
 import { UserRole } from "../../constants/roles";
@@ -10,7 +10,10 @@ export interface AuthedSocket extends Socket {
   };
 }
 
-export function socketAuth(socket: AuthedSocket, next: any) {
+export function socketAuth(
+  socket: AuthedSocket,
+  next: (err?: ExtendedError) => void,
+) {
   try {
     const token = socket.handshake.auth?.token;
 

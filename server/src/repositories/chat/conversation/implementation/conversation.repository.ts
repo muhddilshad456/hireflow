@@ -106,4 +106,31 @@ export class ConversationRepository
       recruiter: recruiterId,
     } as unknown as CandidateConversationView;
   }
+  async findActiveIdsByRecruiterAndJob(
+    recruiterId: Types.ObjectId,
+    jobId: Types.ObjectId,
+  ) {
+    const docs = await ConversationModel.find({
+      recruiterId,
+      jobId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+    return docs.map((d) => d._id);
+  }
+
+  async findActiveIdByApplicationAndUser(
+    applicationId: Types.ObjectId,
+    userId: Types.ObjectId,
+  ) {
+    const doc = await ConversationModel.findOne({
+      applicationId,
+      userId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+    return doc?._id ?? null;
+  }
 }

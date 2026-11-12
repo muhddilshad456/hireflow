@@ -5,13 +5,16 @@ import {
   ClientSession,
   UpdateWriteOpResult,
   QueryFilter,
+  QueryOptions,
 } from "mongoose";
 import { IBaseRepository } from "../interface/IBaseRepository.js";
 
 export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   constructor(private _model: Model<T>) {}
   async create(data: Partial<T>, session?: ClientSession): Promise<T> {
-    const docs = (await this._model.create([data as never], { session })) as unknown as T[];
+    const docs = (await this._model.create([data as never], {
+      session,
+    })) as unknown as T[];
     return docs[0];
   }
   async save(doc: T, session?: ClientSession): Promise<T> {
@@ -29,16 +32,22 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   async findAll(): Promise<T[]> {
     return this._model.find();
   }
-  async update(id: string, data: UpdateQuery<T>): Promise<T | null> {
-    return this._model.findByIdAndUpdate(id, data, { new: true });
+  async update(
+    id: string,
+    data: UpdateQuery<T>,
+    session?: ClientSession,
+  ): Promise<T | null> {
+    return this._model.findByIdAndUpdate(id, data, { new: true, session });
   }
   async findOneAndUpdate(
     filter: QueryFilter<T>,
     data: UpdateQuery<T> | Record<string, unknown>,
     session?: ClientSession,
+    options?: QueryOptions,
   ): Promise<T | null> {
     return this._model.findOneAndUpdate(filter, data as UpdateQuery<T>, {
       new: true,
+      ...options,
       session,
     });
   }
@@ -48,8 +57,14 @@ export class BaseRepository<T extends Document> implements IBaseRepository<T> {
   async findOne(
     filter: QueryFilter<T>,
     session?: ClientSession,
+    options?: {
+      populate?: string | string[];
+    },
   ): Promise<T | null> {
-    return this._model.findOne(filter).session(session ?? null);
+    return this._model
+      .findOne(filter)
+      .populate(options?.populate ?? [])
+      .session(session ?? null);
   }
   async addToSet(
     filter: QueryFilter<T>,

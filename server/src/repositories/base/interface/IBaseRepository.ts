@@ -1,6 +1,7 @@
 import {
   ClientSession,
   QueryFilter,
+  QueryOptions,
   UpdateQuery,
   UpdateWriteOpResult,
 } from "mongoose";
@@ -11,14 +12,25 @@ export interface IBaseRepository<T> {
   createMany(data: Partial<T>[]): Promise<T[]>;
   findById(id: string, session?: ClientSession): Promise<T | null>;
   findAll(): Promise<T[]>;
-  update(id: string, data: Partial<T>): Promise<T | null>;
+  update(
+    id: string,
+    data: Partial<T>,
+    session?: ClientSession,
+  ): Promise<T | null>;
   findOneAndUpdate(
     filter: QueryFilter<T>,
     data: UpdateQuery<T> | Record<string, unknown>,
     session?: ClientSession,
+    options?: QueryOptions,
   ): Promise<T | null>;
   delete(id: string): Promise<T | null>;
-  findOne(filter: QueryFilter<T>, session?: ClientSession): Promise<T | null>;
+  findOne(
+    filter: QueryFilter<T>,
+    session?: ClientSession,
+    options?: {
+      populate?: string | string[];
+    },
+  ): Promise<T | null>;
   addToSet(
     filter: QueryFilter<T>,
     field: keyof T,

@@ -33,4 +33,19 @@ export class MessageRepository
       { $set: { isRead: true } },
     );
   }
+  async getUnreadCountsByConversation(
+    conversationIds: Types.ObjectId[],
+    senderRole: "company_recruiter" | "user",
+  ): Promise<{ _id: Types.ObjectId; count: number }[]> {
+    return MessageModel.aggregate([
+      {
+        $match: {
+          conversationId: { $in: conversationIds },
+          senderRole,
+          isRead: false,
+        },
+      },
+      { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+    ]);
+  }
 }

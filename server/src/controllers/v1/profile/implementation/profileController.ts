@@ -19,7 +19,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._profileService.getProfile(userId);
       ResponseHandler.success(res, PROFILE_MESSAGES.FETCH_SUCCESS, result);
     } catch (error) {
@@ -33,7 +33,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { name } = req.body;
       const file = req.file;
       const result = await this._profileService.updateBasicInfo(
@@ -58,9 +58,12 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const data = req.body;
-      const result = await this._profileService.updateBasicProfile(userId, data);
+      const result = await this._profileService.updateBasicProfile(
+        userId,
+        data,
+      );
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -77,7 +80,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { skill } = req.body;
       const result = await this._profileService.addSkill(userId, skill);
       ResponseHandler.success(
@@ -96,7 +99,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const skill = req.params?.skill as string;
       const result = await this._profileService.removeSkill(userId, skill);
       ResponseHandler.success(
@@ -115,9 +118,10 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const file = req.file;
-      const result = await this._profileService.addResume(userId, file);
+      const { title } = req.body;
+      const result = await this._profileService.addResume(userId, file, title);
       ResponseHandler.success(
         res,
         PROFILE_MESSAGES.PROFILE_UPDATE_SUCCESS,
@@ -134,7 +138,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const resumeId = req.params.resumeId as string;
       const result = await this._profileService.removeResume(userId, resumeId);
       ResponseHandler.success(
@@ -153,7 +157,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const field = req.params.field as ProfileArrayField;
       const data = req.body;
 
@@ -179,7 +183,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const field = req.params.field as ProfileArrayField;
       const itemId = req.params.itemId as string;
       const data = req.body;
@@ -207,7 +211,7 @@ export class ProfileController implements IProfileController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const field = req.params.field as ProfileArrayField;
       const itemId = req.params.itemId as string;
 

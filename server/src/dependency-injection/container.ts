@@ -58,6 +58,11 @@ import { NotificationRepository } from "../repositories/notification/implementat
 import { NotificationService } from "../services/v1/notification/implementation/notificationService";
 import { NotificationController } from "../controllers/v1/notification/implementation/notificationController";
 import { DashboardRepository } from "../repositories/dashboard/implementation/dashboardRepository";
+import { WishlistRepository } from "../repositories/wishlist/implementation/wishlistRepository";
+import { WishlistService } from "../services/v1/wishlist/implementation/wishlistService";
+import { WishlistController } from "../controllers/v1/wishlist/implementation/wishlistController";
+import { CounterRepository } from "../repositories/counter/implementation/counterRepository";
+import { CounterService } from "../services/v1/counter/implementation/counterService";
 
 const container = new Container();
 
@@ -83,6 +88,8 @@ container
 container.bind(TYPES.SubscriptionRepository).to(SubscriptionRepository);
 container.bind(TYPES.NotificationRepository).to(NotificationRepository);
 container.bind(TYPES.DashboardRepository).to(DashboardRepository);
+container.bind(TYPES.WishlistRepository).to(WishlistRepository);
+container.bind(TYPES.CounterRepository).to(CounterRepository);
 //services
 container.bind(TYPES.AuthService).to(AuthService);
 container.bind(TYPES.AuthEmailService).to(AuthEmailService);
@@ -101,6 +108,8 @@ container.bind(TYPES.InterviewService).to(InterviewService);
 container.bind(TYPES.InterviewerService).to(InterviewerService);
 container.bind(TYPES.SubscriptionService).to(SubscriptionService);
 container.bind(TYPES.NotificationService).to(NotificationService);
+container.bind(TYPES.WishlistService).to(WishlistService);
+container.bind(TYPES.CounterService).to(CounterService);
 ///////////////////
 container.bind(TYPES.EmailService).to(EmailService);
 container.bind(TYPES.RedisService).to(RedisService);
@@ -126,6 +135,7 @@ container
   .bind(TYPES.SubscriptionwebhookController)
   .to(SubscriptionwebhookController);
 container.bind(TYPES.NotificationController).to(NotificationController);
+container.bind(TYPES.WishlistController).to(WishlistController);
 
 export function bindSocketDependencies(io: import("socket.io").Server) {
   container.bind(TYPES.SocketIO).toConstantValue(io);

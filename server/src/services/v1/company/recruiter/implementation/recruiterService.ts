@@ -1,6 +1,6 @@
 import { IJob } from "../../../../../models/job/job.model";
 import { inject, injectable } from "inversify";
-import { JobDto } from "../../../../../dtos/v1/job/job.dto";
+import { JobDto, WorkMode } from "../../../../../dtos/v1/job/job.dto";
 import { IRecruiterService } from "../interface/IRecruiterService";
 import { IUserRepository } from "../../../../../repositories/user/interfaces/IUserRepository";
 import { TYPES } from "../../../../../dependency-injection/types";
@@ -69,6 +69,27 @@ export class RecruiterService implements IRecruiterService {
     @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* helpers
+  private validateJobLocation(dto: JobDto): void {
+    if (dto.workMode === WorkMode.REMOTE) {
+      return;
+    }
+
+    if (!dto.locationCoordinates) {
+      throw new BadRequestError(JOB_MESSAGES.INVALID_LOCATION);
+    }
+
+    const [longitude, latitude] = dto.locationCoordinates.coordinates;
+
+    if (
+      longitude < -180 ||
+      longitude > 180 ||
+      latitude < -90 ||
+      latitude > 90
+    ) {
+      throw new BadRequestError(JOB_MESSAGES.INVALID_LOCATION_CORDINATES);
+    }
+  }
+
   private buildFullStageList(
     pipelineStages: string[] | undefined,
   ): JobStageName[] {
@@ -198,10 +219,11 @@ Evaluate every candidate above against the job requirement and return the JSON a
         }
 
         return result.data;
-      } catch (err: any) {
+      } catch (err: unknown) {
         lastError = err;
 
-        if (err?.status === 429 || err?.error?.code === 429) {
+        const aiErr = err as { status?: number; error?: { code?: number }; message?: string };
+        if (aiErr?.status === 429 || aiErr?.error?.code === 429) {
           const retryAfterSeconds = 5;
           if (attempt === maxRetries) {
             this._logger.warn({
@@ -220,7 +242,7 @@ Evaluate every candidate above against the job requirement and return the JSON a
           this._logger.warn({
             event: "AI batch call failed, retrying",
             attempt,
-            error: err?.message,
+            error: aiErr?.message,
           });
           continue;
         }
@@ -239,6 +261,8 @@ Evaluate every candidate above against the job requirement and return the JSON a
     this._logger.info({
       event: JOB_MESSAGES.JOB_CREATION_STARTED,
     });
+
+    this.validateJobLocation(dto);
 
     if (!dto.applicationDeadline) {
       throw new BadRequestError(
@@ -352,6 +376,8 @@ Evaluate every candidate above against the job requirement and return the JSON a
     recruiterId: string,
   ): Promise<IJob> {
     this._logger.info({ event: "Job update started", jobId });
+
+    this.validateJobLocation(dto);
 
     const job = await this._jobRepository.findById(jobId);
 

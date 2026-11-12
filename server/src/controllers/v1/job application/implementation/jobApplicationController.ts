@@ -53,7 +53,7 @@ export class JobApplicationController implements IJobApplicationController {
         page: req.query.page ? Number(req.query.page) : 1,
         limit: req.query.limit ? Number(req.query.limit) : 10,
       };
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
 
       const result = await this._jobApplicationService.getMyApplications(
         filters,
@@ -72,7 +72,7 @@ export class JobApplicationController implements IJobApplicationController {
   ): Promise<void> {
     try {
       const applicationId = req.params.applicationId as string;
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
 
       const result = await this._jobApplicationService.getMyApplicationDetails(
         applicationId,
@@ -92,7 +92,7 @@ export class JobApplicationController implements IJobApplicationController {
     try {
       const appStageId = req.params.appStageId as string;
       const { decision, feedback } = req.body;
-      const recruiterId = req.user.userId;
+      const recruiterId = req.user?.userId as string;
 
       const result = await this._jobApplicationService.updateApplicationStage(
         appStageId,
@@ -143,7 +143,7 @@ export class JobApplicationController implements IJobApplicationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { applicationId, jobStageId } = req.params;
 
       const result =
@@ -169,7 +169,7 @@ export class JobApplicationController implements IJobApplicationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { applicationId, jobStageId } = req.params;
       const { text } = req.body;
       const file = req.file;
@@ -199,7 +199,7 @@ export class JobApplicationController implements IJobApplicationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const applicationStageId = req.params?.applicationStageId;
       const keepUrls = parseExistingDocuments(
         req.body?.existingDocuments ?? "[]",
@@ -256,7 +256,7 @@ export class JobApplicationController implements IJobApplicationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { applicationStageId } = req.params;
       const { response } = req.body;
 
@@ -282,7 +282,7 @@ export class JobApplicationController implements IJobApplicationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { applicationId } = req.params;
 
       const result = await this._jobApplicationService.withdrawApplication(

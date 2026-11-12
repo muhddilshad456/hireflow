@@ -12,9 +12,9 @@ export interface GetMyApplicationsFilters {
 }
 
 export interface UpdateApplicationStageResult {
-  application: IJobApplication;
+  application: IJobApplication | null;
   stageId: Types.ObjectId;
-  nextStage: IJobApplication | null;
+  nextStage: IJobApplicationStage | null;
 }
 
 export interface ApplicationStageDetailsResult {
@@ -102,4 +102,10 @@ export interface MyApplicationsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+export interface MyApplicationSummary {
+  _id: string;
+  status: string;
+  appliedAt: Date;
 }

@@ -6,6 +6,7 @@ import { TYPES } from "../../../../../dependency-injection/types";
 import { IConversationService } from "../../../../../services/v1/chat/conversation/interface/IConversationService";
 import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 import { ResponseHandler } from "../../../../../utils/responseHandler";
+import { CreatorRole } from "../../../../../interfaces/chat/conversation";
 
 @injectable()
 export class ConversationController implements IConversationController {
@@ -20,13 +21,12 @@ export class ConversationController implements IConversationController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      console.log("🚀 CREATE CONVERSATION API HIT");
       const { applicationId } = req.body;
       const conversation =
         await this._conversationService.getOrCreateConversation(
           new Types.ObjectId(applicationId),
           new Types.ObjectId(req.user!.userId),
-          req.user!.role,
+          req.user!.role as CreatorRole,
         );
       ResponseHandler.success(res, "Conversation ready", conversation);
     } catch (error: unknown) {
@@ -45,7 +45,7 @@ export class ConversationController implements IConversationController {
 
       const conversations = await this._conversationService.listConversations(
         new Types.ObjectId(req.user!.userId),
-        req.user!.role,
+        req.user!.role as CreatorRole,
         new Types.ObjectId(jobId),
       );
       ResponseHandler.success(res, "Conversations fetched", conversations);

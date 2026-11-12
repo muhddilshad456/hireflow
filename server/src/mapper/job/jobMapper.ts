@@ -1,4 +1,4 @@
-import { JobDto } from "../../dtos/v1/job/job.dto";
+import { JobDto, WorkMode } from "../../dtos/v1/job/job.dto";
 import { Types } from "mongoose";
 
 export class JobMapper {
@@ -10,7 +10,10 @@ export class JobMapper {
     return {
       title: dto.title,
       description: dto.description,
-      location: dto.location,
+      workMode: dto.workMode,
+      location: dto.workMode === WorkMode.REMOTE ? "Remote" : dto.location,
+      locationCoordinates:
+        dto.workMode === WorkMode.REMOTE ? null : dto.locationCoordinates,
       jobType: dto.jobType,
 
       salaryMin: dto.minSalary,
@@ -37,7 +40,10 @@ export class JobMapper {
     return {
       title: dto.title,
       description: dto.description,
-      location: dto.location,
+      workMode: dto.workMode,
+      location: dto.workMode === WorkMode.REMOTE ? "Remote" : dto.location,
+      locationCoordinates:
+        dto.workMode === WorkMode.REMOTE ? null : dto.locationCoordinates,
       jobType: dto.jobType,
 
       salaryMin: dto.minSalary,

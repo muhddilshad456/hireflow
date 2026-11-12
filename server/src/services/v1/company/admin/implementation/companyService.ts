@@ -174,7 +174,7 @@ export class CompanyService implements ICompanyService {
     email: string,
     role: UserRole,
     companyAdminId: string,
-  ): Promise<any> {
+  ): Promise<void> {
     const existingUser = await this._userRepository.findByEmail(email);
     if (existingUser) {
       this._logger.warn({

@@ -20,12 +20,15 @@ import { APPLICATION_MESSAGES } from "../../../../../constants/messages/applicat
 import { IConversationService } from "../interface/IConversationService";
 import { BadRequestError } from "../../../../../errors/bad-request.error";
 import { IConversation } from "../../../../../models/chat/conversation";
+import { IMessageRepository } from "../../../../../repositories/chat/message/interface/IMessageRepository";
 
 @injectable()
 export class ConversationService implements IConversationService {
   constructor(
     @inject(TYPES.ConversationRepository)
     private _conversationRepository: IConversationRepository,
+    @inject(TYPES.MessageRepository)
+    private _messageRepository: IMessageRepository,
     @inject(TYPES.JobRepository) private _jobRepository: IJobRepository,
     @inject(TYPES.JobApplicationRepository)
     private _jobApplicationRepository: IJobApplicationRepository,
@@ -153,7 +156,22 @@ export class ConversationService implements IConversationService {
         throw new BadRequestError(JOB_MESSAGES.JOB_ID_REQUIRED);
       }
 
-      return this._conversationRepository.listForRecruiter(actorId, jobId);
+      const list = await this._conversationRepository.listForRecruiter(
+        actorId,
+        jobId,
+      );
+
+      const counts =
+        await this._messageRepository.getUnreadCountsByConversation(
+          list.map((c) => c._id),
+          "user",
+        );
+
+      const countMap = new Map(counts.map((c) => [c._id.toString(), c.count]));
+      return list.map((c) => ({
+        ...c,
+        unreadCount: c.isActive ? (countMap.get(c._id.toString()) ?? 0) : 0, // closed = 0
+      }));
     }
 
     return this._conversationRepository.listForCandidate(actorId);

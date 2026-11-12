@@ -13,4 +13,8 @@ export interface IMessageRepository extends IBaseRepository<IMessage> {
     conversationId: Types.ObjectId,
     recipientId: Types.ObjectId,
   ): Promise<void>;
+  getUnreadCountsByConversation(
+    conversationIds: Types.ObjectId[],
+    senderRole: "company_recruiter" | "user",
+  ): Promise<{ _id: Types.ObjectId; count: number }[]>;
 }

@@ -23,7 +23,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { isAvailable } = req.body;
       const result = await this._interviewerService.toggleAvailability(
         userId,
@@ -45,7 +45,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const dto = req.body;
       const result = await this._interviewerService.updateInterviewerProfile(
         userId,
@@ -67,7 +67,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result =
         await this._interviewerService.getInterviewerProfile(userId);
       ResponseHandler.success(
@@ -86,7 +86,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { status, page, limit } = req.query;
 
       const result = await this._interviewerService.getInterviewRequests(
@@ -114,7 +114,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const requestId = req.params.id as string;
       const dto: InterviewRequestDecisionDto = req.body;
 
@@ -140,7 +140,7 @@ export class InterviewerController implements IInterviewerController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const { search, status, page, limit } = req.query;
 
       const result = await this._interviewerService.getInterviews(userId, {

@@ -15,4 +15,8 @@ export interface IJobRepository extends BaseRepository<IJob> {
   getJobDetails(id: string): Promise<IJob | null>;
   updateStatus(id: string, status: string): Promise<void>;
   findByIdSelect(id: string, fields: string): Promise<JobSubsetInfo | null>;
+  updateJobStatus(
+    jobId: string,
+    status: "OPEN" | "CLOSED",
+  ): Promise<IJob | null>;
 }

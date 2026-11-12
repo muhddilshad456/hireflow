@@ -8,8 +8,16 @@ import {
   Min,
   IsBoolean,
   IsDateString,
+  ValidateNested,
 } from "class-validator";
 import { Transform, Type } from "class-transformer";
+import { GeoPointDto } from "./getPoint.dto";
+
+export enum WorkMode {
+  ONSITE = "ONSITE",
+  REMOTE = "REMOTE",
+  HYBRID = "HYBRID",
+}
 
 export class JobDto {
   @IsString()
@@ -28,6 +36,14 @@ export class JobDto {
   @IsNotEmpty()
   @Transform(({ value }) => value.trim())
   location!: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GeoPointDto)
+  locationCoordinates?: GeoPointDto | null;
+
+  @IsEnum(WorkMode)
+  workMode!: WorkMode;
 
   @IsString()
   @IsNotEmpty()

@@ -3,6 +3,8 @@ import { Schema, Document, Types, model } from "mongoose";
 export interface IJobApplication extends Document {
   _id: Types.ObjectId;
 
+  applicationNumber: string;
+
   jobId: Types.ObjectId;
   userId: Types.ObjectId;
 
@@ -23,6 +25,12 @@ const jobApplicationSchema = new Schema<IJobApplication>(
     jobId: {
       type: Schema.Types.ObjectId,
       ref: "Job",
+      required: true,
+    },
+
+    applicationNumber: {
+      type: String,
+      unique: true,
       required: true,
     },
 

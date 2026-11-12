@@ -21,7 +21,7 @@ import { NotFoundError } from "../../../../errors/not-found.error";
 import { USER_MESSAGES } from "../../../../constants/messages/user";
 import { IJobApplicationRepository } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
 import { ConflictError } from "../../../../errors/conflict.error";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { IJobStageRepository } from "../../../../repositories/job/interface/IJobStageRepository";
 import { IJobApplicationStageRepository } from "../../../../repositories/job-application/interface/IJobApplicationStageRepository";
 import { ICloudinaryService } from "../../../cloudinary/interface/ICloudinaryService";
@@ -34,6 +34,13 @@ import { INotificationService } from "../../notification/interface/INotification
 import { UserRole } from "../../../../constants/roles";
 import { ICompanyRepository } from "../../../../repositories/company/interface/ICompanyRepository";
 import { COMPANY_MESSAGES } from "../../../../constants/messages/company";
+import { IUserProfileRepository } from "../../../../repositories/profile/interface/IUserProfileRepository";
+import { PROFILE_MESSAGES } from "../../../../constants/messages/profile";
+import { emitApplicationUpdated } from "../../../../socket/application/applicationrealtime";
+import { MyApplicationSummary } from "../../../../interfaces/application/application";
+import { IWishlistRepository } from "../../../../repositories/wishlist/interface/IWishlistRepository";
+import { IJobWithFavorite } from "../../../../interfaces/job/job";
+import { ICounterService } from "../../counter/interface/ICounterService";
 
 @injectable()
 export class JobService implements IJobService {
@@ -50,6 +57,12 @@ export class JobService implements IJobService {
     private _notificationService: INotificationService,
     @inject(TYPES.CompanyRepository)
     private _companyRepository: ICompanyRepository,
+    @inject(TYPES.UserProfileRepository)
+    private _userProfileRepository: IUserProfileRepository,
+    @inject(TYPES.WishlistRepository)
+    private _wishlistRepository: IWishlistRepository,
+    @inject(TYPES.CounterService)
+    private _counterService: ICounterService,
     @inject(TYPES.CloudinaryService)
     private _cloudinaryService: ICloudinaryService,
     @inject(TYPES.Logger) private _logger: Logger,
@@ -61,8 +74,11 @@ export class JobService implements IJobService {
   ): Promise<PaginatedJobsResult> {
     const query: JobFilters = { ...filter };
 
+    console.log("filters : ", filter);
+
     if (user?.role == "company_recruiter") {
       query.createdBy = user?.userId;
+      query.isActive = "Active";
     } else if (user?.role == UserRole.COMPANY_ADMIN) {
       const company = await this._companyRepository.findOne({
         adminId: user?.userId,
@@ -74,14 +90,48 @@ export class JobService implements IJobService {
         throw new BadRequestError(COMPANY_MESSAGES.NO_COMPANY_ASSOCIATED);
       }
       query.company = company._id.toString();
+    } else if (user?.role === UserRole.USER) {
+      query.isActive = "Active";
+      query.status = "OPEN";
     }
 
     const result = await this._jobRepository.getJobs(query);
 
+    if (user?.role === UserRole.USER && result.data.length > 0) {
+      const applications =
+        await this._jobApplicationRepository.findByUserAndJobIds(
+          user.userId,
+          result.data.map((job) => job._id.toString()),
+        );
+
+      const myApplicationByJobId = new Map<string, MyApplicationSummary>();
+      for (const application of applications) {
+        const jobId = application.jobId.toString();
+        if (!myApplicationByJobId.has(jobId)) {
+          myApplicationByJobId.set(jobId, {
+            _id: application._id.toString(),
+            status: application.status,
+            appliedAt: application.appliedAt,
+          });
+        }
+      }
+
+      return {
+        ...result,
+        data: result.data.map((job) => ({
+          ...job.toObject(),
+          application: myApplicationByJobId.get(job._id.toString()) ?? null,
+        })),
+      };
+    }
+
     return result;
   }
   //* get a job
-  async getJob(jobId: string): Promise<IJob | null> {
+  async getJob(
+    jobId: string,
+    user: AuthUser,
+  ): Promise<IJobWithFavorite | null> {
     if (!jobId) {
       this._logger.warn({
         event: VALIDATION_MESSAGES.ID_REQUIRED,
@@ -90,6 +140,23 @@ export class JobService implements IJobService {
       throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
     }
     const result = await this._jobRepository.getJobDetails(jobId);
+
+    if (!result) {
+      return null;
+    }
+
+    if (user?.role === UserRole.USER) {
+      const wishlist = await this._wishlistRepository.findOne({
+        userId: user.userId,
+        jobs: new Types.ObjectId(jobId),
+      });
+
+      return {
+        ...result,
+        isFavorite: !!wishlist,
+      };
+    }
+
     return result;
   }
   //* update status
@@ -155,14 +222,14 @@ export class JobService implements IJobService {
       throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
     }
 
-    // const profile = await this.userProrfileRepository.findOne({ userId });
-    // if (!profile || !profile.profileCompleted) {
-    //   this._logger.warn({
-    //     event: PROFILE_MESSAGES.COMPLETE_PROFILE,
-    //     jobId,
-    //   });
-    //   throw new NotFoundError(PROFILE_MESSAGES.COMPLETE_PROFILE);
-    // }
+    const profile = await this._userProfileRepository.findOne({ userId });
+    if (!profile || !profile.profileCompleted) {
+      this._logger.warn({
+        event: PROFILE_MESSAGES.COMPLETE_PROFILE,
+        jobId,
+      });
+      throw new NotFoundError(PROFILE_MESSAGES.COMPLETE_PROFILE);
+    }
 
     const existing = await this._jobApplicationRepository.findOne({
       jobId,
@@ -176,44 +243,78 @@ export class JobService implements IJobService {
       throw new ConflictError(JOB_MESSAGES.JOB_ALREADY_APPLIED);
     }
 
-    const { resumeUrl, coverLetter } = data;
-
-    const userObjId = new mongoose.Types.ObjectId(userId);
-    const jobObjId = new mongoose.Types.ObjectId(jobId);
-
-    const application = await this._jobApplicationRepository.create({
-      userId: userObjId,
-      jobId: jobObjId,
-      resumeUrl,
-      coverLetter,
-      status: "IN_PROGRESS",
-    });
-
     const firstStage = await this._jobStageRepository.findOne({
       jobId,
       order: 1,
     });
+
     if (!firstStage) {
-      this._logger.warn({
-        event: JOB_MESSAGES.JOB_STAGE_NOT_FOUND,
-        jobId,
-      });
       throw new ConflictError(JOB_MESSAGES.JOB_STAGE_NOT_FOUND);
     }
 
-    const firstApplicationStage =
-      await this._jobApplicationStageRepository.create({
-        applicationId: application._id,
-        jobStageId: firstStage._id,
-        status: "IN_PROGRESS",
-        startedAt: new Date(),
+    const session = await mongoose.startSession();
+
+    let application: IJobApplication | undefined;
+
+    try {
+      application = await session.withTransaction(async () => {
+        const applicationNumber = await this._counterService.generateNumber(
+          "HF",
+          "application",
+          session,
+        );
+
+        const createdApplication = await this._jobApplicationRepository.create(
+          {
+            applicationNumber,
+            userId: new mongoose.Types.ObjectId(userId),
+            jobId: new mongoose.Types.ObjectId(jobId),
+            resumeUrl: data.resumeUrl,
+            coverLetter: data.coverLetter,
+            status: "IN_PROGRESS",
+          },
+          session,
+        );
+
+        const firstApplicationStage =
+          await this._jobApplicationStageRepository.create(
+            {
+              applicationId: createdApplication._id,
+              jobStageId: firstStage._id,
+              status: "IN_PROGRESS",
+              startedAt: new Date(),
+            },
+            session,
+          );
+
+        await this._jobApplicationRepository.update(
+          createdApplication._id.toString(),
+          {
+            currentStageId: firstApplicationStage._id,
+          },
+          session,
+        );
+
+        await this._jobRepository.update(
+          jobId,
+          { $inc: { applicantsCount: 1 } },
+          session,
+        );
+        return createdApplication;
       });
+    } finally {
+      await session.endSession();
+    }
 
-    await this._jobApplicationRepository.update(application._id.toString(), {
-      currentStageId: firstApplicationStage._id,
+    if (!application) {
+      throw new Error("Failed to create job application");
+    }
+
+    emitApplicationUpdated([job.createdBy?.toString()], {
+      applicationId: application._id.toString(),
+      jobId: job._id.toString(),
+      reason: "NEW_APPLICATION_FOR_THE_JOB",
     });
-
-    await this._jobRepository.update(jobId, { $inc: { applicantsCount: 1 } });
 
     await this._notificationService.notify(job.createdBy.toString(), {
       type: "JOB APPLICATION",
@@ -319,6 +420,7 @@ export class JobService implements IJobService {
     description?: string,
     file?: Express.Multer.File,
   ): Promise<boolean> {
+    const start = performance.now();
     if (!jobId || !stageId) {
       this._logger.warn({
         event: VALIDATION_MESSAGES.ID_REQUIRED,
@@ -337,6 +439,7 @@ export class JobService implements IJobService {
     }
 
     const stage = await this._jobStageRepository.findById(stageId);
+    console.log("Stage query:", (performance.now() - start).toFixed(2), "ms");
     if (!stage || stage?.jobId.toString() !== jobId) {
       this._logger.warn({
         event: JOB_MESSAGES.STAGE_NOT_FOUND,
@@ -355,9 +458,15 @@ export class JobService implements IJobService {
 
     if (file) {
       try {
+        const uploadStart = performance.now();
         const uploaded = await this._cloudinaryService.uploadFile(
           file,
           "assessment-task",
+        );
+        console.log(
+          "Cloudinary upload:",
+          (performance.now() - uploadStart).toFixed(2),
+          "ms",
         );
         data.assessmentTaskAttachmentUrl = uploaded;
       } catch (error) {
@@ -369,12 +478,26 @@ export class JobService implements IJobService {
       }
     }
 
+    const dbStart = performance.now();
+
     const updated = await this._jobStageRepository.findOneAndUpdate(
       {
         _id: stageId,
         jobId: jobId,
       },
       data,
+    );
+
+    console.log(
+      "Database update:",
+      (performance.now() - dbStart).toFixed(2),
+      "ms",
+    );
+
+    console.log(
+      "Total service time:",
+      (performance.now() - start).toFixed(2),
+      "ms",
     );
 
     if (!updated) {
@@ -470,5 +593,58 @@ export class JobService implements IJobService {
     );
 
     return text;
+  }
+  //* update job status
+  async updateJobStatus(
+    jobId: string,
+    status: "OPEN" | "CLOSED",
+    userId: string,
+  ): Promise<IJob> {
+    if (!jobId) {
+      this._logger.warn({
+        event: VALIDATION_MESSAGES.ID_REQUIRED,
+        jobId,
+      });
+      throw new BadRequestError(VALIDATION_MESSAGES.ID_REQUIRED);
+    }
+
+    if (!status || !["OPEN", "CLOSED"].includes(status)) {
+      this._logger.warn({
+        event: JOB_MESSAGES.INVALID_JOB_STATUS,
+        jobId,
+        status,
+      });
+      throw new BadRequestError(JOB_MESSAGES.INVALID_JOB_STATUS);
+    }
+
+    const job = await this._jobRepository.findById(jobId);
+    if (!job) {
+      this._logger.warn({
+        event: JOB_MESSAGES.JOB_NOT_FOUND,
+        jobId,
+      });
+      throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
+    }
+
+    if (job.createdBy?.toString() != userId) {
+      this._logger.warn({
+        event: JOB_MESSAGES.INVALID_RECRUITER,
+        jobId,
+      });
+      throw new NotFoundError(JOB_MESSAGES.INVALID_RECRUITER);
+    }
+
+    // Resolve company and update job
+    const updatedJob = await this._jobRepository.updateJobStatus(jobId, status);
+
+    if (!updatedJob) {
+      this._logger.warn({
+        event: JOB_MESSAGES.JOB_NOT_FOUND,
+        jobId,
+      });
+      throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
+    }
+
+    return updatedJob;
   }
 }

@@ -20,7 +20,7 @@ router.post(
         TYPES.ConversationController,
       );
       conversationController.createOrGet(req, res, next);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
     }
   },
@@ -62,5 +62,25 @@ router.patch("/conversations/:id/read", verifyAccessToken, (req, res, next) => {
   );
   messageController.markRead(req, res, next);
 });
+
+router.get(
+  "/conversations/job/:jobId/unread-count",
+  verifyAccessToken,
+  (req, res, next) => {
+    container
+      .get<IMessageController>(TYPES.MessageController)
+      .getJobUnreadCount(req, res, next);
+  },
+);
+
+router.get(
+  "/conversations/application/:applicationId/unread-count",
+  verifyAccessToken,
+  (req, res, next) => {
+    container
+      .get<IMessageController>(TYPES.MessageController)
+      .getApplicationUnreadCount(req, res, next);
+  },
+);
 
 export default router;

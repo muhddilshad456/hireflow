@@ -54,9 +54,9 @@ export function initInterviewSocket(io: Server, socket: AuthedSocket) {
         if (size > 1) {
           io.to(room).emit("interview:peer-joined");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Interview join error:", error);
-        socket.emit("interview:error", { message: error.message });
+        socket.emit("interview:error", { message: error instanceof Error ? error.message : "Failed to join interview" });
       }
     },
   );

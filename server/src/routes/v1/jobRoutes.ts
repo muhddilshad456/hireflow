@@ -6,6 +6,8 @@ import { verifyAccessToken } from "../../middlewares/auth.middleware";
 import { upload } from "../../config/multer";
 import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
+import { validateDto } from "../../middlewares/validate.middleware";
+import { UpdateJobStatusDto } from "../../dtos/v1/job/updateJobStatus.dto";
 
 const router = Router();
 
@@ -17,7 +19,11 @@ router.get(
   jobController.getJobs.bind(jobController),
 );
 //* get a job
-router.get("/job/:id", jobController.getJob.bind(jobController));
+router.get(
+  "/job/:id",
+  verifyAccessToken,
+  jobController.getJob.bind(jobController),
+);
 //* get a job with full datatils
 router.get("/details/:jobId", jobController.getJobDetails.bind(jobController));
 //* change status
@@ -39,6 +45,7 @@ router.post(
   upload.single("file"),
   jobController.addAssesmentTask.bind(jobController),
 );
+//* application status
 router.get(
   "/:jobId/application-status",
   verifyAccessToken,
@@ -50,5 +57,13 @@ router.patch(
   verifyAccessToken,
   roleGuard([UserRole.COMPANY_RECRUITER]),
   jobController.setDocVerDescription.bind(jobController),
+);
+//* update job status
+router.patch(
+  "/:jobId/status",
+  verifyAccessToken,
+  validateDto(UpdateJobStatusDto),
+  roleGuard([UserRole.COMPANY_RECRUITER]),
+  jobController.updateJobStatus.bind(jobController),
 );
 export default router;

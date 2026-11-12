@@ -30,18 +30,19 @@ export interface IProfileService {
   addResume(
     userId: string,
     file: Express.Multer.File,
+    title: string,
   ): Promise<IUserProfile | null>;
   removeResume(userId: string, resumeId: string): Promise<boolean>;
   addProfileItem(
     userId: string,
     field: ProfileArrayField,
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<IUserProfile | null>;
   updateProfileItem(
     userId: string,
     field: ProfileArrayField,
     itemId: string,
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<IUserProfile | null>;
   removeProfileItem(
     userId: string,

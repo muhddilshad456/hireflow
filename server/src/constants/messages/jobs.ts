@@ -7,7 +7,11 @@ export const JOB_MESSAGES = {
   JOBS_FETCHED: "Jobs fetched successfully",
   JOB_FETCHED: "Job fetched successfully",
   JOB_STATUS_REQUIRED: "Job status required",
+  JOB_STATUS_UPDATED: "Job status updated",
   JOB_ID_REQUIRED: "Job ID is required",
+  JOB_IS_CLOSED: "Job is clossd",
+  INVALID_JOB_STATUS: "Invalied job status",
+  INVALID_RECRUITER: "Recruiter is not assosiated with this job.",
 
   // Job Application Messages
   JOB_APPLIED_SUCCESS: "Applied for the job successfully",
@@ -27,4 +31,7 @@ export const JOB_MESSAGES = {
     "The selected stage does not belong to this application",
   // assesement
   ASSESMENT_TASK_ADDED_SUCCESSFULLY: "Assesment task added successfully.",
+  //location
+  INVALID_LOCATION_CORDINATES: "Invalid location coordinates.",
+  INVALID_LOCATION: "Please select a valid location from the suggestions.",
 };

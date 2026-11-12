@@ -20,7 +20,7 @@ export class InterviewController implements IInterviewController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const recruiterId = req.user.userId;
+      const recruiterId = req.user?.userId as string;
       const data = req.body;
       const result = await this._interviewService.createInterviewRequest(
         recruiterId,
@@ -42,7 +42,7 @@ export class InterviewController implements IInterviewController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.userId as string;
       const interviewId = req.params.id;
       const result = await this._interviewService.getInterviewDetails(
         userId,
@@ -64,7 +64,7 @@ export class InterviewController implements IInterviewController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.userId as string;
       const interviewId = req.params.id;
       const dto = req?.body;
       const result = await this._interviewService.submitFeedback(

@@ -24,7 +24,7 @@ export class RecruiterController implements IRecruiterController {
   ): Promise<void> {
     try {
       const dto = req.body;
-      const recruiterId = req.user?.userId;
+      const recruiterId = req.user?.userId as string;
       const result = await this._recruiterService.createJob(dto, recruiterId);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_CREATED, result);
     } catch (error) {
@@ -40,7 +40,7 @@ export class RecruiterController implements IRecruiterController {
     try {
       const dto = req.body;
       const jobId = req.params.jobId as string;
-      const recruiterId = req.user?.userId;
+      const recruiterId = req.user?.userId as string;
       const result = await this._recruiterService.updateJob(
         jobId,
         dto,
@@ -59,7 +59,7 @@ export class RecruiterController implements IRecruiterController {
   ): Promise<void> {
     try {
       const jobId = req?.params?.jobId as string;
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._recruiterService.aiFilterCandidates(
         userId,
         jobId,
@@ -80,7 +80,7 @@ export class RecruiterController implements IRecruiterController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const recruiterId = req.user?.userId;
+      const recruiterId = req.user?.userId as string;
       const { search, capability, page, limit } = req.query;
 
       const result = await this._recruiterService.getCompanyInterviewers(
@@ -109,7 +109,7 @@ export class RecruiterController implements IRecruiterController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._recruiterService.getRecruiterProfile(userId);
       ResponseHandler.success(res, RECRUITER_MESSAGES.PROFILE_FETCHED, result);
     } catch (error) {
@@ -123,7 +123,7 @@ export class RecruiterController implements IRecruiterController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const recruiterId = req.user?.userId;
+      const recruiterId = req.user?.userId as string;
 
       const result = await this._recruiterService.getDashboard(
         recruiterId as string,

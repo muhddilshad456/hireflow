@@ -11,6 +11,13 @@ export interface IJob extends Document {
 
   location: string;
 
+  locationCoordinates?: {
+    type: "Point";
+    coordinates: [number, number];
+  } | null;
+
+  workMode: "ONSITE" | "REMOTE" | "HYBRID";
+
   jobType: "FULL_TIME" | "PART_TIME" | "INTERNSHIP" | "CONTRACT";
 
   salaryMin?: number;
@@ -23,7 +30,7 @@ export interface IJob extends Document {
 
   category: string;
 
-  status: "OPEN" | "CLOSED" | "FILLED";
+  status: "OPEN" | "CLOSED";
 
   applicationDeadline?: Date;
 
@@ -70,6 +77,24 @@ const jobSchema = new Schema<IJob>(
     location: {
       type: String,
       required: true,
+    },
+
+    locationCoordinates: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+      },
+    },
+
+    workMode: {
+      type: String,
+      enum: ["ONSITE", "REMOTE", "HYBRID"],
+      required: true,
+      default: "ONSITE",
     },
 
     jobType: {
@@ -126,5 +151,9 @@ const jobSchema = new Schema<IJob>(
   },
   { timestamps: true },
 );
+
+jobSchema.index({
+  locationCoordinates: "2dsphere",
+});
 
 export const JobModel = mongoose.model<IJob>("Job", jobSchema);

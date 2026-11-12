@@ -25,7 +25,7 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const dto = req.body;
       const files = req.files as {
         document?: Express.Multer.File[];
@@ -50,7 +50,7 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const type = req.query?.type?.toString() as VerificationType;
       const result = await this._companyService.getVerificationStatus(
         userId,
@@ -72,7 +72,7 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const companyAdminId = req.user.userId;
+      const companyAdminId = req.user?.userId as string;
       const { name, email, role } = req.body;
       const result = await this._companyService.invite(
         name,
@@ -94,7 +94,7 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const companyAdminId = req.user.userId;
+      const companyAdminId = req.user?.userId as string;
       const result =
         await this._companyService.getCompanyProfile(companyAdminId);
       ResponseHandler.success(res, PROFILE_MESSAGES.FETCH_SUCCESS, result);
@@ -109,7 +109,7 @@ export class CompanyController implements ICompanyController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
 
       const result = await this._companyService.getDashboard(userId as string);
 
@@ -130,7 +130,7 @@ export class CompanyController implements ICompanyController {
       const search = (req.query.search as string) || "";
       const status = (req.query.status as string)?.toLowerCase() || "";
       const role = req.query.role as UserRole;
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._companyService.getAllInvitations(
         page,
         limit,
@@ -159,7 +159,7 @@ export class CompanyController implements ICompanyController {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string) || "";
       const status = (req.query.status as string)?.toLowerCase() || "";
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._companyService.getRecruiters(
         page,
         limit,
@@ -187,7 +187,7 @@ export class CompanyController implements ICompanyController {
       const limit = parseInt(req.query.limit as string) || 10;
       const search = (req.query.search as string) || "";
       const status = (req.query.status as string)?.toLowerCase() || "";
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._companyService.getInterviewers(
         page,
         limit,
@@ -213,7 +213,7 @@ export class CompanyController implements ICompanyController {
   ): Promise<void> {
     try {
       const invitationId = req.params.id as string;
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._companyService.cancelInvitation(
         invitationId,
         userId,

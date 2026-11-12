@@ -142,7 +142,7 @@ export class AdminController implements IAdminController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._adminService.getAdminProfile(userId);
       ResponseHandler.success(res, ADMIN_MESSAGES.PROFILE_FETCHED, result);
     } catch (error) {

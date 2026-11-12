@@ -1,5 +1,11 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
+export interface ILocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface IUserProfile extends Document {
   _id: Types.ObjectId;
 
@@ -8,7 +14,8 @@ export interface IUserProfile extends Document {
   profilePicture?: string;
 
   phone?: string;
-  location?: string;
+
+  location?: ILocation;
 
   summary?: string;
 
@@ -32,7 +39,7 @@ export interface IUserProfile extends Document {
   jobPreference?: {
     role: string;
     type: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERNSHIP";
-    location: string;
+    location: ILocation;
     workMode: "ONSITE" | "REMOTE" | "HYBRID";
     expectedSalary?: number;
   };
@@ -41,6 +48,7 @@ export interface IUserProfile extends Document {
     _id?: Types.ObjectId;
     url: string;
     name: string;
+    title: string;
     isDefault: boolean;
     uploadedAt: Date;
   }[];
@@ -58,6 +66,15 @@ export interface IUserProfile extends Document {
   updatedAt: Date;
 }
 
+const locationSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+  },
+  { _id: false },
+);
+
 const userProfileSchema = new Schema<IUserProfile>(
   {
     userId: {
@@ -70,7 +87,10 @@ const userProfileSchema = new Schema<IUserProfile>(
     profilePicture: { type: String },
 
     phone: { type: String },
-    location: { type: String },
+
+    location: {
+      type: locationSchema,
+    },
 
     summary: { type: String },
 
@@ -103,7 +123,9 @@ const userProfileSchema = new Schema<IUserProfile>(
         type: String,
         enum: ["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"],
       },
-      location: { type: String },
+      location: {
+        type: locationSchema,
+      },
       workMode: {
         type: String,
         enum: ["ONSITE", "REMOTE", "HYBRID"],
@@ -115,6 +137,11 @@ const userProfileSchema = new Schema<IUserProfile>(
       {
         url: { type: String, required: true },
         name: { type: String, required: true },
+        title: {
+          type: String,
+          required: true,
+          trim: true,
+        },
         isDefault: { type: Boolean, default: false },
         uploadedAt: { type: Date, default: Date.now },
       },

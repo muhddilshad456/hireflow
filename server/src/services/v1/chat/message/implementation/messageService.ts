@@ -17,6 +17,7 @@ import { IConversation } from "../../../../../models/chat/conversation";
 import { IMessage } from "../../../../../models/chat/message";
 import { MessageEntity } from "../../../../../interfaces/chat/message";
 import { IChatEventPublisher } from "../../../../../events/chat/interface/IChatEventPublisher";
+import { UnreadUpdatePayload } from "../../../../../interfaces/chat/conversation";
 
 @injectable()
 export class MessageService implements IMessageService {
@@ -32,6 +33,39 @@ export class MessageService implements IMessageService {
     @inject(TYPES.Logger)
     private _logger: Logger,
   ) {}
+  //* helper
+  private async emitUnreadUpdate(
+    convo: IConversation,
+    receiverId: Types.ObjectId,
+  ): Promise<void> {
+    try {
+      const isRecruiter = convo.recruiterId.equals(receiverId);
+      const otherRole: SenderRole = isRecruiter ? "user" : "company_recruiter";
+      const [counts, jobUnreadConversations] = await Promise.all([
+        this._messageRepository.getUnreadCountsByConversation(
+          [convo._id],
+          otherRole,
+        ),
+        isRecruiter
+          ? this.getUnreadConversationCountForJob(receiverId, convo.jobId)
+          : Promise.resolve(undefined),
+      ]);
+      const payload: UnreadUpdatePayload = {
+        conversationId: convo._id.toString(),
+        applicationId: convo.applicationId.toString(),
+        jobId: convo.jobId.toString(),
+        unreadCount: counts[0]?.count ?? 0,
+        jobUnreadConversations,
+      };
+      this._eventPublisher.publishUnreadUpdate(receiverId.toString(), payload);
+    } catch (error) {
+      this._logger.warn({
+        event: "UNREAD_UPDATE_FAILED",
+        conversationId: convo._id,
+        error,
+      });
+    }
+  }
   //* security layer
   private async assertActiveParticipant(
     conversationId: Types.ObjectId,
@@ -69,7 +103,10 @@ export class MessageService implements IMessageService {
       throw new BadRequestError(MSG_MESSAGES.MESSAGE_EMPTY);
     }
 
-    await this.assertActiveParticipant(params.conversationId, params.senderId);
+    const convo = await this.assertActiveParticipant(
+      params.conversationId,
+      params.senderId,
+    );
 
     let uploadedAttachement;
 
@@ -101,6 +138,11 @@ export class MessageService implements IMessageService {
       message,
     );
 
+    const recipientId = convo.recruiterId.equals(params.senderId)
+      ? convo.userId
+      : convo.recruiterId;
+    await this.emitUnreadUpdate(convo, recipientId);
+
     this._logger.info({
       event: "MESSAGE_SENT",
       conversationId: params.conversationId,
@@ -130,8 +172,47 @@ export class MessageService implements IMessageService {
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
   ): Promise<void> {
-    await this.assertActiveParticipant(conversationId, userId);
+    const convo = await this.assertActiveParticipant(conversationId, userId);
     await this._messageRepository.markReadByRecipient(conversationId, userId);
-    this._logger.info({ event: "MESSAGES_MARKED_READ", conversationId, userId });
+    this._logger.info({
+      event: "MESSAGES_MARKED_READ",
+      conversationId,
+      userId,
+    });
+    await this.emitUnreadUpdate(convo, userId);
+  }
+
+  async getUnreadConversationCountForJob(
+    recruiterId: Types.ObjectId,
+    jobId: Types.ObjectId,
+  ): Promise<number> {
+    const ids =
+      await this._conversationRepository.findActiveIdsByRecruiterAndJob(
+        recruiterId,
+        jobId,
+      );
+    if (ids.length === 0) return 0;
+    const counts = await this._messageRepository.getUnreadCountsByConversation(
+      ids,
+      "user",
+    );
+    return counts.length;
+  }
+
+  async getUnreadCountForApplication(
+    userId: Types.ObjectId,
+    applicationId: Types.ObjectId,
+  ): Promise<number> {
+    const id =
+      await this._conversationRepository.findActiveIdByApplicationAndUser(
+        applicationId,
+        userId,
+      );
+    if (!id) return 0;
+    const counts = await this._messageRepository.getUnreadCountsByConversation(
+      [id],
+      "company_recruiter",
+    );
+    return counts[0]?.count ?? 0;
   }
 }

@@ -1,6 +1,10 @@
 export type JobFilters = {
   jobType?: string[];
   location?: string;
+  workMode?: string[];
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
   category?: string[];
   salaryMin?: string;
   salaryMax?: string;
@@ -8,6 +12,7 @@ export type JobFilters = {
   experienceMax?: string;
   search?: string;
   isActive?: string;
+  status?: "OPEN" | "CLOSED";
   page?: number;
   limit?: number;
   createdBy?: string;

@@ -1,7 +1,10 @@
 import { injectable } from "inversify";
 import { IJob, JobModel } from "../../../models/job/job.model";
 import { BaseRepository } from "../../base/implementation/base.repository";
-import { IJobRepository, PaginatedJobsResult } from "../interface/IJobRepository";
+import {
+  IJobRepository,
+  PaginatedJobsResult,
+} from "../interface/IJobRepository";
 import { JobFilters } from "../../../types/jobFilter";
 import { JobSubsetInfo } from "../../../interfaces/interview/interview";
 
@@ -21,8 +24,29 @@ export class JobRepository
       query.title = { $regex: filters.search, $options: "i" };
     }
 
-    if (filters.location) {
+    const hasCoords =
+      filters.latitude !== undefined && filters.longitude !== undefined;
+
+    // Text location is only used when there are no coordinates
+    if (filters.location && !hasCoords) {
       query.location = { $regex: filters.location, $options: "i" };
+    }
+
+    if (filters.workMode?.length) {
+      query.workMode = { $in: filters.workMode };
+    }
+
+    if (hasCoords) {
+      const radiusKm =
+        filters.radius && filters.radius > 0 ? filters.radius : 25;
+      query.locationCoordinates = {
+        $geoWithin: {
+          $centerSphere: [
+            [filters.longitude, filters.latitude],
+            radiusKm / 6378.1,
+          ],
+        },
+      };
     }
 
     if (filters.jobType?.length) query.jobType = { $in: filters.jobType };
@@ -37,37 +61,28 @@ export class JobRepository
       }
     }
 
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
     if (filters.createdBy) query.createdBy = filters.createdBy;
 
-    if (filters.salaryMin && filters.salaryMax) {
-      query.$and = [
-        { salaryMax: { $gte: filters.salaryMin } },
-        { salaryMin: { $lte: filters.salaryMax } },
-      ];
-    } else {
-      if (filters.salaryMin) {
-        query.salaryMax = { $gte: filters.salaryMin };
-      }
-
-      if (filters.salaryMax) {
-        query.salaryMin = { $lte: filters.salaryMax };
-      }
+    if (filters.company) {
+      query.company = filters.company;
     }
 
-    if (filters.experienceMin && filters.experienceMax) {
-      query.$and = [
-        { experienceMax: { $gte: filters.experienceMin } },
-        { experienceMin: { $lte: filters.experienceMax } },
-      ];
-    } else {
-      if (filters.experienceMin) {
-        query.experienceMax = { $gte: filters.experienceMin };
-      }
+    const and: Record<string, unknown>[] = [];
 
-      if (filters.experienceMax) {
-        query.experienceMin = { $lte: filters.experienceMax };
-      }
-    }
+    if (filters.salaryMin)
+      and.push({ salaryMax: { $gte: Number(filters.salaryMin) } });
+    if (filters.salaryMax)
+      and.push({ salaryMin: { $lte: Number(filters.salaryMax) } });
+    if (filters.experienceMin)
+      and.push({ experienceMax: { $gte: Number(filters.experienceMin) } });
+    if (filters.experienceMax)
+      and.push({ experienceMin: { $lte: Number(filters.experienceMax) } });
+
+    if (and.length) query.$and = and;
 
     const page = filters.page || 1;
     const limit = filters.limit || 10;
@@ -107,5 +122,16 @@ export class JobRepository
     fields: string,
   ): Promise<JobSubsetInfo | null> {
     return await JobModel.findById(id).select(fields);
+  }
+  //* update job status
+  async updateJobStatus(
+    jobId: string,
+    status: "OPEN" | "CLOSED",
+  ): Promise<IJob | null> {
+    return await JobModel.findByIdAndUpdate(
+      jobId,
+      { $set: { status } },
+      { new: true, runValidators: true },
+    );
   }
 }

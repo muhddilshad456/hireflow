@@ -7,12 +7,20 @@ export interface IMessageController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
-
   getMessages(
     req: AuthRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void>;
-
   markRead(req: AuthRequest, res: Response, next: NextFunction): Promise<void>;
+  getJobUnreadCount(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
+  getApplicationUnreadCount(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

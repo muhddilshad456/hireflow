@@ -8,7 +8,7 @@ import {
   IJobApplicationRepository,
   AggregateFacetResult,
 } from "../../../../repositories/job-application/interface/IJobApplicationRepository";
-import mongoose, { PipelineStage, Types } from "mongoose";
+import mongoose, { PipelineStage, QueryFilter, Types } from "mongoose";
 import { IJobStageRepository } from "../../../../repositories/job/interface/IJobStageRepository";
 import { IJobApplicationStageRepository } from "../../../../repositories/job-application/interface/IJobApplicationStageRepository";
 import { IJobApplicationService } from "../interface/IJobApplicationService";
@@ -42,6 +42,13 @@ import { formatStageName } from "../../../../constants/notification/notification
 import { CreateNotificationData } from "../../../../interfaces/notification/notification";
 import { IUserRepository } from "../../../../repositories/user/interfaces/IUserRepository";
 import { USER_MESSAGES } from "../../../../constants/messages/user";
+import { emitApplicationUpdated } from "../../../../socket/application/applicationrealtime";
+import { ApplicationUpdatedPayload } from "../../../../constants/application/application";
+
+type PendingRealtime = {
+  userIds: string[];
+  payload: ApplicationUpdatedPayload;
+};
 
 @injectable()
 export class JobApplicationService implements IJobApplicationService {
@@ -73,10 +80,10 @@ export class JobApplicationService implements IJobApplicationService {
     const { search, page, limit } = filters;
 
     const safePage = Math.max(1, page);
-    const safeLimit = Math.max(1, Math.min(limit, 50)); // cap to avoid abuse
+    const safeLimit = Math.max(1, Math.min(limit, 50));
     const skip = (safePage - 1) * safeLimit;
 
-    const matchStage: Record<string, any> = {
+    const matchStage: QueryFilter<IJobApplication> = {
       userId: new mongoose.Types.ObjectId(userId),
     };
 
@@ -331,6 +338,7 @@ export class JobApplicationService implements IJobApplicationService {
       {
         $project: {
           _id: 1,
+          applicationNumber: 1,
           status: 1,
           appliedAt: 1,
           resumeUrl: 1,
@@ -508,9 +516,10 @@ export class JobApplicationService implements IJobApplicationService {
     const session = await mongoose.startSession();
 
     let pendingNotification = null as CreateNotificationData | null;
+    let pendingRealtime = null as PendingRealtime | null;
 
     try {
-      let result: any;
+      let result!: UpdateApplicationStageResult;
 
       await session.withTransaction(async () => {
         pendingNotification = null;
@@ -611,6 +620,16 @@ export class JobApplicationService implements IJobApplicationService {
         const candidateUserId = application.userId.toString();
         const applicationLink = `/application/${application._id}`;
         const stageLabel = formatStageName(currentJobStage.name);
+
+        pendingRealtime = {
+          userIds: [candidateUserId],
+          payload: {
+            applicationId: application._id.toString(),
+            applicationStageId: currentAppStage._id.toString(),
+            jobId: job._id.toString(),
+            reason: "STAGE_DECIDED",
+          },
+        };
 
         await this._jobApplicationStageRepository.findOneAndUpdate(
           { _id: currentAppStage._id.toString() },
@@ -724,6 +743,13 @@ export class JobApplicationService implements IJobApplicationService {
         await this._notificationService.notify(userId, payload);
       }
 
+      if (pendingRealtime) {
+        emitApplicationUpdated(
+          pendingRealtime.userIds,
+          pendingRealtime.payload,
+        );
+      }
+
       return result;
     } catch (error) {
       console.error(">>> updateApplicationStage ERROR:", error);
@@ -821,7 +847,7 @@ export class JobApplicationService implements IJobApplicationService {
 
     return { jobStage, applicationStage: applicationStage ?? null };
   }
-  //* add or edit assessment resonce
+  //* add or edit assessment responce
   async addOrEditAssessmentResponse(
     userId: string,
     applicationId: string,
@@ -908,7 +934,12 @@ export class JobApplicationService implements IJobApplicationService {
       throw new BadRequestError(APPLICATION_MESSAGES.STAGE_NOT_EDITABLE);
     }
 
-    // Keep the existing attachment unless a new file is uploaded with this edit
+    const hadResponseBefore = Boolean(
+      applicationStage.assessmentSubmittedAt ||
+      applicationStage.assessmentResponseText ||
+      applicationStage.assessmentResponseAttachmentUrl,
+    );
+
     let attachmentUrl = applicationStage.assessmentResponseAttachmentUrl;
 
     if (file) {
@@ -940,9 +971,41 @@ export class JobApplicationService implements IJobApplicationService {
       entity,
     );
 
+    try {
+      const job = await this._jobRepository.findById(
+        application.jobId.toString(),
+      );
+
+      if (job) {
+        const recruiterId = job.createdBy.toString();
+
+        emitApplicationUpdated([recruiterId], {
+          applicationId: application._id.toString(),
+          applicationStageId: applicationStage._id.toString(),
+          jobId: job._id.toString(),
+          reason: "ASSESSMENT_SUBMITTED",
+        });
+
+        if (!hadResponseBefore) {
+          await this._notificationService.notify(recruiterId, {
+            type: "ASSESSMENT_SUBMITTED",
+            title: "Assessment submitted",
+            message: `A candidate submitted their assessment for ${job.title}.`,
+            link: `/company/recruiter/job/${job._id}/stage/${jobStage._id}`,
+          });
+        }
+      }
+    } catch (error) {
+      this._logger.error({
+        event: "ASSESSMENT_REALTIME_FAILED",
+        applicationId,
+        jobStageId,
+        error: error instanceof Error ? error.message : error,
+      });
+    }
+
     return updated as IJobApplicationStage;
   }
-
   //* udpate verification documents
   async updateDocumentsForVerification(
     userId: string,
@@ -1035,6 +1098,48 @@ export class JobApplicationService implements IJobApplicationService {
       { documents },
     );
 
+    const hadDocumentsBefore = current.length > 0;
+    const changed = uploaded.length > 0 || keep.length !== current.length;
+
+    if (changed) {
+      try {
+        const job = await this._jobRepository.findById(
+          application.jobId.toString(),
+        );
+
+        if (job) {
+          const recruiterId = job.createdBy.toString();
+
+          emitApplicationUpdated([recruiterId], {
+            applicationId: application._id.toString(),
+            applicationStageId: applicationStage._id.toString(),
+            jobId: job._id.toString(),
+            reason: "DOCUMENTS_UPDATED",
+          });
+
+          if (documents.length > 0) {
+            await this._notificationService.notify(recruiterId, {
+              type: "DOCUMENTS_UPDATED",
+              title: hadDocumentsBefore
+                ? "Documents updated"
+                : "Documents submitted",
+              message: hadDocumentsBefore
+                ? `A candidate updated their verification documents for ${job.title}.`
+                : `A candidate submitted their verification documents for ${job.title}.`,
+              link: `/company/recruiter/job/${job._id}/stage/${stage._id}`,
+            });
+          }
+        }
+      } catch (error) {
+        this._logger.error({
+          event: "DOCUMENTS_REALTIME_FAILED",
+          applicationId: application._id,
+          applicationStageId,
+          error: error instanceof Error ? error.message : error,
+        });
+      }
+    }
+
     return documents;
   }
   //* upload offer letter
@@ -1090,6 +1195,8 @@ export class JobApplicationService implements IJobApplicationService {
       throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
     }
 
+    const hadLetterBefore = Boolean(appStage.offerLetterUrl);
+
     let offerLetterUrl: string;
     try {
       offerLetterUrl = await this._cloudinaryService.uploadFile(
@@ -1113,6 +1220,31 @@ export class JobApplicationService implements IJobApplicationService {
     if (!updated) {
       throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
     }
+
+    const candidateUserId = application.userId.toString();
+
+    emitApplicationUpdated([candidateUserId], {
+      applicationId: application._id.toString(),
+      applicationStageId: appStage._id.toString(),
+      jobId: job._id.toString(),
+      reason: "OFFER_LETTER_UPLOADED",
+    });
+
+    await this._notificationService.notify(candidateUserId, {
+      type: hadLetterBefore ? "OFFER_LETTER_UPDATED" : "OFFER_LETTER_RECEIVED",
+      title: hadLetterBefore ? "Offer letter updated" : "You have an offer!",
+      message: hadLetterBefore
+        ? `Your offer letter for ${job.title} was updated. Please review it.`
+        : `Your offer letter for ${job.title} is ready. Please review it and respond.`,
+      link: `/application/${application._id}`,
+    });
+
+    emitApplicationUpdated([application.userId.toString()], {
+      applicationId: application._id.toString(),
+      applicationStageId: appStage._id.toString(),
+      jobId: job._id.toString(),
+      reason: "OFFER_LETTER_UPLOADED",
+    });
 
     return { offerLetterUrl };
   }
@@ -1174,6 +1306,38 @@ export class JobApplicationService implements IJobApplicationService {
       throw new ConflictError(APPLICATION_MESSAGES.OFFER_ALREADY_RESPONDED);
     }
 
+    try {
+      const job = await this._jobRepository.findById(
+        application.jobId.toString(),
+      );
+
+      if (job) {
+        const recruiterId = job.createdBy.toString();
+        const accepted = response === "ACCEPTED";
+
+        emitApplicationUpdated([recruiterId], {
+          applicationId: application._id.toString(),
+          applicationStageId: appStage._id.toString(),
+          jobId: job._id.toString(),
+          reason: "OFFER_RESPONDED",
+        });
+
+        await this._notificationService.notify(recruiterId, {
+          type: accepted ? "OFFER_ACCEPTED" : "OFFER_DECLINED",
+          title: accepted ? "Offer accepted" : "Offer declined",
+          message: accepted
+            ? `A candidate accepted your offer for ${job.title}.`
+            : `A candidate declined your offer for ${job.title}.`,
+          link: `/company/recruiter/job/${job._id}/stage/${jobStage._id}`,
+        });
+      }
+    } catch (error) {
+      this._logger.error({
+        event: "OFFER_RESPONSE_REALTIME_FAILED",
+        appStageId,
+        error: error instanceof Error ? error.message : error,
+      });
+    }
     return { offerResponse: response };
   }
   //* candidate: withdraw application
@@ -1235,6 +1399,12 @@ export class JobApplicationService implements IJobApplicationService {
         APPLICATION_MESSAGES.APPLICATION_NOT_IN_PROGRESS,
       );
     }
+
+    emitApplicationUpdated([job.createdBy.toString()], {
+      applicationId: application._id.toString(),
+      jobId: job._id.toString(),
+      reason: "APPLICATION_WITHDRAWN",
+    });
 
     await this._notificationService.notify(job.createdBy.toString(), {
       type: "APPLICATION_WITHDRAWN",

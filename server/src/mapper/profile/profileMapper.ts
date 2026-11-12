@@ -2,7 +2,10 @@ import { ProfileArrayField } from "../../constants/profile/profile.constents";
 import { BadRequestError } from "../../errors/bad-request.error";
 
 export class ProfileMapper {
-  static toArrayItemEntity(field: ProfileArrayField, data: any) {
+  static toArrayItemEntity(
+    field: ProfileArrayField,
+    data: Record<string, unknown>,
+  ) {
     switch (field) {
       case ProfileArrayField.EDUCATION:
         return this.toEducationEntity(data);
@@ -15,8 +18,14 @@ export class ProfileMapper {
     }
   }
 
-  private static toEducationEntity(data: any) {
-    const { degree, fieldOfStudy, institution, graduationYear } = data ?? {};
+  private static toEducationEntity(data: Record<string, unknown>) {
+    const { degree, fieldOfStudy, institution, graduationYear } = (data ??
+      {}) as {
+      degree?: string;
+      fieldOfStudy?: string;
+      institution?: string;
+      graduationYear?: number | string;
+    };
 
     if (!degree || !institution) {
       throw new BadRequestError("Degree and institution are required");
@@ -30,8 +39,13 @@ export class ProfileMapper {
     };
   }
 
-  private static toExperienceEntity(data: any) {
-    const { title, company, years, description } = data ?? {};
+  private static toExperienceEntity(data: Record<string, unknown>) {
+    const { title, company, years, description } = (data ?? {}) as {
+      title?: string;
+      company?: string;
+      years?: number | string;
+      description?: string;
+    };
 
     if (!title || !company) {
       throw new BadRequestError("Title and company are required");
@@ -45,8 +59,11 @@ export class ProfileMapper {
     };
   }
 
-  private static toCoverLetterEntity(data: any) {
-    const { title, content } = data ?? {};
+  private static toCoverLetterEntity(data: Record<string, unknown>) {
+    const { title, content } = (data ?? {}) as {
+      title?: string;
+      content?: string;
+    };
 
     if (!title || !content) {
       throw new BadRequestError("Title and content are required");
@@ -59,7 +76,10 @@ export class ProfileMapper {
     };
   }
 
-  static toArrayItemUpdate(field: ProfileArrayField, data: any) {
+  static toArrayItemUpdate(
+    field: ProfileArrayField,
+    data: Record<string, unknown>,
+  ) {
     switch (field) {
       case ProfileArrayField.EDUCATION:
         return this.toEducationUpdate(data);
@@ -72,9 +92,9 @@ export class ProfileMapper {
     }
   }
 
-  private static toEducationUpdate(data: any) {
+  private static toEducationUpdate(data: Record<string, unknown>) {
     const allowed = ["degree", "fieldOfStudy", "institution", "graduationYear"];
-    const update: Record<string, any> = {};
+    const update: Record<string, unknown> = {};
 
     for (const key of allowed) {
       if (data?.[key] !== undefined) {
@@ -84,9 +104,9 @@ export class ProfileMapper {
     return update;
   }
 
-  private static toExperienceUpdate(data: any) {
+  private static toExperienceUpdate(data: Record<string, unknown>) {
     const allowed = ["title", "company", "years", "description"];
-    const update: Record<string, any> = {};
+    const update: Record<string, unknown> = {};
 
     for (const key of allowed) {
       if (data?.[key] !== undefined) {
@@ -96,9 +116,9 @@ export class ProfileMapper {
     return update;
   }
 
-  private static toCoverLetterUpdate(data: any) {
+  private static toCoverLetterUpdate(data: Record<string, unknown>) {
     const allowed = ["title", "content"];
-    const update: Record<string, any> = {};
+    const update: Record<string, unknown> = {};
 
     for (const key of allowed) {
       if (data?.[key] !== undefined) {
@@ -108,10 +128,15 @@ export class ProfileMapper {
     return update;
   }
 
-  static toResumeEntity(file: Express.Multer.File, uploadedUrl: string) {
+  static toResumeEntity(
+    file: Express.Multer.File,
+    uploadedUrl: string,
+    title: string,
+  ) {
     return {
       url: uploadedUrl,
       name: file.originalname,
+      title: title.trim(),
       isDefault: false,
       uploadedAt: new Date(),
     };

@@ -1,5 +1,8 @@
 import { Types } from "mongoose";
-import { MessageEntity, SenderRole } from "../../../../../interfaces/chat/message";
+import {
+  MessageEntity,
+  SenderRole,
+} from "../../../../../interfaces/chat/message";
 import { IMessage } from "../../../../../models/chat/message";
 
 export interface IMessageService {
@@ -20,4 +23,12 @@ export interface IMessageService {
     conversationId: Types.ObjectId,
     userId: Types.ObjectId,
   ): Promise<void>;
+  getUnreadConversationCountForJob(
+    recruiterId: Types.ObjectId,
+    jobId: Types.ObjectId,
+  ): Promise<number>;
+  getUnreadCountForApplication(
+    userId: Types.ObjectId,
+    applicationId: Types.ObjectId,
+  ): Promise<number>;
 }

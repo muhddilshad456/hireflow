@@ -8,6 +8,15 @@ import { TYPES } from "../../../../dependency-injection/types";
 import { IJobService } from "../../../../services/v1/job/interface/IJobService";
 import { APPLICATION_MESSAGES } from "../../../../constants/messages/application/application";
 import { DOCUMENT_VERIFICATION_MESSAGES } from "../../../../constants/messages/docVer";
+import { AuthUser } from "../../../../types/AuthUser";
+
+const toArray = (v: unknown): string[] =>
+  v === undefined ? [] : Array.isArray(v) ? v.map(String) : [String(v)];
+
+const toNumber = (v: unknown): number | undefined =>
+  v !== undefined && v !== "" && !Number.isNaN(Number(v))
+    ? Number(v)
+    : undefined;
 
 export class JobController implements IJobController {
   constructor(@inject(TYPES.JobService) private _jobService: IJobService) {}
@@ -19,12 +28,14 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const filters = {
-        jobType: req.query.jobType as string[] | [],
+        jobType: toArray(req.query.jobType),
+        category: toArray(req.query.category),
+        workMode: toArray(req.query.workMode),
+        latitude: toNumber(req.query.latitude),
+        longitude: toNumber(req.query.longitude),
+        radius: toNumber(req.query.radius),
         location: req.query.location as string | undefined,
-        category: req.query.category as string[] | [],
         salaryMin: req.query.salaryMin as string | undefined,
-        salaryMax: req.query.salaryMax as string | undefined,
-        experienceMin: req.query.experienceMin as string | undefined,
         experienceMax: req.query.experienceMax as string | undefined,
         search: req.query.search as string | undefined,
         isActive: req.query.status as string | undefined,
@@ -32,7 +43,7 @@ export class JobController implements IJobController {
         limit: req.query.limit ? Number(req.query.limit) : 10,
         createdBy: req.query.createdBy as string | undefined,
       };
-      const user = req?.user;
+      const user = req.user as AuthUser;
 
       const result = await this._jobService.getJobs(filters, user);
       ResponseHandler.success(res, JOB_MESSAGES.JOBS_FETCHED, result);
@@ -48,9 +59,11 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const jobId = req.params.id as string;
-      const result = await this._jobService.getJob(jobId);
+      const user = req.user as AuthUser;
+      const result = await this._jobService.getJob(jobId, user);
       ResponseHandler.success(res, JOB_MESSAGES.JOB_FETCHED, result);
     } catch (error) {
+      console.log(error);
       next(error);
     }
   }
@@ -76,7 +89,7 @@ export class JobController implements IJobController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const jobId = req.params.jobId as string;
       const data = req.body.data;
       const result = await this._jobService.applyJob(userId, jobId, data);
@@ -158,7 +171,7 @@ export class JobController implements IJobController {
   ): Promise<void> {
     try {
       const jobId = req.params.jobId as string;
-      const userId = req.user.userId;
+      const userId = req.user?.userId as string;
 
       const data = await this._jobService.applicationStatus(jobId, userId);
 
@@ -178,7 +191,7 @@ export class JobController implements IJobController {
     next: NextFunction,
   ): Promise<void> {
     try {
-      const userId = req?.user?.userId;
+      const userId = req.user?.userId as string;
       const { jobStageId } = req.params;
       const description = req?.body?.description || undefined;
 
@@ -195,6 +208,27 @@ export class JobController implements IJobController {
           documentVerificationDescription: saved,
         },
       );
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* update job status
+  async updateJobStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { jobId } = req.params;
+      const { status } = req.body;
+      const userId = req.user?.userId as string;
+      const result = await this._jobService.updateJobStatus(
+        jobId as string,
+        status,
+        userId,
+      );
+
+      ResponseHandler.success(res, JOB_MESSAGES.JOB_STATUS_UPDATED, result);
     } catch (error) {
       next(error);
     }

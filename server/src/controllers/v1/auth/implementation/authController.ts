@@ -75,7 +75,7 @@ export class AuthController implements IAuthController {
   //* logout
   async logout(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = req.user.userId;
+      const userId = req.user?.userId as string;
       await this._authService.logout(userId);
       res.clearCookie("refreshToken");
       res.json({ message: "Logged out successfully.." });
@@ -86,7 +86,7 @@ export class AuthController implements IAuthController {
   //* get current user
   async getCurrentUser(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       console.log(userId);
       const result = await this._authService.getCurrentUser(userId);
       ResponseHandler.success(res, "Token Check successfull..", result);

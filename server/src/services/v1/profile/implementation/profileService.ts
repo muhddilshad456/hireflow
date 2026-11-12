@@ -48,14 +48,14 @@ export class ProfileService implements IProfileService {
       !!user.name?.trim() &&
       !!user.profilePicture &&
       !!profile.phone?.trim() &&
-      !!profile.location?.trim() &&
+      !!profile.location?.name?.trim() &&
       !!profile.summary?.trim() &&
       profile.skills.length > 0 &&
       !!profile.education?.length &&
       profile.experience.length > 0 &&
       !!preference?.role?.trim() &&
       !!preference?.type &&
-      !!preference?.location?.trim() &&
+      !!preference?.location?.name?.trim() &&
       !!preference?.workMode &&
       profile.resumes.length > 0;
 
@@ -326,6 +326,7 @@ export class ProfileService implements IProfileService {
   async addResume(
     userId: string,
     file: Express.Multer.File,
+    title: string,
   ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError(VALIDATION_MESSAGES.USER_ID_REQUIRED);
@@ -340,6 +341,10 @@ export class ProfileService implements IProfileService {
       throw new BadRequestError(PROFILE_MESSAGES.RESUME_REQUIRED);
     }
 
+    if (!title?.trim()) {
+      throw new BadRequestError(PROFILE_MESSAGES.RESUME_TITLE_REQUIRED);
+    }
+
     let uploaded;
 
     try {
@@ -348,7 +353,7 @@ export class ProfileService implements IProfileService {
       throw new InternalServerError(UPLOAD_MESSAGES.UPLOAD_FAILED);
     }
 
-    const resumeData = ProfileMapper.toResumeEntity(file, uploaded);
+    const resumeData = ProfileMapper.toResumeEntity(file, uploaded, title);
 
     const existingProfile = await this._userProfileRepository.findOne({
       userId,
@@ -425,7 +430,7 @@ export class ProfileService implements IProfileService {
   async addProfileItem(
     userId: string,
     field: ProfileArrayField,
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError("User ID required");
@@ -466,7 +471,7 @@ export class ProfileService implements IProfileService {
     userId: string,
     field: ProfileArrayField,
     itemId: string,
-    data: any,
+    data: Record<string, unknown>,
   ): Promise<IUserProfile | null> {
     if (!userId) {
       throw new UnauthorizedError("User ID required");

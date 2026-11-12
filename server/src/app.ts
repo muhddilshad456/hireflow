@@ -13,6 +13,7 @@ import interviewerRoutes from "./routes/v1/company/interviewer/interviewerRoutes
 import subscriptionWebhookRoutes from "./routes/v1/subscriptionwebhookroutes";
 import subscriptionRoutes from "./routes/v1/subscription/subscriptionRoutes";
 import notificationRoutes from "./routes/v1/notification/notificationRoutes";
+import wishlistRoutes from "./routes/v1/wishlist/wishlistRoutes";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -46,6 +47,7 @@ app.use("/api/v1/interviews", interviewRoutes);
 app.use("/api/v1/interviewer", interviewerRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/wishlist", wishlistRoutes);
 
 app.use(errorMiddleware);
 

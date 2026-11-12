@@ -27,9 +27,9 @@ export function initChatSocket(socket: AuthedSocket) {
       }
 
       socket.join(conversationId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       socket.emit("error", {
-        message: error.message,
+        message: error instanceof Error ? error.message : "Failed to join conversation",
       });
     }
   });
@@ -48,9 +48,9 @@ export function initChatSocket(socket: AuthedSocket) {
           senderRole: socket.user!.role as SenderRole,
           content: data.content,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         socket.emit("error", {
-          message: err.message,
+          message: err instanceof Error ? err.message : "Failed to send message",
         });
       }
     },

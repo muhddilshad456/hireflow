@@ -164,11 +164,18 @@ export class SubscriptionService implements ISubscriptionService {
 
     const subscription =
       await stripe.subscriptions.retrieve(stripeSubscriptionId);
-    const item = subscription.items.data[0] as any;
+    const item = subscription.items.data[0] as unknown as {
+      current_period_start?: number;
+      current_period_end?: number;
+    };
     const periodStart: number | undefined =
-      item?.current_period_start ?? (subscription as any).current_period_start;
+      item?.current_period_start ??
+      (subscription as unknown as { current_period_start?: number })
+        .current_period_start;
     const periodEnd: number | undefined =
-      item?.current_period_end ?? (subscription as any).current_period_end;
+      item?.current_period_end ??
+      (subscription as unknown as { current_period_end?: number })
+        .current_period_end;
 
     if (!periodStart || !periodEnd) {
       throw new Error("Stripe subscription has no billing period"); // 500 -> Stripe retries
@@ -272,7 +279,9 @@ export class SubscriptionService implements ISubscriptionService {
         companyId,
         error: error instanceof Error ? error.message : error,
       });
-      throw new Error(SUBSCRIPTION_MESSAGES.CHECKOUT_FAILED);
+      throw Object.assign(new Error(SUBSCRIPTION_MESSAGES.CHECKOUT_FAILED), {
+        cause: error,
+      });
     }
   }
   //* handle stipe event

@@ -76,20 +76,19 @@ export class JobApplicationStageRepository
     ];
 
     // ---- Interview lookups (interview-type stages only) ----
+
     if (isInterviewStage) {
       dataStages.push(
+        // Latest interview request
         {
           $lookup: {
             from: "interviewrequests",
-            let: { appId: "$applicationId" },
+            let: { applicationStageId: "$_id" },
             pipeline: [
               {
                 $match: {
                   $expr: {
-                    $and: [
-                      { $eq: ["$jobApplicationId", "$$appId"] },
-                      { $eq: ["$jobStageId", objectStageId] },
-                    ],
+                    $eq: ["$jobApplicationStageId", "$$applicationStageId"],
                   },
                 },
               },
@@ -105,6 +104,24 @@ export class JobApplicationStageRepository
             preserveNullAndEmptyArrays: true,
           },
         },
+
+        // Populate interviewer in the latest request
+        {
+          $lookup: {
+            from: "users",
+            localField: "latestInterviewRequest.interviewerId",
+            foreignField: "_id",
+            as: "latestRequestInterviewer",
+          },
+        },
+        {
+          $unwind: {
+            path: "$latestRequestInterviewer",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        // Existing latest interview lookup
         {
           $lookup: {
             from: "interviews",
@@ -132,8 +149,37 @@ export class JobApplicationStageRepository
             preserveNullAndEmptyArrays: true,
           },
         },
+
         {
           $addFields: {
+            // Complete latest interview request
+            interviewRequest: {
+              $cond: [
+                { $ifNull: ["$latestInterviewRequest._id", false] },
+                {
+                  $mergeObjects: [
+                    "$latestInterviewRequest",
+                    {
+                      interviewerId: {
+                        $cond: [
+                          {
+                            $ifNull: ["$latestRequestInterviewer._id", false],
+                          },
+                          {
+                            _id: "$latestRequestInterviewer._id",
+                            name: "$latestRequestInterviewer.name",
+                            email: "$latestRequestInterviewer.email",
+                          },
+                          null,
+                        ],
+                      },
+                    },
+                  ],
+                },
+                null,
+              ],
+            },
+
             resolvedInterviewerId: {
               $ifNull: [
                 "$latestInterview.interviewerId",
@@ -142,6 +188,8 @@ export class JobApplicationStageRepository
             },
           },
         },
+
+        // Existing interviewer lookup for interviewProgress
         {
           $lookup: {
             from: "users",
@@ -156,6 +204,8 @@ export class JobApplicationStageRepository
             preserveNullAndEmptyArrays: true,
           },
         },
+
+        // Existing interview progress
         {
           $addFields: {
             interviewProgress: {
@@ -273,6 +323,7 @@ export class JobApplicationStageRepository
 
     if (isInterviewStage) {
       applicationStageProjection.interviewProgress = "$interviewProgress";
+      applicationStageProjection.interviewRequest = "$interviewRequest";
     } else if (isOfferStage) {
       applicationStageProjection.offerLetterUrl = "$offerLetterUrl";
       applicationStageProjection.offeredSalary = "$offeredSalary";

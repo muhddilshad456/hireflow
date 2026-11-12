@@ -26,4 +26,12 @@ export interface IConversationRepository extends IBaseRepository<IConversation> 
   findByIdForCandidate(
     id: Types.ObjectId,
   ): Promise<CandidateConversationView | null>;
+  findActiveIdsByRecruiterAndJob(
+    recruiterId: Types.ObjectId,
+    jobId: Types.ObjectId,
+  ): Promise<Types.ObjectId[]>;
+  findActiveIdByApplicationAndUser(
+    applicationId: Types.ObjectId,
+    userId: Types.ObjectId,
+  ): Promise<Types.ObjectId | null>;
 }

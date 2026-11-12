@@ -7,7 +7,7 @@ export const errorMiddleware = (
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   if (err instanceof BaseError) {
     return ResponseHandler.error(

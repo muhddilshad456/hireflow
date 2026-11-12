@@ -34,6 +34,7 @@ import { IInterview } from "../../../../models/interview/interview";
 import { InterviewFeedbackDto } from "../../../../dtos/v1/interview/interviewFeedbackDto ";
 import { Types } from "mongoose";
 import { INotificationService } from "../../notification/interface/INotificationService";
+import { emitApplicationUpdated } from "../../../../socket/application/applicationrealtime";
 
 @injectable()
 export class InterviewService implements IInterviewService {
@@ -175,15 +176,20 @@ export class InterviewService implements IInterviewService {
     });
 
     if (existingRequest) {
-      this._logger.warn({
-        event: INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_ALREADY_EXISTS,
-        applicationId: jobApplicationStage.applicationId,
-        jobStageId: jobApplicationStage.jobStageId,
-      });
+      if (
+        existingRequest.status == "ACCEPTED" ||
+        existingRequest.status == "PENDING"
+      ) {
+        this._logger.warn({
+          event: INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_ALREADY_EXISTS,
+          applicationId: jobApplicationStage.applicationId,
+          jobStageId: jobApplicationStage.jobStageId,
+        });
 
-      throw new ConflictError(
-        INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_ALREADY_EXISTS,
-      );
+        throw new ConflictError(
+          INTERVIEW_REQUEST_MESSAGES.INTERVIEW_REQUEST_ALREADY_EXISTS,
+        );
+      }
     }
 
     const interviewRequestData =
@@ -349,6 +355,50 @@ export class InterviewService implements IInterviewService {
         status: "COMPLETED",
       },
     );
+
+    const jobApplicationStage =
+      await this._jobApplicationStageRepository.findOne({
+        jobStageId: interview.jobStageId,
+        applicationId: interview.jobApplicationId,
+      });
+    if (!jobApplicationStage) {
+      this._logger.warn({
+        event: APPLICATION_MESSAGES.STAGE_NOT_FOUND,
+      });
+      throw new NotFoundError(APPLICATION_MESSAGES.STAGE_NOT_FOUND);
+    }
+
+    const jobStage = await this._jobStageRepository.findById(
+      interview.jobStageId?.toString(),
+    );
+    if (!jobStage) {
+      this._logger.warn({
+        event: JOB_MESSAGES.STAGE_NOT_FOUND,
+      });
+      throw new NotFoundError(JOB_MESSAGES.STAGE_NOT_FOUND);
+    }
+
+    const job = await this._jobRepository.findById(jobStage.jobId?.toString());
+    if (!job) {
+      this._logger.warn({
+        event: JOB_MESSAGES.JOB_NOT_FOUND,
+      });
+      throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
+    }
+
+    emitApplicationUpdated([interview.recruiterId?.toString()], {
+      applicationId: interview.jobApplicationId.toString(),
+      applicationStageId: jobApplicationStage._id.toString(),
+      jobId: job._id.toString(),
+      reason: "INTERVIEW_RESULT_SUBMITTED",
+    });
+
+    await this._notificationService.notify(interview.recruiterId?.toString(), {
+      type: "INTERVIEW_RESULT_SUBMITTED",
+      title: "Interview result submitted",
+      message: `Interviewer submitted interview result for ${job.title}.`,
+      link: `/company/recruiter/job/${job._id}/stage/${jobStage._id}`,
+    });
 
     return updated as IInterview;
   }

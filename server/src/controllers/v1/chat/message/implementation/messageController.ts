@@ -7,6 +7,7 @@ import { ResponseHandler } from "../../../../../utils/responseHandler";
 import { AuthRequest } from "../../../../../middlewares/auth.middleware";
 import { MSG_MESSAGES } from "../../../../../constants/messages/chat/msg";
 import { IMessageService } from "../../../../../services/v1/chat/message/interface/IMessageService";
+import { SenderRole } from "../../../../../interfaces/chat/message";
 
 @injectable()
 export class MessageController implements IMessageController {
@@ -26,7 +27,7 @@ export class MessageController implements IMessageController {
       const message = await this._messageService.sendMessage({
         conversationId,
         senderId: new Types.ObjectId(req.user!.userId),
-        senderRole: req.user!.role,
+        senderRole: req.user!.role as SenderRole,
         content: req.body.content,
         attachment,
       });
@@ -54,7 +55,7 @@ export class MessageController implements IMessageController {
       next(error);
     }
   }
-
+  //* mark read
   async markRead(
     req: AuthRequest,
     res: Response,
@@ -67,6 +68,38 @@ export class MessageController implements IMessageController {
         new Types.ObjectId(req.user!.userId),
       );
       ResponseHandler.success(res, MSG_MESSAGES.MESSAGE_MARKED_READ, {});
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get job unread count
+  async getJobUnreadCount(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const count = await this._messageService.getUnreadConversationCountForJob(
+        new Types.ObjectId(req.user!.userId),
+        new Types.ObjectId(req.params.jobId as string),
+      );
+      ResponseHandler.success(res, "Unread count fetched", { count });
+    } catch (error) {
+      next(error);
+    }
+  }
+  //* get application unread count
+  async getApplicationUnreadCount(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const count = await this._messageService.getUnreadCountForApplication(
+        new Types.ObjectId(req.user!.userId),
+        new Types.ObjectId(req.params.applicationId as string),
+      );
+      ResponseHandler.success(res, "Unread count fetched", { count });
     } catch (error) {
       next(error);
     }

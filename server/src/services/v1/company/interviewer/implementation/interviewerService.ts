@@ -51,6 +51,10 @@ import {
 import { INTERVIEW_MESSAGES } from "../../../../../constants/messages/interview/interview";
 import { INotificationService } from "../../../notification/interface/INotificationService";
 import { IDashboardRepository } from "../../../../../repositories/dashboard/interface/IDashboardRepository";
+import { emitApplicationUpdated } from "../../../../../socket/application/applicationrealtime";
+import { IJobApplicationRepository } from "../../../../../repositories/job-application/interface/IJobApplicationRepository";
+import { IJobRepository } from "../../../../../repositories/job/interface/IJobRepository";
+import { JOB_MESSAGES } from "../../../../../constants/messages/jobs";
 
 @injectable()
 export class InterviewerService implements IInterviewerService {
@@ -65,10 +69,14 @@ export class InterviewerService implements IInterviewerService {
     private _interviewRepository: IInterviewRepository,
     @inject(TYPES.JobApplicationStageRepository)
     private _jobApplicationStageRepository: IJobApplicationStageRepository,
+    @inject(TYPES.JobApplicationRepository)
+    private _jobApplicationRepository: IJobApplicationRepository,
     @inject(TYPES.NotificationService)
     private _notificationService: INotificationService,
     @inject(TYPES.DashboardRepository)
     private _dashboardRepository: IDashboardRepository,
+    @inject(TYPES.JobRepository)
+    private _jobRepository: IJobRepository,
     @inject(TYPES.Logger) private _logger: Logger,
   ) {}
   //* toggle availability
@@ -448,6 +456,38 @@ export class InterviewerService implements IInterviewerService {
             title: "Interview request accepted.",
             message: "Your interview request accepted",
             link: `/job-management`,
+          },
+        );
+
+        const application = await this._jobApplicationRepository.findById(
+          interview.jobApplicationId?.toString(),
+        );
+
+        if (!application) {
+          this._logger.warn({
+            event: APPLICATION_MESSAGES.APPLICATION_NOT_FOUND,
+          });
+          throw new NotFoundError(APPLICATION_MESSAGES.APPLICATION_NOT_FOUND);
+        }
+
+        const job = await this._jobRepository.findById(
+          application.jobId?.toString(),
+        );
+
+        if (!job) {
+          this._logger.warn({
+            event: JOB_MESSAGES.JOB_NOT_FOUND,
+          });
+          throw new NotFoundError(JOB_MESSAGES.JOB_NOT_FOUND);
+        }
+
+        emitApplicationUpdated(
+          [interview.recruiterId?.toString(), application.userId?.toString()],
+          {
+            applicationId: application._id.toString(),
+            applicationStageId: request.jobApplicationStageId.toString(),
+            jobId: job._id.toString(),
+            reason: "INTERVIEW_REQUEST_DECISION_UPDATED",
           },
         );
 

@@ -21,7 +21,7 @@ export class EmailController implements IEmailController {
     try {
       const { newEmail } = req.body;
       console.log(req.user);
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._authEmailService.changeEmail(userId, newEmail);
       ResponseHandler.success(
         res,

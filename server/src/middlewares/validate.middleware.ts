@@ -1,10 +1,10 @@
-import { plainToInstance } from "class-transformer";
+import { ClassConstructor, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger.util";
 
 export const validateDto =
-  (dtoClass: any) =>
+  <T extends object>(dtoClass: ClassConstructor<T>) =>
   async (req: Request, res: Response, next: NextFunction) => {
     const dtoObject = plainToInstance(dtoClass, req.body || {});
     const errors = await validate(dtoObject, {

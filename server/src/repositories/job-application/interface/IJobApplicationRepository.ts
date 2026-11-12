@@ -6,6 +6,10 @@ export interface IJobApplicationRepository extends IBaseRepository<IJobApplicati
   getMyApplicationsAggregate<T = unknown>(
     pipeline: PipelineStage[],
   ): Promise<T[]>;
+  findByUserAndJobIds(
+    userId: string,
+    jobIds: string[],
+  ): Promise<Pick<IJobApplication, "_id" | "jobId" | "status" | "appliedAt">[]>;
 }
 
 export interface AggregateFacetResult<T = unknown> {

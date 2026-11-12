@@ -35,4 +35,9 @@ export interface IJobController {
     res: Response,
     next: NextFunction,
   ): Promise<void>;
+  updateJobStatus(
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void>;
 }

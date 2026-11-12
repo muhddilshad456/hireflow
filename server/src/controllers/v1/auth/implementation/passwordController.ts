@@ -43,7 +43,7 @@ export class PasswordController implements IPasswordController {
       const { currentPassword, newPassword } = req.body;
       console.log("cur : ", currentPassword);
       console.log("new pass : ", newPassword);
-      const userId = req.user?.userId;
+      const userId = req.user?.userId as string;
       const result = await this._passwordService.changePassword(
         userId,
         currentPassword,

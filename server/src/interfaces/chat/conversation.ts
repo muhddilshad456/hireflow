@@ -27,6 +27,7 @@ export interface RecruiterConversationView {
     avatar?: string;
   };
   createdBy: "company_recruiter" | "user";
+  unreadCount?: number;
   lastMessageAt?: Date;
   lastMessagePreview?: string;
   isActive: boolean;
@@ -58,4 +59,12 @@ export interface CandidateConversationView {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UnreadUpdatePayload {
+  conversationId: string;
+  applicationId: string;
+  jobId: string;
+  unreadCount: number;
+  jobUnreadConversations?: number;
 }

@@ -20,4 +20,12 @@ export class JobApplicationRepository
   ): Promise<T[]> {
     return JobApplicationModel.aggregate<T>(pipeline);
   }
+  async findByUserAndJobIds(userId: string, jobIds: string[]) {
+    return JobApplicationModel.find({ userId, jobId: { $in: jobIds } })
+      .select("jobId status appliedAt")
+      .sort({ appliedAt: -1 })
+      .lean<
+        Pick<IJobApplication, "_id" | "jobId" | "status" | "appliedAt">[]
+      >();
+  }
 }
