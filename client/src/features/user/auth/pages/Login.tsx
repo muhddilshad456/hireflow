@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ChangeEvent } from "react";
 import UserHeader from "../../../shared/components/UserHeader";
 import FormFieldInput from "../../../shared/components/FormFieldInput";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { loginApi } from "../../../shared/services/authService";
 import PrimaryButton from "../../../shared/components/FormButton";
 import { useAppDispatch } from "../../../../hooks/reduxHooks";
@@ -300,6 +300,8 @@ const Login = () => {
   const handleChange =
     (field: keyof FormState) => (e: ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const location = useLocation();
 
   const handleSubmit = async () => {
     const errs = validate(form);

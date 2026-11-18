@@ -8,6 +8,7 @@ import { roleGuard } from "../../middlewares/role.middleware";
 import { UserRole } from "../../constants/roles";
 import { validateDto } from "../../middlewares/validate.middleware";
 import { UpdateJobStatusDto } from "../../dtos/v1/job/updateJobStatus.dto";
+import { optionalVerifyAccessToken } from "../../middlewares/optional.auth.middleware";
 
 const router = Router();
 
@@ -15,13 +16,13 @@ const jobController = container.get<IJobController>(TYPES.JobController);
 //* get jobs
 router.get(
   "/jobs",
-  verifyAccessToken,
+  optionalVerifyAccessToken,
   jobController.getJobs.bind(jobController),
 );
 //* get a job
 router.get(
   "/job/:id",
-  verifyAccessToken,
+  optionalVerifyAccessToken,
   jobController.getJob.bind(jobController),
 );
 //* get a job with full datatils

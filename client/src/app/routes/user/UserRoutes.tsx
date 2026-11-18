@@ -26,21 +26,23 @@ const UserRoutes = () => {
   return (
     <>
       <Routes>
+        <Route element={<UserLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/job/:jobId" element={<Job />} />
+        </Route>
         <Route
           element={
             <ProtectedRoute allowedRoles={["user"]} redirectTo="/login" />
           }
         >
           <Route path="/" element={<UserLayout />}>
-            <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/verify-email" element={<EmailVerificationPage />} />
             <Route
               path="/verify-email-change"
               element={<EmailVerificationResultPage />}
             />
-            <Route path="/jobs" element={<Jobs />} />
-            <Route path="/job" element={<Job />} />
             <Route path="/applied-jobs" element={<AppliedJobs />} />
             <Route
               path="/application/:applicationId"

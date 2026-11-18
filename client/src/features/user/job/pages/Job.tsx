@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { MapPin, Briefcase, Wallet, Users, CalendarClock } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getJobApi } from "../../../shared/services/jobService";
 import { ApplyModal } from "../components/applyModal";
 import { checkApplicationStatus } from "../services/userJobService";
 import toast from "react-hot-toast";
 import { addToWishlist } from "../../wishlist/services/wishlistService";
+import { useAppSelector } from "../../../../hooks/reduxHooks";
 
 export interface JobDetailData {
   _id: string;
@@ -315,10 +316,20 @@ export default function Job() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isApplied, setIsApplied] = useState<boolean>(false);
 
-  const location = useLocation();
-  const jobId = location.state?.jobId;
+  const user = useAppSelector((state) => state.auth.user);
+  const navigate = useNavigate();
+  const { jobId } = useParams<{ jobId: string }>();
+
+  const redirectToLogin = () => {
+    navigate("/login", {
+      state: {
+        from: `/jobs/${jobId}`,
+      },
+    });
+  };
 
   const getJob = async () => {
+    if (!jobId) return;
     try {
       const result = await getJobApi(jobId);
       console.log("result of job details fetch : ", result);
@@ -329,6 +340,7 @@ export default function Job() {
   };
 
   const getApplicationStatus = async () => {
+    if (!jobId) return;
     try {
       const result = await checkApplicationStatus(jobId);
       setIsApplied(Boolean(result?.data?.isApplied));
@@ -338,6 +350,11 @@ export default function Job() {
   };
 
   const addWishlist = async () => {
+    if (!user) {
+      toast.error("Please login to add wishlist.");
+      redirectToLogin();
+      return;
+    }
     if (!job || !job._id) {
       console.log("Job or job id not found");
       return;
@@ -353,6 +370,16 @@ export default function Job() {
     }
   };
 
+  const handleApply = () => {
+    if (!user) {
+      toast.error("Please login to apply.");
+      redirectToLogin();
+      return;
+    }
+
+    setIsApplyModalOpen(true);
+  };
+
   useEffect(() => {
     getJob();
     getApplicationStatus();
@@ -365,16 +392,18 @@ export default function Job() {
           job={job}
           isApplied={isApplied}
           onSave={addWishlist}
-          onApply={() => setIsApplyModalOpen(true)}
+          onApply={handleApply}
         />
       </main>
-      <ApplyModal
-        isOpen={isApplyModalOpen}
-        jobId={jobId}
-        onRefresh={() => getJob()}
-        onClose={() => setIsApplyModalOpen(false)}
-        onApplied={getApplicationStatus}
-      />
+      {jobId && (
+        <ApplyModal
+          isOpen={isApplyModalOpen}
+          jobId={jobId}
+          onRefresh={getJob}
+          onClose={() => setIsApplyModalOpen(false)}
+          onApplied={getApplicationStatus}
+        />
+      )}
     </div>
   );
 }

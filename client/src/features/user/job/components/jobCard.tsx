@@ -221,7 +221,7 @@ export function JobCard({ job }: JobCardProps) {
 
       {/* View Details button */}
       <button
-        onClick={() => navigate("/job", { state: { jobId: job._id } })}
+        onClick={() => navigate(`/job/${job?._id}`)}
         style={{
           background: "#e84b30",
           color: "#fff",

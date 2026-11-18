@@ -73,7 +73,7 @@ interface ProfileBannerProps {
 }
 
 const ProfileBanner: React.FC<ProfileBannerProps> = ({
-  message = "Complete your profile to get better job recommendations",
+  message = "Complete your profile to apply for the job.",
   ctaLabel = "Complete Profile",
   onCta,
 }) => (

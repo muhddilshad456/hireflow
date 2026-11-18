@@ -18,21 +18,21 @@ function Logo({ size = "md" }: LogoProps) {
       className={`font-black leading-none select-none ${cls}`}
       style={style}
     >
-      <span style={{ color: "#f26a50" }}>Hire</span>
-      <span className="text-gray-900">Flow</span>
+      <Link to="/" className="flex-shrink-0">
+        <span className="text-xl font-bold tracking-tight">
+          <span style={{ color: "#f26a50" }}>Hire</span>
+          <span className="text-gray-900">Flow</span>
+        </span>
+      </Link>
     </span>
   );
 }
 
 function UserHeader() {
-  const NAV_LINKS = [
-    { name: "Features", path: "/features" },
-    { name: "Pricing", path: "/pricing" },
-    { name: "About", path: "/about" },
-  ];
+  const NAV_LINKS = [{ name: "Home", path: "/" }];
   return (
     <header
-      className="sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4"
+      className="sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 py-2 sm:py-3"
       style={{
         background: "rgba(255,255,255,0.6)",
         backdropFilter: "blur(14px)",
@@ -53,13 +53,6 @@ function UserHeader() {
             {item.name}
           </Link>
         ))}
-        <Link
-          to="/login"
-          className="text-sm font-semibold"
-          style={{ color: "#f26a50" }}
-        >
-          Log in
-        </Link>
       </nav>
     </header>
   );

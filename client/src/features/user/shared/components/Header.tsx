@@ -3,7 +3,7 @@ import { Heart, Search, Menu, X } from "lucide-react";
 import { logoutApi } from "../../../shared/services/authService";
 import { logout } from "../../../../redux/slice/authSlice";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/reduxHooks";
 import { ProfileDropdown } from "../../../shared/components/ProfileDropdown";
 import { ConfirmModal } from "../../../shared/components/ConfirmationModal";
@@ -19,7 +19,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", active: true },
   { label: "Jobs", href: "/jobs" },
-  { label: "Applied Jobs", href: "/applied-jobs" },
 ];
 
 export const Header: React.FC = () => {
@@ -42,7 +41,7 @@ export const Header: React.FC = () => {
       await logoutApi({ id: user?.id });
       dispatch(logout());
       toast.success("Logged out");
-      navigate("/admin/login");
+      navigate("/login");
     } catch (error) {
       console.log(error);
     }
@@ -54,13 +53,12 @@ export const Header: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-4">
             {/* Logo */}
-            <a href="#" className="flex-shrink-0">
+            <Link to="/" className="flex-shrink-0">
               <span className="text-xl font-bold tracking-tight">
                 <span className="text-[#F4522A]">Hire</span>
                 <span className="text-gray-900">Flow</span>
               </span>
-            </a>
-
+            </Link>
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">
               {NAV_ITEMS.map((item) => (
@@ -79,34 +77,82 @@ export const Header: React.FC = () => {
                   {item.label}
                 </NavLink>
               ))}
+              {user && (
+                <NavLink
+                  to="/applied-jobs"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? "text-[#F4522A] bg-orange-50"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`
+                  }
+                >
+                  Applied Jobs
+                </NavLink>
+              )}
             </nav>
 
             {/* Icons */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => navigate("/wishlist")}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
-              >
-                <Heart size={18} />
-              </button>
-              <NotificationBell
-                viewAllRoute="/notifications"
-                buttonClassName="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
-              />
-              <ProfileDropdown
-                avatarUrl={user?.profilePicture ?? ""}
-                onProfile={() => navigate("/profile")}
-                onLogout={logoutUser}
-                name={user?.name ?? ""}
-              />
+              {user ? (
+                <>
+                  {/* Wishlist */}
+                  <button
+                    onClick={() => navigate("/wishlist")}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+                  >
+                    <Heart size={18} />
+                  </button>
 
-              {/* Mobile Menu Toggle */}
-              <button
-                className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
-                onClick={() => setMenuOpen((v) => !v)}
-              >
-                {menuOpen ? <X size={18} /> : <Menu size={18} />}
-              </button>
+                  {/* Notifications */}
+                  <NotificationBell
+                    viewAllRoute="/notifications"
+                    buttonClassName="relative p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+                  />
+
+                  {/* Profile */}
+                  <ProfileDropdown
+                    avatarUrl={user.profilePicture ?? ""}
+                    onProfile={() => navigate("/profile")}
+                    onLogout={logoutUser}
+                    name={user.name ?? ""}
+                  />
+
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+                    onClick={() => setMenuOpen((v) => !v)}
+                  >
+                    {menuOpen ? <X size={18} /> : <Menu size={18} />}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Guest Actions */}
+                  <button
+                    onClick={() => navigate("/login")}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  >
+                    Login
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="px-4 py-2 text-sm font-medium text-[#F4522A] hover:text-gray-900"
+                  >
+                    Sign Up
+                  </button>
+
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    className="md:hidden p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+                    onClick={() => setMenuOpen((v) => !v)}
+                  >
+                    {menuOpen ? <X size={18} /> : <Menu size={18} />}
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -145,6 +191,42 @@ export const Header: React.FC = () => {
                 {item.label}
               </NavLink>
             ))}
+
+            {user && (
+              <NavLink
+                to="/applied-jobs"
+                className={({ isActive }) =>
+                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? "text-[#F4522A] bg-orange-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`
+                }
+                onClick={() => setMenuOpen(false)}
+              >
+                Applied Jobs
+              </NavLink>
+            )}
+
+            {!user && (
+              <>
+                <NavLink
+                  to="/login"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Login
+                </NavLink>
+
+                <NavLink
+                  to="/signup"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-[#F4522A] hover:bg-orange-50"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign Up
+                </NavLink>
+              </>
+            )}
           </div>
         )}
       </header>

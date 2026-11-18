@@ -74,8 +74,6 @@ export class JobService implements IJobService {
   ): Promise<PaginatedJobsResult> {
     const query: JobFilters = { ...filter };
 
-    console.log("filters : ", filter);
-
     if (user?.role == "company_recruiter") {
       query.createdBy = user?.userId;
       query.isActive = "Active";

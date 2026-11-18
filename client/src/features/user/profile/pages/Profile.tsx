@@ -1142,8 +1142,8 @@ export function Profile() {
                 Complete your profile
               </p>
               <p className="text-amber-700 text-xs mt-0.5">
-                A complete profile increases your chances of getting hired. Add
-                your summary, skills, experience, and resume.
+                A complete profile can only sent applicaiton. Add your summary,
+                skills, experience, and resume.
               </p>
             </div>
           </div>

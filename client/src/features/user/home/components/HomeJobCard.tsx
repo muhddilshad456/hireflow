@@ -135,7 +135,7 @@ export function HomeJobCard({ job }: HomeJobCardProps) {
         </div>
 
         <button
-          onClick={() => navigate("/job", { state: { jobId: job._id } })}
+          onClick={() => navigate(`/job/${job?._id}`)}
           className="inline-flex flex-shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#F4522A] px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-200 transition-colors hover:bg-[#e04420] active:bg-[#c93b1a] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4522A] focus-visible:ring-offset-2"
         >
           View Details

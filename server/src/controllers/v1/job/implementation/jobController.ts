@@ -43,7 +43,7 @@ export class JobController implements IJobController {
         limit: req.query.limit ? Number(req.query.limit) : 10,
         createdBy: req.query.createdBy as string | undefined,
       };
-      const user = req.user as AuthUser;
+      const user = req?.user as AuthUser;
 
       const result = await this._jobService.getJobs(filters, user);
       ResponseHandler.success(res, JOB_MESSAGES.JOBS_FETCHED, result);
