@@ -6,6 +6,7 @@ import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
 import type { StageDetail } from "../StageRenderer";
 import { updateJobApplicationStage } from "../../services/jobServices";
 import { uploadOfferLetter } from "../../services/offerServices";
+import { ApplicationStatusBadge } from "../../../shared/components/ApplicationStatusBadge";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -156,7 +157,12 @@ export function OfferStage({ stage }: StageComponentProps) {
               key={id}
               className="border-b border-gray-100 py-6 last:border-b-0"
             >
-              {/* name + offer status */}
+              {/* application status - top right */}
+              <div className="mb-3 flex justify-end">
+                <ApplicationStatusBadge status={c.application.status} />
+              </div>
+
+              {/* candidate name + offer status */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">
@@ -171,6 +177,7 @@ export function OfferStage({ stage }: StageComponentProps) {
                       : "—"}
                   </p>
                 </div>
+
                 <OfferStatusBadge
                   letterSent={!!letterUrl}
                   response={response}

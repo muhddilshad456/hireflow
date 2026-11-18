@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { CheckCircle2, FileText, Pencil, Plus, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
-// ⚠️ Adjust these import paths to your project
 import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
 import type { StageDetail } from "../StageRenderer";
 import {
   setDocumentVerificationDescription,
   updateJobApplicationStage,
 } from "../../services/jobServices";
+import { ApplicationStatusBadge } from "../../../shared/components/ApplicationStatusBadge";
+import type { StageStatus } from "../../../../../../types/applicaionTypes";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -35,13 +36,24 @@ const fileNameFromUrl = (url: string, index: number) => {
   }
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const config =
-    status === "PASSED"
-      ? { label: "Passed", cls: "bg-emerald-50 text-emerald-600" }
-      : status === "FAILED"
-        ? { label: "Failed", cls: "bg-red-50 text-red-500" }
-        : { label: "In progress", cls: "bg-amber-50 text-amber-600" };
+const statusConfig: Record<StageStatus, { label: string; cls: string }> = {
+  PASSED: {
+    label: "Document Verified",
+    cls: "bg-emerald-50 text-emerald-600",
+  },
+  FAILED: {
+    label: "Verification Failed",
+    cls: "bg-red-50 text-red-500",
+  },
+  IN_PROGRESS: {
+    label: "Pending Verification",
+    cls: "bg-amber-50 text-amber-600",
+  },
+};
+
+const StatusBadge = ({ status }: { status: StageStatus }) => {
+  const config = statusConfig[status];
+
   return (
     <span
       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${config.cls}`}
@@ -52,7 +64,6 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export function DocumentVerificationStage({ stage }: StageComponentProps) {
-  console.log("stage : ", stage);
   const { refetchJob } = useOutletContext<JobLayoutOutletContext>();
 
   /* ---------- description (inline view / add / edit) ---------- */
@@ -213,7 +224,7 @@ export function DocumentVerificationStage({ stage }: StageComponentProps) {
       ) : (
         <div className="mt-4 space-y-3">
           {stage.candidates.map((c) => {
-            const id = c._id; // same as applicationStage._id
+            const id = c._id;
             const docs: string[] = c.applicationStage?.documents ?? [];
             const isOpen = c.status === "IN_PROGRESS";
             const busy = busyId === id;
@@ -225,11 +236,22 @@ export function DocumentVerificationStage({ stage }: StageComponentProps) {
                 className="rounded-xl border border-gray-100 px-4 py-3"
               >
                 {/* name + status */}
+                {/* application status */}
+                <div className="mb-3 flex justify-end">
+                  {c.application && (
+                    <ApplicationStatusBadge status={c.application.status} />
+                  )}
+                </div>
+
+                {/* candidate name + stage status */}
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-sm font-medium text-gray-900">
                     {c.application?.userId?.name ?? "—"}
                   </span>
-                  <StatusBadge status={c.status} />
+
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={c.status} />
+                  </div>
                 </div>
 
                 {/* submitted documents */}

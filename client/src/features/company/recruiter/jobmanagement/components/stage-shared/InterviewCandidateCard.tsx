@@ -5,8 +5,8 @@ import {
   ScheduleForm,
 } from "./InterviewPrimitives";
 import type { ApiStageCandidate } from "../../../../../../types/applicaionTypes";
-import type { InterviewerInfo } from "../../../../../../types/interview/interview";
 import { InterviewerPickerModal } from "../interviewerPickerModal";
+import type { InterviewerInfo } from "../../../../../../types/company/interviewer/interviewerTypes";
 
 export const InterviewCandidateCard: React.FC<{
   candidate: ApiStageCandidate;
@@ -19,6 +19,7 @@ export const InterviewCandidateCard: React.FC<{
   ) => Promise<void>;
   fetchInterviewers: () => Promise<InterviewerInfo[]>;
   onChat?: () => void;
+  hideSchedule?: boolean;
 }> = ({
   candidate,
   interviewLabel,
@@ -26,9 +27,10 @@ export const InterviewCandidateCard: React.FC<{
   onRequestInterview,
   fetchInterviewers,
   onChat,
+  hideSchedule = false,
 }) => {
   const name = candidate.application?.userId?.name ?? "Unknown candidate";
-  const progress = candidate.interviewProgress;
+  const progress = candidate?.applicationStage?.interviewProgress;
   const status = progress?.status ?? "NOT_REQUESTED";
 
   const [date, setDate] = useState("");
@@ -74,50 +76,58 @@ export const InterviewCandidateCard: React.FC<{
 
   let body: React.ReactNode;
 
-  switch (status) {
-    case "REJECTED":
-      body = (
-        <>
-          <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
-            Request rejected by {progress?.interviewer?.name ?? "interviewer"}
-            {progress?.rejectionReason ? `: ${progress.rejectionReason}` : "."}
-          </div>
-          <p className="mt-3 text-xs text-gray-500">
-            Reschedule to send a new request.
+  if (hideSchedule) {
+    body = null;
+  } else {
+    switch (status) {
+      case "REJECTED":
+        body = (
+          <>
+            <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+              Request rejected by {progress?.interviewer?.name ?? "interviewer"}
+              {progress?.rejectionReason
+                ? `: ${progress.rejectionReason}`
+                : "."}
+            </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Reschedule to send a new request.
+            </p>
+            {scheduleSection}
+          </>
+        );
+        break;
+
+      case "REQUESTED":
+        body = (
+          <p className="mt-3 text-xs text-amber-600">
+            Requested{" "}
+            {progress?.interviewer?.name
+              ? `to ${progress.interviewer.name}`
+              : ""}{" "}
+            for{" "}
+            {progress?.scheduledAt
+              ? new Date(progress.scheduledAt).toLocaleString()
+              : "—"}{" "}
+            — waiting for interviewer to accept
           </p>
-          {scheduleSection}
-        </>
-      );
-      break;
+        );
+        break;
 
-    case "REQUESTED":
-      body = (
-        <p className="mt-3 text-xs text-amber-600">
-          Requested{" "}
-          {progress?.interviewer?.name ? `to ${progress.interviewer.name}` : ""}{" "}
-          for{" "}
-          {progress?.scheduledAt
-            ? new Date(progress.scheduledAt).toLocaleString()
-            : "—"}{" "}
-          — waiting for interviewer to accept
-        </p>
-      );
-      break;
+      case "WAITING_FOR_RESULT":
+        body = (
+          <p className="mt-3 text-xs text-blue-600">
+            Scheduled with {progress?.interviewer?.name ?? "interviewer"} on{" "}
+            {progress?.scheduledAt
+              ? new Date(progress.scheduledAt).toLocaleString()
+              : "—"}{" "}
+            — waiting for interview result
+          </p>
+        );
+        break;
 
-    case "WAITING_FOR_RESULT":
-      body = (
-        <p className="mt-3 text-xs text-blue-600">
-          Scheduled with {progress?.interviewer?.name ?? "interviewer"} on{" "}
-          {progress?.scheduledAt
-            ? new Date(progress.scheduledAt).toLocaleString()
-            : "—"}{" "}
-          — waiting for interview result
-        </p>
-      );
-      break;
-
-    default: // NOT_REQUESTED
-      body = <div className="mt-3">{scheduleSection}</div>;
+      default:
+        body = <div className="mt-3">{scheduleSection}</div>;
+    }
   }
 
   return (

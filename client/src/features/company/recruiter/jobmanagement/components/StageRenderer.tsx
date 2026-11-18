@@ -72,7 +72,8 @@ const SEARCH_DEBOUNCE_MS = 350;
 /* --------------------------- StageRenderer --------------------------- */
 export function StageRenderer() {
   const { stageId } = useParams<{ stageId: string }>();
-  const { stages, jobId } = useOutletContext<JobLayoutOutletContext>();
+  const { stages, jobId, stageRefreshKey } =
+    useOutletContext<JobLayoutOutletContext>();
 
   const stageMeta = stages.find((s) => s._id === stageId);
 
@@ -157,7 +158,7 @@ export function StageRenderer() {
     };
 
     fetchCandidates();
-  }, [jobId, stageId, debouncedSearch, statusFilter, page]);
+  }, [jobId, stageId, debouncedSearch, statusFilter, page, stageRefreshKey]);
 
   if (!stageMeta) {
     return (

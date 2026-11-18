@@ -78,3 +78,9 @@ export const setDocumentVerificationDescription = (
     )
     .then((res) => res.data);
 };
+
+export const updateJobStatus = (jobId: string, status: string) => {
+  return api
+    .patch(`/${JOB_BASE_ROUTE}/${jobId}/${JOB_ACTIONS.JOB_STATUS}`, { status })
+    .then((res) => res.data);
+};

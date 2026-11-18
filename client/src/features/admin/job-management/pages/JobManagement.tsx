@@ -26,7 +26,7 @@ export function JobManagement() {
 
   const navigate = useNavigate();
 
-  const limit = 2;
+  const limit = 6;
 
   const fetchJobs = async () => {
     try {

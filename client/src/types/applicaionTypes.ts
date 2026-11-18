@@ -5,9 +5,7 @@ export type ApplicationStatus =
   | "IN_PROGRESS"
   | "REJECTED"
   | "SELECTED"
-  | "OFFER_SENT"
-  | "ACCEPTED"
-  | "DECLINED";
+  | "WITHDRAWN";
 
 export interface OfferDetails {
   salary?: number;
@@ -58,6 +56,23 @@ export interface ApplicationStageDetail {
   // ---- Interview stages only ----
   interviewProgress?: InterviewProgress;
 
+  interviewRequest: {
+    _id: string;
+    jobApplicationStageId: string;
+    requestedBy: string;
+    interviewerId: {
+      _id: string;
+      name: string;
+      email: string;
+    } | null;
+    scheduledAt: string;
+    duration?: number;
+    status: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
+    rejectionReason?: string;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
+
   // ---- Offer stage only ----
   offerLetterUrl?: string;
   offeredSalary?: number;
@@ -84,10 +99,16 @@ export interface ApiStageCandidate {
     userId: UserSummary | null;
     resumeUrl: string;
     coverLetter: string;
-    status: ApplicationStatus | "WITHDRAWN";
+    status: ApplicationStatus;
     appliedAt: string;
     currentStageId?: string;
   } | null;
 }
 
 export type Decision = "PASSED" | "FAILED";
+
+export interface MyApplicationSummary {
+  _id: string;
+  status: ApplicationStatus;
+  appliedAt: string;
+}

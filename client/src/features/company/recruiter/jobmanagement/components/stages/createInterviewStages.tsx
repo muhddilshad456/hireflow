@@ -8,6 +8,7 @@ import type { StageDetail } from "../StageRenderer.tsx";
 import { requestForInterview } from "../../services/interviewServices.tsx";
 import toast from "react-hot-toast";
 import { updateJobApplicationStage } from "../../services/jobServices.tsx";
+import { ApplicationStatusBadge } from "../../../shared/components/ApplicationStatusBadge.tsx";
 
 interface InterviewStageConfig {
   title: string;
@@ -77,41 +78,130 @@ export function createInterviewStage(config: InterviewStageConfig) {
 
         <div className="mt-2 space-y-4">
           {stage.candidates.map((c) => {
+            if (!c.application) return null;
             const isDecided = c.status === "PASSED" || c.status === "FAILED";
             const progressStatus =
               c?.applicationStage?.interviewProgress?.status ?? "NOT_REQUESTED";
-
-            if (isDecided) {
-              return (
-                <FinalResultCard key={c.applicationStage._id} candidate={c} />
-              );
-            }
-
-            if (progressStatus === "COMPLETED") {
-              return (
-                <InterviewResultCard
-                  key={c.applicationStage._id}
-                  candidate={c}
-                  title={config.resultTitle ?? `${config.title} Results`}
-                  feedbackLabel={config.feedbackLabel}
-                  onSubmitResult={(result, feedback) =>
-                    handleSubmitResult(c, result, feedback)
-                  }
-                />
-              );
-            }
+            const interviewRequest = c.applicationStage?.interviewRequest;
 
             return (
-              <InterviewCandidateCard
+              <div
                 key={c.applicationStage._id}
-                candidate={c}
-                interviewLabel={config.interviewLabel}
-                scheduleButtonLabel={config.scheduleButtonLabel}
-                onRequestInterview={(date, time, interviewerId) =>
-                  handleRequestInterview(c, date, time, interviewerId)
-                }
-                fetchInterviewers={() => fetchInterviewersStub(jobId)}
-              />
+                className="rounded-xl border border-gray-100 p-4"
+              >
+                {/* Application Status - Top Right */}
+                <div className="mb-4 flex justify-end">
+                  <ApplicationStatusBadge status={c.application.status} />
+                </div>
+
+                {isDecided ? (
+                  <>
+                    <InterviewCandidateCard
+                      candidate={c}
+                      interviewLabel={config.interviewLabel}
+                      scheduleButtonLabel={config.scheduleButtonLabel}
+                      onRequestInterview={(date, time, interviewerId) =>
+                        handleRequestInterview(c, date, time, interviewerId)
+                      }
+                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      hideSchedule
+                    />
+                    <FinalResultCard candidate={c} />
+                  </>
+                ) : progressStatus === "COMPLETED" ? (
+                  <>
+                    <InterviewCandidateCard
+                      candidate={c}
+                      interviewLabel={config.interviewLabel}
+                      scheduleButtonLabel={config.scheduleButtonLabel}
+                      onRequestInterview={(date, time, interviewerId) =>
+                        handleRequestInterview(c, date, time, interviewerId)
+                      }
+                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      hideSchedule
+                    />
+                    <InterviewResultCard
+                      candidate={c}
+                      title={config.resultTitle ?? `${config.title} Results`}
+                      feedbackLabel={config.feedbackLabel}
+                      onSubmitResult={(result, feedback) =>
+                        handleSubmitResult(c, result, feedback)
+                      }
+                    />
+                  </>
+                ) : interviewRequest?.status === "ACCEPTED" ? (
+                  <>
+                    <InterviewCandidateCard
+                      candidate={c}
+                      interviewLabel={config.interviewLabel}
+                      scheduleButtonLabel={config.scheduleButtonLabel}
+                      onRequestInterview={(date, time, interviewerId) =>
+                        handleRequestInterview(c, date, time, interviewerId)
+                      }
+                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      hideSchedule
+                    />
+                    <div className="rounded-lg border border-green-200 bg-green-50/50 p-3 text-sm">
+                      <p className="font-semibold text-green-700">
+                        Interview accepted
+                      </p>
+                      <p className="mt-1 text-gray-600">
+                        Accepted by{" "}
+                        {interviewRequest.interviewerId?.name ?? "Interviewer"}
+                      </p>
+                      <p className="mt-1 text-gray-600">
+                        Scheduled for{" "}
+                        {new Date(
+                          interviewRequest.scheduledAt,
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  </>
+                ) : interviewRequest?.status === "REJECTED" ? (
+                  <>
+                    <InterviewCandidateCard
+                      candidate={c}
+                      interviewLabel={config.interviewLabel}
+                      scheduleButtonLabel={config.scheduleButtonLabel}
+                      onRequestInterview={(date, time, interviewerId) =>
+                        handleRequestInterview(c, date, time, interviewerId)
+                      }
+                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      hideSchedule
+                    />
+                    <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-full bg-red-100 px-2.5 py-1 font-medium text-red-700">
+                        Latest request rejected
+                      </span>
+                      <span className="text-gray-500">
+                        By{" "}
+                        {interviewRequest.interviewerId?.name ?? "Interviewer"}
+                        {interviewRequest.rejectionReason &&
+                          ` · ${interviewRequest.rejectionReason}`}
+                      </span>
+                    </div>
+                    <InterviewCandidateCard
+                      candidate={c}
+                      interviewLabel={config.interviewLabel}
+                      scheduleButtonLabel={config.scheduleButtonLabel}
+                      onRequestInterview={(date, time, interviewerId) =>
+                        handleRequestInterview(c, date, time, interviewerId)
+                      }
+                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                    />
+                  </>
+                ) : (
+                  <InterviewCandidateCard
+                    candidate={c}
+                    interviewLabel={config.interviewLabel}
+                    scheduleButtonLabel={config.scheduleButtonLabel}
+                    onRequestInterview={(date, time, interviewerId) =>
+                      handleRequestInterview(c, date, time, interviewerId)
+                    }
+                    fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                  />
+                )}
+              </div>
             );
           })}
         </div>

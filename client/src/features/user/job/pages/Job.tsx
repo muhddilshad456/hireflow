@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { MapPin, Briefcase, Wallet, Users, CalendarClock } from "lucide-react";
-import { Header } from "../../shared/components/Header";
 import { useLocation } from "react-router-dom";
 import { getJobApi } from "../../../shared/services/jobService";
 import { ApplyModal } from "../components/applyModal";
 import { checkApplicationStatus } from "../services/userJobService";
+import toast from "react-hot-toast";
+import { addToWishlist } from "../../wishlist/services/wishlistService";
 
 export interface JobDetailData {
   _id: string;
@@ -36,6 +37,7 @@ export interface JobDetailData {
 
   createdAt: string;
   updatedAt: string;
+  isFavorite?: boolean;
 }
 
 interface JobDetailCardProps {
@@ -131,9 +133,6 @@ export const JobDetailCard: React.FC<JobDetailCardProps> = ({
           </div>
 
           <div className="flex flex-col gap-2.5 shrink-0 w-36">
-            <Button variant="save" size="md" fullWidth onClick={onSave}>
-              Save
-            </Button>
             <div className="group/apply relative">
               <Button
                 variant="apply"
@@ -148,6 +147,23 @@ export const JobDetailCard: React.FC<JobDetailCardProps> = ({
                 <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap rounded-md bg-slate-800 px-2.5 py-1.5 text-[12px] text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/apply:opacity-100 z-10">
                   You already applied
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-slate-800" />
+                </div>
+              )}
+            </div>
+            <div className="relative group/wishlist">
+              <Button
+                variant="save"
+                size="md"
+                fullWidth
+                disabled={job?.isFavorite}
+                onClick={job?.isFavorite ? undefined : onSave}
+              >
+                {job?.isFavorite ? "Added to Wishlist" : "Add to Wishlist"}
+              </Button>
+
+              {job?.isFavorite && (
+                <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 whitespace-nowrap rounded-md bg-slate-800 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/wishlist:opacity-100 z-20">
+                  Already in your wishlist
                 </div>
               )}
             </div>
@@ -250,7 +266,9 @@ export const Button: React.FC<ButtonProps> = ({
       "bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-400",
     secondary:
       "bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-300",
-    save: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400",
+    save: disabled
+      ? "bg-slate-200 text-slate-500 cursor-not-allowed focus:ring-slate-200"
+      : "bg-green-600 text-white hover:bg-green-700 focus:ring-green-400",
     apply: disabled
       ? "bg-slate-200 text-slate-500 hover:bg-slate-200 focus:ring-slate-200"
       : "bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-400",
@@ -303,6 +321,7 @@ export default function Job() {
   const getJob = async () => {
     try {
       const result = await getJobApi(jobId);
+      console.log("result of job details fetch : ", result);
       setJob(result.data);
     } catch (error: any) {
       console.log(error?.response?.data);
@@ -318,19 +337,34 @@ export default function Job() {
     }
   };
 
+  const addWishlist = async () => {
+    if (!job || !job._id) {
+      console.log("Job or job id not found");
+      return;
+    }
+    try {
+      const result = await addToWishlist(job?._id);
+      console.log("result of add ot wishlist : ", result);
+      toast.success("Job added to wishlist");
+      getJob();
+    } catch (error: any) {
+      toast.error(error?.response?.data);
+      console.log(error?.response?.data);
+    }
+  };
+
   useEffect(() => {
     getJob();
     getApplicationStatus();
-  }, [job]);
+  }, [jobId]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      <Header />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <JobDetailCard
           job={job}
           isApplied={isApplied}
-          onSave={() => alert("Job saved!")}
+          onSave={addWishlist}
           onApply={() => setIsApplyModalOpen(true)}
         />
       </main>
@@ -339,6 +373,7 @@ export default function Job() {
         jobId={jobId}
         onRefresh={() => getJob()}
         onClose={() => setIsApplyModalOpen(false)}
+        onApplied={getApplicationStatus}
       />
     </div>
   );

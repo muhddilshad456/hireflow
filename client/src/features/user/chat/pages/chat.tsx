@@ -321,6 +321,11 @@ export function ChatPage() {
     const handleNewMessage = (message: ChatMessage) => {
       if (message.conversationId !== conversation._id) return;
       setMessages((prev) => [...prev, message]);
+      if (message.senderId !== currentUserId) {
+        markConversationAsRead(conversation._id).catch((e: any) =>
+          console.error(e?.response ?? e),
+        );
+      }
     };
 
     const handleSocketError = (err: { message: string }) => {

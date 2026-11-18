@@ -56,7 +56,7 @@ export function DocumentVerificationStage({
     } finally {
       setLoading(false);
     }
-  }, [applicationId, jobStageId]);
+  }, [applicationId, jobStageId, application]);
 
   useEffect(() => {
     fetchDetails();

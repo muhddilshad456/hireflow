@@ -268,7 +268,7 @@ function Pagination({ current, total, onChange }: PaginationProps) {
 const INITIAL_FILTERS: JobFilters = {
   search: "",
   page: 1,
-  limit: 2,
+  limit: 4,
 };
 
 export function AppliedJobs() {
@@ -326,8 +326,6 @@ export function AppliedJobs() {
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
       `}</style>
-
-      <Header />
 
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "28px 20px" }}>
         {/* Search bar always on top */}

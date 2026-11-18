@@ -56,7 +56,7 @@ export function OfferStage({ stage, application }: StageComponentProps) {
     } finally {
       setLoading(false);
     }
-  }, [applicationId, jobStageId]);
+  }, [applicationId, jobStageId, application]);
 
   useEffect(() => {
     fetchDetails();

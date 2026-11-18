@@ -1,10 +1,16 @@
 import { useOutletContext } from "react-router-dom";
-import { FileText, User as UserIcon } from "lucide-react";
+import {
+  CheckCircle2,
+  FileText,
+  User as UserIcon,
+  XCircle,
+} from "lucide-react";
 import type { JobLayoutOutletContext } from "../../pages/JobDetailsLayout";
 import { CandidateChatButton } from "./CandidateChatButton";
 import type { StageDetail } from "../StageRenderer";
 import { updateJobApplicationStage } from "../../services/jobServices";
 import toast from "react-hot-toast";
+import { ApplicationStatusBadge } from "../../../shared/components/ApplicationStatusBadge";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -77,51 +83,77 @@ export function ResumeReviewStage({ stage }: StageComponentProps) {
           return (
             <div
               key={c?.applicationStage?._id}
-              className="flex flex-col gap-4 border-b border-gray-100 py-6 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+              className="border-b border-gray-100 py-6 last:border-b-0"
             >
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-gray-900">{name}</h3>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  Applied{" "}
-                  {c.application?.appliedAt
-                    ? new Date(c.application.appliedAt).toLocaleDateString(
-                        "en-IN",
-                      )
-                    : "—"}
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => handleViewCV(c?.applicationStage?._id)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                  >
-                    <FileText className="h-3.5 w-3.5" /> View CV
-                  </button>
-                  <CandidateChatButton applicationId={c?.application?._id} />
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={() =>
-                      handleAccept(c?.applicationStage?._id ?? null)
-                    }
-                    className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
-                  >
-                    Accept CV
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleReject(c?.applicationStage?._id ?? null)
-                    }
-                    className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
-                  >
-                    Reject CV
-                  </button>
-                </div>
+              <div className="mb-4 flex justify-end">
+                <ApplicationStatusBadge status={c.application.status} />
               </div>
 
-              <div className="flex h-20 w-full items-center justify-center rounded-xl bg-orange-100 sm:h-20 sm:w-32">
-                <UserIcon className="h-8 w-8 text-gray-400" strokeWidth={1.5} />
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {name}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Applied{" "}
+                    {c.application?.appliedAt
+                      ? new Date(c.application.appliedAt).toLocaleDateString(
+                          "en-IN",
+                        )
+                      : "—"}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleViewCV(c?.applicationStage?._id)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                    >
+                      <FileText className="h-3.5 w-3.5" /> View CV
+                    </button>
+                    <CandidateChatButton applicationId={c?.application?._id} />
+                  </div>
+
+                  {c?.applicationStage?.status == "IN_PROGRESS" && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() =>
+                          handleAccept(c?.applicationStage?._id ?? null)
+                        }
+                        className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600"
+                      >
+                        Accept CV
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleReject(c?.applicationStage?._id ?? null)
+                        }
+                        className="rounded-full bg-gray-100 px-4 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200"
+                      >
+                        Reject CV
+                      </button>
+                    </div>
+                  )}
+                  {c?.applicationStage?.status === "PASSED" && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                      <CheckCircle2 className="h-4 w-4" />
+                      CV Accepted
+                    </div>
+                  )}
+
+                  {c?.applicationStage?.status === "FAILED" && (
+                    <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600">
+                      <XCircle className="h-4 w-4" />
+                      CV Rejected
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex h-20 w-full items-center justify-center rounded-xl bg-orange-100 sm:h-20 sm:w-32">
+                  <UserIcon
+                    className="h-8 w-8 text-gray-400"
+                    strokeWidth={1.5}
+                  />
+                </div>
               </div>
             </div>
           );

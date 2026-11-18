@@ -45,7 +45,7 @@ export function InterviewStage({ stage, application }: StageComponentProps) {
 
   useEffect(() => {
     fetchDetails();
-  }, [applicationId, jobStageId]);
+  }, [applicationId, jobStageId, application]);
 
   const isDecided =
     applicationStage?.status === "PASSED" ||
@@ -84,7 +84,7 @@ export function InterviewStage({ stage, application }: StageComponentProps) {
       {!loading && !error && (
         <>
           {/* No interview scheduled yet */}
-          {!stage?.interview && (
+          {!interview && (
             <p className="mt-2 text-[13px] text-slate-500">
               Your interview for this stage hasn't been scheduled yet.
             </p>

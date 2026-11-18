@@ -44,3 +44,15 @@ export const markConversationAsRead = (conversationId: string) => {
     .patch(`/${CHAT_BASE_ROUTE}/conversations/${conversationId}/read`)
     .then((res) => res.data);
 };
+
+export const getJobUnreadCount = (jobId: string) =>
+  api
+    .get(`/${CHAT_BASE_ROUTE}/conversations/job/${jobId}/unread-count`)
+    .then((res) => res.data);
+
+export const getApplicationUnreadCount = (applicationId: string) =>
+  api
+    .get(
+      `/${CHAT_BASE_ROUTE}/conversations/application/${applicationId}/unread-count`,
+    )
+    .then((res) => res.data);

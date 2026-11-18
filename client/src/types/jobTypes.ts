@@ -1,8 +1,13 @@
+import type { MyApplicationSummary } from "./applicaionTypes";
+import type { WorkMode } from "./job/job/jobForm";
+
 //* job
 export interface Job {
   _id: string;
   title: string;
+  application?: MyApplicationSummary | null;
   company: { _id: string; companyName: string };
+  workMode: string;
   location: string;
   salary: string;
   isActive: boolean;
@@ -25,7 +30,11 @@ export interface GetStageCandidatesParams {
 //* job filter type
 export interface JobFilters {
   search?: string;
+  workMode?: WorkMode[];
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  radius?: number;
   jobType?: JobType[];
   salaryMin?: string;
   salaryMax?: string;

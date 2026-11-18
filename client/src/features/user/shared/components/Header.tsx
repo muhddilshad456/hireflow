@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Bell, Heart, Search, Menu, X } from "lucide-react";
+import { Heart, Search, Menu, X } from "lucide-react";
 import { logoutApi } from "../../../shared/services/authService";
 import { logout } from "../../../../redux/slice/authSlice";
 import toast from "react-hot-toast";
@@ -8,6 +8,7 @@ import { useAppDispatch, useAppSelector } from "../../../../hooks/reduxHooks";
 import { ProfileDropdown } from "../../../shared/components/ProfileDropdown";
 import { ConfirmModal } from "../../../shared/components/ConfirmationModal";
 import { NotificationBell } from "../../../shared/components/NotificationBell";
+import { NavLink } from "react-router-dom";
 
 interface NavItem {
   label: string;
@@ -19,7 +20,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", active: true },
   { label: "Jobs", href: "/jobs" },
   { label: "Applied Jobs", href: "/applied-jobs" },
-  // { label: "Messages", href: "#" },
 ];
 
 export const Header: React.FC = () => {
@@ -64,23 +64,29 @@ export const Header: React.FC = () => {
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">
               {NAV_ITEMS.map((item) => (
-                <a
+                <NavLink
                   key={item.label}
-                  href={item.href}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    item.active
-                      ? "text-[#F4522A]"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  to={item.href}
+                  end={item.href === "/"}
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? "text-[#F4522A] bg-orange-50"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`
+                  }
                 >
                   {item.label}
-                </a>
+                </NavLink>
               ))}
             </nav>
 
             {/* Icons */}
             <div className="flex items-center gap-2">
-              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]">
+              <button
+                onClick={() => navigate("/wishlist")}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-[#F4522A]"
+              >
                 <Heart size={18} />
               </button>
               <NotificationBell
@@ -123,18 +129,21 @@ export const Header: React.FC = () => {
         {menuOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
-              <a
+              <NavLink
                 key={item.label}
-                href={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  item.active
-                    ? "text-[#F4522A] bg-orange-50"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+                to={item.href}
+                end={item.href === "/"}
+                className={({ isActive }) =>
+                  `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? "text-[#F4522A] bg-orange-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 {item.label}
-              </a>
+              </NavLink>
             ))}
           </div>
         )}

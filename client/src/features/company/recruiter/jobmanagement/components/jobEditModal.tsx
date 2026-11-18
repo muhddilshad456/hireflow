@@ -6,7 +6,11 @@ import {
   type JobStageName,
 } from "../../../../../constents/jobStages";
 import toast from "react-hot-toast";
-import type { JobFormData } from "../../../../../types/job/job/jobForm";
+import type {
+  JobFormData,
+  WorkMode,
+} from "../../../../../types/job/job/jobForm";
+import LocationInput from "../../../../shared/components/LocationInput";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,7 +22,12 @@ export interface EditableJob {
   title: string;
   category: string;
   jobType: JobType;
+  workMode?: WorkMode;
   location: string;
+  locationCoordinates: {
+    type: "Point";
+    coordinates: [number, number];
+  } | null;
   description: string;
   salaryMin?: number;
   salaryMax?: number;
@@ -68,7 +77,14 @@ const validate = (form: JobFormData): FormErrors => {
   if (!form.title.trim()) e.title = "Job title is required.";
   if (!form.category) e.category = "Please select a category.";
   if (!form.jobType) e.jobType = "Please select a job type.";
-  if (!form.location.trim()) e.location = "Location is required.";
+  // Location Validation
+  if (form.workMode !== "REMOTE") {
+    if (!form.location.trim()) {
+      e.location = "Location is required.";
+    } else if (!form.locationCoordinates) {
+      e.location = "Please select a valid location from the suggestions.";
+    }
+  }
   if (!form.description.trim()) e.description = "Description is required.";
   if (form.skills.length === 0) e.skills = "Add at least one skill.";
   if (!form.positions.trim() || Number(form.positions) < 1)
@@ -117,7 +133,9 @@ const buildFormFromJob = (
   title: job.title ?? "",
   category: (job.category as JobCategory) ?? "",
   jobType: job.jobType ?? "",
+  workMode: job.workMode ?? (job.location === "Remote" ? "REMOTE" : "ONSITE"),
   location: job.location ?? "",
+  locationCoordinates: job.locationCoordinates ?? null,
   description: job.description ?? "",
   minSalary:
     job.salaryMin !== undefined && job.salaryMin !== null
@@ -258,9 +276,6 @@ export function EditJobModal({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Once a job has applicants, the hiring pipeline (mandatory stage + optional
-  // stages + their order) is frozen so in-flight candidates aren't disrupted.
-  // Every other field on the job remains editable.
   const stagesLocked = job.applicantsCount > 0;
 
   // Drag-and-drop state for pipeline reordering
@@ -406,6 +421,17 @@ export function EditJobModal({
     }
   };
 
+  const handleWorkModeChange = (mode: WorkMode) => {
+    const merged: JobFormData = {
+      ...form,
+      workMode: mode,
+      location: mode === "REMOTE" ? "Remote" : "",
+      locationCoordinates: null,
+    };
+    setForm(merged);
+    if (touched) setErrors(validate(merged));
+  };
+
   const charCount = form.description.length;
   const isValid = touched ? Object.keys(errors).length === 0 : true;
 
@@ -541,16 +567,67 @@ export function EditJobModal({
                 </div>
               </div>
 
+              {/* Work Mode */}
               <div>
-                <Label required>Location</Label>
-                <input
-                  name="location"
-                  value={form.location}
-                  onChange={handleChange}
-                  placeholder="e.g. Bangalore, India · Remote"
-                  className={inputCls(errors.location)}
-                />
-                <ErrorMsg msg={errors.location} />
+                <Label required>Work Mode</Label>
+                <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 border border-gray-200 rounded-xl">
+                  {(
+                    [
+                      { value: "ONSITE", label: "Onsite" },
+                      { value: "REMOTE", label: "Remote" },
+                      { value: "HYBRID", label: "Hybrid" },
+                    ] as const
+                  ).map((opt) => {
+                    const active = form.workMode === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleWorkModeChange(opt.value)}
+                        aria-pressed={active}
+                        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                          active
+                            ? "bg-white text-green-700 shadow-sm border border-green-200"
+                            : "text-gray-500 hover:text-gray-800 border border-transparent"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <Label required={form.workMode !== "REMOTE"}>Location</Label>
+                {form.workMode === "REMOTE" ? (
+                  <input
+                    value="Remote"
+                    disabled
+                    readOnly
+                    className={`${inputCls()} bg-gray-50 text-gray-500 cursor-not-allowed`}
+                  />
+                ) : (
+                  <>
+                    <LocationInput
+                      value={form.location}
+                      onChange={(value) => {
+                        set("location", value);
+                        set("locationCoordinates", null);
+                      }}
+                      onSelect={(suggestion) => {
+                        set("locationCoordinates", {
+                          type: "Point",
+                          coordinates: [suggestion.lon, suggestion.lat],
+                        });
+                      }}
+                      placeholder="Search city or location"
+                      inputClassName={`${inputCls(errors.location)} pr-10`}
+                    />
+                    <ErrorMsg msg={errors.location} />
+                  </>
+                )}
               </div>
 
               <div>

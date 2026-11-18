@@ -51,7 +51,7 @@ export function AssessmentStage({ stage, application }: StageComponentProps) {
   useEffect(() => {
     fetchDetails();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applicationId, jobStageId]);
+  }, [applicationId, jobStageId, application]);
 
   const isLocked =
     applicationStage?.status === "PASSED" ||

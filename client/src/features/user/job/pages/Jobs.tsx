@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Header } from "../../shared/components/Header";
 import { getJobsApi } from "../../../shared/services/jobService";
 import toast from "react-hot-toast";
 import type { JobFilters } from "../../../../types/jobTypes";
@@ -13,7 +12,8 @@ import { useDebounce } from "../../../shared/hooks/useDebounce";
 
 interface SearchBarProps {
   filters: JobFilters;
-  onChange: (key: keyof JobFilters, value: string) => void;
+  onChange: <K extends keyof JobFilters>(key: K, value: JobFilters[K]) => void;
+  onPatch: (patch: Partial<JobFilters>) => void;
   onSearch?: () => void;
   loading: boolean;
 }
@@ -38,9 +38,17 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
 };
 
-function SearchBar({ filters, onChange }: SearchBarProps) {
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100];
+
+function SearchBar({ filters, onChange, onPatch }: SearchBarProps) {
   const [searchText, setSearchText] = useState(filters.search ?? "");
   const [locationText, setLocationText] = useState(filters.location ?? "");
+  const [hasCoords, setHasCoords] = useState(
+    filters.latitude != null && filters.longitude != null,
+  );
+  const [nearMe, setNearMe] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
   const debouncedSearch = useDebounce(searchText, 400);
   const debouncedLocation = useDebounce(locationText, 400);
@@ -49,68 +57,231 @@ function SearchBar({ filters, onChange }: SearchBarProps) {
     onChange("search", debouncedSearch);
   }, [debouncedSearch]);
 
+  // Text location filter is only used when there are no coordinates
   useEffect(() => {
+    if (hasCoords) return;
     onChange("location", debouncedLocation);
   }, [debouncedLocation]);
 
+  // Keep in sync if the parent resets filters (e.g. "Reset" in the sidebar)
+  useEffect(() => {
+    if (filters.latitude == null && hasCoords) {
+      setHasCoords(false);
+      setNearMe(false);
+    }
+  }, [filters.latitude]);
+
+  const handleLocationChange = (value: string) => {
+    setLocationText(value);
+    setGeoError("");
+    // User is typing again, so drop the old coordinates
+    if (hasCoords) {
+      setHasCoords(false);
+      onPatch({ latitude: null, longitude: null });
+    }
+  };
+
+  const handleSelect = (s: { lat: number; lon: number }) => {
+    setHasCoords(true);
+    onPatch({
+      location: "", // search by coordinates, not by text
+      latitude: s.lat,
+      longitude: s.lon,
+      radius: filters.radius ?? 25,
+    });
+  };
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation isn't supported in this browser.");
+      return;
+    }
+    setLocating(true);
+    setGeoError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setHasCoords(true);
+        setNearMe(true);
+        setLocationText("");
+        onPatch({
+          location: "",
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          radius: filters.radius ?? 25,
+        });
+        setLocating(false);
+      },
+      (err) => {
+        setGeoError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission was denied."
+            : "Couldn't get your location.",
+        );
+        setLocating(false);
+      },
+      { timeout: 10000, maximumAge: 300000 },
+    );
+  };
+
+  const clearGeo = () => {
+    setHasCoords(false);
+    setNearMe(false);
+    setLocationText("");
+    onPatch({ latitude: null, longitude: null, location: "" });
+  };
+
   return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 14,
-        border: "1px solid #eee",
-        padding: "10px 12px",
-        display: "flex",
-        gap: 10,
-        boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
-        marginBottom: 24,
-      }}
-    >
-      {/* Job search */}
-      <div style={pillStyle}>
-        <svg
-          width="14"
-          height="14"
-          fill="none"
-          stroke="#bbb"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
-        <input
-          type="text"
-          placeholder="Job title, keywords…"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={inputStyle}
-        />
+    <>
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 14,
+          border: "1px solid #eee",
+          padding: "10px 12px",
+          display: "flex",
+          gap: 10,
+          boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+          marginBottom: geoError ? 8 : 24,
+        }}
+      >
+        {/* Job search */}
+        <div style={pillStyle}>
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="#bbb"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Job title, keywords…"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+
+        {/* Location */}
+        <div style={pillStyle}>
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            stroke="#bbb"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+
+          {nearMe ? (
+            <span
+              style={{
+                flex: 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 13,
+                color: "#e84b30",
+                fontWeight: 600,
+              }}
+            >
+              Near me
+              <button
+                type="button"
+                onClick={clearGeo}
+                aria-label="Clear current location"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#999",
+                  padding: 0,
+                  fontSize: 14,
+                  lineHeight: 1,
+                }}
+              >
+                ×
+              </button>
+            </span>
+          ) : (
+            <LocationInput
+              value={locationText}
+              onChange={handleLocationChange}
+              onSelect={handleSelect}
+              placeholder="City, country…"
+              wrapperClassName="relative flex-1 min-w-0"
+              inputClassName="w-full bg-transparent border-0 p-0 text-[13px] text-[#333] placeholder:text-gray-400 outline-none focus:outline-none focus:ring-0 shadow-none"
+            />
+          )}
+
+          {/* Near me button */}
+          <button
+            type="button"
+            onClick={handleNearMe}
+            disabled={locating}
+            title="Use my current location"
+            aria-label="Use my current location"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: locating ? "wait" : "pointer",
+              padding: 0,
+              display: "flex",
+              color: nearMe ? "#e84b30" : "#bbb",
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              style={
+                locating ? { animation: "spin 1s linear infinite" } : undefined
+              }
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <circle cx="12" cy="12" r="8" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Radius (only when searching by coordinates) */}
+        {hasCoords && (
+          <div style={{ ...pillStyle, flex: "0 0 auto" }}>
+            <select
+              value={filters.radius ?? 25}
+              onChange={(e) => onChange("radius", Number(e.target.value))}
+              style={{ ...inputStyle, cursor: "pointer" }}
+              aria-label="Search radius"
+            >
+              {RADIUS_OPTIONS.map((r) => (
+                <option key={r} value={r}>
+                  Within {r} km
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
-      {/* Location */}
-      <div style={pillStyle}>
-        <svg
-          width="14"
-          height="14"
-          fill="none"
-          stroke="#bbb"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
-          <circle cx="12" cy="10" r="3" />
-        </svg>
-        <LocationInput
-          value={locationText}
-          onChange={setLocationText}
-          wrapperClassName="flex-1 min-w-0"
-          inputClassName="w-full bg-transparent border-0 p-0 text-[13px] text-[#333] placeholder:text-gray-400 outline-none focus:outline-none focus:ring-0 shadow-none"
-        />
-      </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+      {geoError && (
+        <p style={{ fontSize: 11, color: "#e84b30", margin: "0 0 16px 6px" }}>
+          {geoError}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -300,6 +471,7 @@ function Pagination({ current, total, onChange }: PaginationProps) {
 
 const INITIAL_FILTERS: JobFilters = {
   search: "",
+  workMode: [],
   location: "",
   jobType: [],
   category: [],
@@ -307,8 +479,11 @@ const INITIAL_FILTERS: JobFilters = {
   salaryMax: "",
   experienceMin: "",
   experienceMax: "",
+  latitude: null,
+  longitude: null,
+  radius: 10,
   page: 1,
-  limit: 2,
+  limit: 4,
 };
 
 export function Jobs() {
@@ -319,9 +494,13 @@ export function Jobs() {
   const [totalPages, setTotalPages] = useState(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  const handleChange = (key: keyof JobFilters, value: string | string[]) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
-  };
+  const handleChange = <K extends keyof JobFilters>(
+    key: K,
+    value: JobFilters[K],
+  ) => setFilters((p) => ({ ...p, [key]: value, page: 1 }));
+
+  const handlePatch = (patch: Partial<JobFilters>) =>
+    setFilters((p) => ({ ...p, ...patch, page: 1 }));
 
   const handleReset = () => {
     setFilters(INITIAL_FILTERS);
@@ -340,6 +519,7 @@ export function Jobs() {
       try {
         setLoading(true);
         const res = await getJobsApi(filters);
+        console.log("result of jobs fetch : ", res);
         setJobs(res?.data?.data);
         setTotalPages(res.data.totalPages);
       } catch (error: any) {
@@ -366,13 +546,12 @@ export function Jobs() {
         * { box-sizing: border-box; }
       `}</style>
 
-      <Header />
-
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "28px 20px" }}>
         {/* Search bar always on top */}
         <SearchBar
           filters={filters}
           onChange={handleChange}
+          onPatch={handlePatch}
           loading={loading}
         />
 
@@ -430,7 +609,6 @@ export function Jobs() {
             <FilterSidebar
               filters={filters}
               onChange={handleChange}
-              //   onToggleSkill={handleToggleSkill}
               onReset={handleReset}
             />
           </div>

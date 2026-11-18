@@ -20,6 +20,7 @@ import {
   updateJobApplicationStage,
 } from "../../services/jobServices";
 import toast from "react-hot-toast";
+import { ApplicationStatusBadge } from "../../../shared/components/ApplicationStatusBadge";
 
 interface StageComponentProps {
   stage: StageDetail;
@@ -81,7 +82,10 @@ function AssessmentModal({
       }
 
       await updateAssessmentTask(jobId, stageId, formData);
+      toast.success("Assessment task updated.");
+
       await onCreated();
+
       onClose();
     } catch (err: any) {
       console.error(err?.response);
@@ -315,18 +319,28 @@ export function AssessmentStage({ stage }: StageComponentProps) {
               );
 
               const isUpdating = updatingId === appStageId;
-              const isDecided = c.status === "PASSED" || c.status === "FAILED";
+              const isDecided =
+                appStage?.status === "PASSED" || appStage?.status === "FAILED";
 
               return (
                 <div
                   key={appStageId}
-                  className="flex flex-col gap-4 py-6 sm:flex-row sm:items-start sm:justify-between"
+                  className="border-b border-gray-100 py-6 last:border-b-0"
                 >
-                  <div className="flex-1 space-y-3">
-                    <div>
+                  {/* Application Status */}
+                  {c.application && (
+                    <div className="mb-6 flex justify-end">
+                      <ApplicationStatusBadge status={c.application.status} />
+                    </div>
+                  )}
+
+                  {/* Candidate Details */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-semibold text-gray-900">
                         {name}
                       </h3>
+
                       <p className="mt-0.5 text-xs text-gray-500">
                         Applied{" "}
                         {c.application?.appliedAt
@@ -335,127 +349,135 @@ export function AssessmentStage({ stage }: StageComponentProps) {
                             ).toLocaleDateString("en-IN")
                           : "—"}
                       </p>
-                    </div>
 
-                    {/* Candidate Response Panel */}
-                    <div className="rounded-lg border border-slate-100 bg-slate-50/70 p-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-600">
-                          Candidate Response
-                        </span>
-                        {hasResponse ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-                            <CheckCircle className="h-3 w-3" /> Submitted
+                      {/* Action Buttons */}
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => handleViewCV(c.application?.resumeUrl)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          View CV
+                        </button>
+
+                        <button className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          Chat
+                        </button>
+
+                        {isDecided ? (
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                              c.status === "PASSED"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {c.status === "PASSED" ? (
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            ) : (
+                              <XCircle className="h-3.5 w-3.5" />
+                            )}
+                            {c.status === "PASSED" ? "Passed" : "Failed"}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                            <Clock className="h-3 w-3" /> Pending
-                          </span>
+                          <>
+                            <button
+                              onClick={() => handleAccept(appStageId)}
+                              disabled={isUpdating}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              {isUpdating ? "Updating..." : "Pass"}
+                            </button>
+
+                            <button
+                              onClick={() => handleReject(appStageId)}
+                              disabled={isUpdating}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              {isUpdating ? "Updating..." : "Fail"}
+                            </button>
+                          </>
                         )}
                       </div>
-
-                      {hasResponse ? (
-                        <div className="space-y-2 text-xs text-slate-700">
-                          {submittedAt && (
-                            <p className="text-[11px] text-slate-500">
-                              Submitted on{" "}
-                              {new Date(submittedAt).toLocaleString("en-IN", {
-                                dateStyle: "medium",
-                                timeStyle: "short",
-                              })}
-                            </p>
-                          )}
-
-                          {responseText ? (
-                            <p className="whitespace-pre-line rounded-md border border-slate-200 bg-white p-2 text-[11px]">
-                              {responseText}
-                            </p>
-                          ) : (
-                            <p className="text-[11px] italic text-slate-400">
-                              No written description provided.
-                            </p>
-                          )}
-
-                          {responseFileUrl ? (
-                            <a
-                              href={responseFileUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:underline"
-                            >
-                              <Paperclip className="h-3.5 w-3.5" />
-                              View Response Attachment
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ) : (
-                            <p className="text-[11px] italic text-slate-400">
-                              No file attached.
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] italic text-slate-400">
-                          Candidate has not submitted a response for this
-                          assessment yet.
-                        </p>
-                      )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => handleViewCV(c.application?.resumeUrl)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-                      >
-                        <FileText className="h-3.5 w-3.5" /> View CV
-                      </button>
-                      <button className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
-                        <MessageCircle className="h-3.5 w-3.5" /> Chat
-                      </button>
-
-                      {isDecided ? (
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                            c.status === "PASSED"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-red-50 text-red-700"
-                          }`}
-                        >
-                          {c.status === "PASSED" ? (
-                            <CheckCircle className="h-3.5 w-3.5" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5" />
-                          )}
-                          {c.status === "PASSED" ? "Passed" : "Failed"}
-                        </span>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleAccept(appStageId)}
-                            disabled={isUpdating}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            {isUpdating ? "Updating..." : "Pass"}
-                          </button>
-                          <button
-                            onClick={() => handleReject(appStageId)}
-                            disabled={isUpdating}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            {isUpdating ? "Updating..." : "Fail"}
-                          </button>
-                        </>
-                      )}
+                    {/* Profile Image */}
+                    <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-xl bg-orange-100">
+                      <UserIcon
+                        className="h-8 w-8 text-gray-400"
+                        strokeWidth={1.5}
+                      />
                     </div>
                   </div>
 
-                  <div className="flex h-20 w-full items-center justify-center rounded-xl bg-orange-100 sm:h-20 sm:w-32">
-                    <UserIcon
-                      className="h-8 w-8 text-gray-400"
-                      strokeWidth={1.5}
-                    />
+                  {/* Candidate Response */}
+                  <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50/70 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-600">
+                        Candidate Response
+                      </span>
+
+                      {hasResponse ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                          <CheckCircle className="h-3 w-3" />
+                          Submitted
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                          <Clock className="h-3 w-3" />
+                          Pending
+                        </span>
+                      )}
+                    </div>
+
+                    {hasResponse ? (
+                      <div className="space-y-2 text-xs text-slate-700">
+                        {submittedAt && (
+                          <p className="text-[11px] text-slate-500">
+                            Submitted on{" "}
+                            {new Date(submittedAt).toLocaleString("en-IN", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </p>
+                        )}
+
+                        {responseText ? (
+                          <p className="whitespace-pre-line rounded-md border border-slate-200 bg-white p-2 text-[11px]">
+                            {responseText}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] italic text-slate-400">
+                            No written description provided.
+                          </p>
+                        )}
+
+                        {responseFileUrl ? (
+                          <a
+                            href={responseFileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 font-medium text-emerald-600 hover:underline"
+                          >
+                            <Paperclip className="h-3.5 w-3.5" />
+                            View Response Attachment
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          <p className="text-[11px] italic text-slate-400">
+                            No file attached.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] italic text-slate-400">
+                        Candidate has not submitted a response for this
+                        assessment yet.
+                      </p>
+                    )}
                   </div>
                 </div>
               );

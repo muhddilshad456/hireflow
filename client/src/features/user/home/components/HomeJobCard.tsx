@@ -1,12 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Building2, MapPin, Wallet } from "lucide-react";
 import type { Job } from "../../../../types/jobTypes";
+import type { ApplicationStatus } from "../../../../types/applicaionTypes";
 
 interface HomeJobCardProps {
   job: Partial<Job>;
 }
 
-// "FULL_TIME" -> "Full time"
 const formatJobType = (value?: string) =>
   value
     ? value
@@ -15,7 +15,6 @@ const formatJobType = (value?: string) =>
         .replace(/^\w/, (c) => c.toUpperCase())
     : "";
 
-// Colour per job type; anything unknown falls back to grey
 const jobTypeStyle = (value?: string) => {
   switch (value) {
     case "FULL_TIME":
@@ -31,35 +30,85 @@ const jobTypeStyle = (value?: string) => {
   }
 };
 
+const applicationStatusStyle: Record<
+  ApplicationStatus,
+  { label: string; className: string }
+> = {
+  IN_PROGRESS: {
+    label: "In Progress",
+    className: "bg-amber-50 text-amber-600 ring-amber-100",
+  },
+  REJECTED: {
+    label: "Rejected",
+    className: "bg-red-50 text-red-600 ring-red-100",
+  },
+  SELECTED: {
+    label: "Selected",
+    className: "bg-green-50 text-green-600 ring-green-100",
+  },
+  WITHDRAWN: {
+    label: "Withdrawn",
+    className: "bg-gray-100 text-gray-600 ring-gray-200",
+  },
+};
+
 export function HomeJobCard({ job }: HomeJobCardProps) {
   const navigate = useNavigate();
+
   const companyName = job.company?.companyName;
+  const application = job.application;
+
+  const statusStyle = application
+    ? applicationStatusStyle[application.status]
+    : null;
 
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/60">
-      {/* accent bar that appears on hover */}
       <span className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[#F4522A] to-orange-300 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
 
-      {/* top: avatar + title + company */}
+      {/* Top: avatar + title + company */}
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 text-lg font-bold text-[#F4522A] ring-1 ring-orange-100">
           {(companyName?.charAt(0) ?? "?").toUpperCase()}
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-bold text-gray-900 transition-colors group-hover:text-[#F4522A]">
-            {job.title}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-base font-bold text-gray-900 transition-colors group-hover:text-[#F4522A]">
+              {job.title}
+            </h3>
+
+            {application && (
+              <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 ring-1 ring-green-100">
+                Applied
+              </span>
+            )}
+          </div>
+
           {companyName && (
             <p className="mt-0.5 flex items-center gap-1.5 text-sm text-gray-500">
               <Building2 size={13} className="flex-shrink-0 text-gray-400" />
               <span className="truncate">{companyName}</span>
             </p>
           )}
+
+          {application && statusStyle && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500">
+                Application Status:
+              </span>
+
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusStyle.className}`}
+              >
+                {statusStyle.label}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* bottom: details + action */}
+      {/* Bottom: details + action */}
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {job.location && (
@@ -68,12 +117,14 @@ export function HomeJobCard({ job }: HomeJobCardProps) {
               {job.location}
             </span>
           )}
+
           {job.salary && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-600 ring-1 ring-gray-100">
               <Wallet size={12} className="text-[#F4522A]" />
               {job.salary}
             </span>
           )}
+
           {job.jobType && (
             <span
               className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${jobTypeStyle(job.jobType)}`}

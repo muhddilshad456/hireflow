@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Header } from "../../shared/components/Header";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { getMyApplication } from "../../../shared/services/applicationService";
 import { withdrawApplication } from "../services/applicatioServices";
 import toast from "react-hot-toast";
 import { ConfirmModal } from "../../shared/components/ConfirmModal";
+import { useApplicationUpdates } from "../../../../hooks/Useapplicationupdates";
+import { useSocket } from "../../../../context/SocketContext";
+import type { ChatUnreadPayload } from "../../../../types/chat/chat";
+import { getApplicationUnreadCount } from "../../../shared/services/messageService";
 
 /* ----------------------------- Types ----------------------------- */
 interface ApiInterviewBasicUser {
@@ -59,6 +62,7 @@ interface ApiJob {
 
 interface ApiApplication {
   _id: string;
+  applicationNumber?: string;
   resumeUrl: string;
   coverLetter: string;
   status:
@@ -98,6 +102,7 @@ export interface AppliedJobData {
   details: JobDetail[];
   appliedOn: string;
   applicationId: string;
+  applicationNumber?: string;
   status: ApiApplication["status"];
   stages: Stage[];
   resumeFileName: string;
@@ -234,7 +239,7 @@ interface JobCardProps {
   location: string;
   details: JobDetail[];
   appliedOn: string;
-  applicationId: string;
+  applicationId?: string;
   status: string;
   onWithdraw: () => void;
   isWithdrawing: boolean;
@@ -282,9 +287,11 @@ const JobCard: React.FC<JobCardProps> = ({
 
       <div className="space-y-1">
         <p className="text-[13px] text-slate-500">Applied on : {appliedOn}</p>
-        <p className="text-[13px] text-slate-500">
-          Application Id : {applicationId}
-        </p>
+        {applicationId && (
+          <p className="text-[13px] text-slate-500">
+            Application Id : {applicationId}
+          </p>
+        )}
       </div>
 
       {canWithdraw && (
@@ -400,10 +407,39 @@ const StageFlow: React.FC<{
 const ChatEntryCard: React.FC<{
   stages: Stage[];
   onOpenChat: () => void;
-}> = ({ stages, onOpenChat }) => {
-  // "resume_review" must match the JobStageName value from your backend enum
+  applicationId?: string;
+}> = ({ stages, onOpenChat, applicationId: applicationIdProp }) => {
+  const params = useParams<{ applicationId: string }>();
+  const applicationId = applicationIdProp ?? params.applicationId;
+  const socket = useSocket();
+  const [unread, setUnread] = useState(0);
+
   const resumeStage = stages.find((s) => s.name === "resume_review");
   const canChat = resumeStage ? resumeStage.status === "completed" : false;
+
+  useEffect(() => {
+    if (!applicationId || !canChat) return;
+    let cancelled = false;
+    getApplicationUnreadCount(applicationId)
+      .then((res) => {
+        if (!cancelled) setUnread(res.data.count);
+      })
+      .catch((e: any) => console.log(e?.response));
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId, canChat, socket]);
+
+  useEffect(() => {
+    if (!socket || !applicationId) return;
+    const onUnread = (p: ChatUnreadPayload) => {
+      if (p.applicationId === applicationId) setUnread(p.unreadCount);
+    };
+    socket.on("chat:unread", onUnread);
+    return () => {
+      socket.off("chat:unread", onUnread);
+    };
+  }, [socket, applicationId]);
 
   return (
     <div className="mt-4 rounded-2xl border-2 border-orange-200 bg-white p-5">
@@ -436,9 +472,14 @@ const ChatEntryCard: React.FC<{
         <button
           type="button"
           onClick={onOpenChat}
-          className="shrink-0 rounded-full bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-600"
+          className="relative shrink-0 rounded-full bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-orange-600"
         >
           Open Chat
+          {unread > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+              {unread > 99 ? "99+" : unread}
+            </span>
+          )}
         </button>
       </div>
     </div>
@@ -621,6 +662,7 @@ function mapApplicationToAppliedJobData(app: ApiApplication): AppliedJobData {
     ],
     appliedOn: formatDate(app.appliedAt),
     applicationId: app._id,
+    applicationNumber: app.applicationNumber,
     status: app.status,
     stages,
     resumeFileName: filenameFromUrl(app.resumeUrl),
@@ -644,21 +686,24 @@ export const AppliedJobPage = () => {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     if (!applicationId) {
       setErrorMessage("No application id in the URL");
       setStatus("error");
       return;
     }
 
-    setStatus("loading");
+    if (!silent) setStatus("loading");
     try {
       const res = await getMyApplication(applicationId);
-      console.log("fetched application details : ", res);
       const application: ApiApplication = res.data;
       setData(mapApplicationToAppliedJobData(application));
       setStatus("success");
     } catch (error: any) {
+      if (silent) {
+        console.log(error?.response);
+        return;
+      }
       setErrorMessage(
         error?.response?.data?.message ??
           error?.message ??
@@ -680,7 +725,7 @@ export const AppliedJobPage = () => {
     try {
       await withdrawApplication(applicationId);
       setIsConfirmOpen(false);
-      await loadData();
+      await loadData(true);
       toast.success("Application withdrawn successfully.");
     } catch (error: any) {
       toast.error(
@@ -702,14 +747,19 @@ export const AppliedJobPage = () => {
     navigate(`/application/${applicationId}/chat`);
   };
 
+  useApplicationUpdates({
+    match: (p) => p.applicationId === applicationId,
+    onUpdate: () => loadData(true),
+    onReconnect: () => loadData(true),
+  });
+
   return (
     <div className="min-h-screen w-full bg-white">
-      <Header />
       {status === "loading" && <PageSkeleton />}
       {status === "error" && (
         <ErrorState
           message={errorMessage || "Failed to load application"}
-          onRetry={loadData}
+          onRetry={() => loadData()}
         />
       )}
       {status === "success" && data && (
@@ -725,7 +775,7 @@ export const AppliedJobPage = () => {
                 location={data.location}
                 details={data.details}
                 appliedOn={data.appliedOn}
-                applicationId={data.applicationId}
+                applicationId={data.applicationNumber}
                 status={data.status}
                 onWithdraw={() => setIsConfirmOpen(true)}
                 isWithdrawing={isWithdrawing}
@@ -737,7 +787,11 @@ export const AppliedJobPage = () => {
                 stages={data.stages}
                 onNavigate={handleStageNavigate}
               />
-              <ChatEntryCard stages={data.stages} onOpenChat={handleOpenChat} />
+              <ChatEntryCard
+                stages={data.stages}
+                onOpenChat={handleOpenChat}
+                applicationId={applicationId}
+              />
             </div>
           </div>
         </main>

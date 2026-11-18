@@ -12,3 +12,4 @@ export const CHAT_BASE_ROUTE = "chat";
 export const INTERVIEW_BASE_ROUTE = "interviews";
 export const INTERVIEWER_BASE_ROUTE = "interviewer";
 export const SUBSCRIPTION_BASE_ROUTE = "subscription";
+export const WISHLIST_BASE_ROUTE = "wishlist";

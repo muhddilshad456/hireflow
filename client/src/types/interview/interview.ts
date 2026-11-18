@@ -11,7 +11,6 @@ export interface InterviewProgress {
   duration?: number;
   interviewer?: InterviewerInfo | null;
   feedback?: string;
-  score?: number;
   feedbackSubmittedAt?: string;
   rejectionReason?: string;
   interviewRequestId?: string;

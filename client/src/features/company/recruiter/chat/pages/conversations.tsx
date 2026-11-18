@@ -12,12 +12,14 @@ import {
 import {
   getConversations,
   getMessages,
+  markConversationAsRead,
   sendMessage,
 } from "../../../../shared/services/messageService";
 import { useSocket } from "../../../../../context/SocketContext";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../../redux/store/store";
 import { useParams } from "react-router-dom";
+import type { ChatUnreadPayload } from "../../../../../types/chat/chat";
 
 /* ================= TYPES ================= */
 
@@ -214,10 +216,12 @@ function ConversationListItem({
         </p>
 
         <div className="flex items-center gap-2 mt-1.5">
-          {conversation.unreadCount > 0 && (
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          )}
           <StageBadge stage={conversation.stage} />
+          {conversation.unreadCount > 0 && (
+            <span className="ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[10px] font-semibold text-white">
+              {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+            </span>
+          )}
         </div>
       </div>
     </button>
@@ -543,6 +547,55 @@ export function MessagesPage() {
   const socket = useSocket();
   const currentUserId = useSelector((state: RootState) => state.auth.user?.id);
   const { jobId } = useParams<{ jobId: string }>();
+  const activeIdRef = useRef<string | undefined>(undefined);
+  const conversationsRef = useRef<Conversation[]>([]);
+  useEffect(() => {
+    activeIdRef.current = activeConversationId;
+  }, [activeConversationId]);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  const markActiveRead = (id: string) => {
+    markConversationAsRead(id)
+      .then(() =>
+        setConversations((prev) =>
+          prev.map((c) => (c._id === id ? { ...c, unreadCount: 0 } : c)),
+        ),
+      )
+      .catch((e: any) => console.error(e?.response ?? e));
+  };
+
+  const refreshConversations = async () => {
+    if (!jobId) return;
+    try {
+      const result = await getConversations(jobId);
+      setConversations(result.data);
+    } catch (e: any) {
+      console.log(e?.response);
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    const onUnread = (p: ChatUnreadPayload) => {
+      if (p.jobId !== jobId) return;
+      if (p.conversationId === activeIdRef.current) return; // open chat is handled by markActiveRead
+      if (!conversationsRef.current.some((c) => c._id === p.conversationId)) {
+        refreshConversations(); // brand-new conversation the list hasn't seen
+        return;
+      }
+      setConversations((prev) =>
+        prev.map((c) =>
+          c._id === p.conversationId ? { ...c, unreadCount: p.unreadCount } : c,
+        ),
+      );
+    };
+    socket.on("chat:unread", onUnread);
+    return () => {
+      socket.off("chat:unread", onUnread);
+    };
+  }, [socket, jobId]);
 
   const fetchConversations = async () => {
     try {
@@ -597,6 +650,7 @@ export function MessagesPage() {
 
     fetchMessages();
     socket.emit("conversation:join", activeConversationId);
+    markActiveRead(activeConversationId);
 
     const handleNewMessage = (message: ChatMessage) => {
       setMessagesByConversation((prev) => ({
@@ -606,6 +660,8 @@ export function MessagesPage() {
           message,
         ],
       }));
+      if (message.senderId !== currentUserId)
+        markActiveRead(message.conversationId);
     };
 
     const handleSocketError = (err: { message: string }) => {

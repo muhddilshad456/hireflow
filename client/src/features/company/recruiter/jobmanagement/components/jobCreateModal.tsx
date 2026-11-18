@@ -5,7 +5,10 @@ import {
   STAGE_LABELS,
 } from "../../../../../constents/jobStages";
 import type { JobStageName } from "../../../../../constents/jobStages";
-import type { JobFormData } from "../../../../../types/job/job/jobForm";
+import type {
+  JobFormData,
+  WorkMode,
+} from "../../../../../types/job/job/jobForm";
 import LocationInput from "../../../../shared/components/LocationInput";
 
 type CreateJobModalProps = {
@@ -31,7 +34,9 @@ const INITIAL_FORM: JobFormData = {
   title: "",
   category: "",
   jobType: "",
+  workMode: "ONSITE",
   location: "",
+  locationCoordinates: null,
   description: "",
   minSalary: "",
   maxSalary: "",
@@ -50,6 +55,15 @@ const validate = (form: JobFormData): FormErrors => {
   const e: FormErrors = {};
 
   // Existing validations...
+  // ─── Location Validation ───────────────────────────
+  // Location Validation
+  if (form.workMode !== "REMOTE") {
+    if (!form.location.trim()) {
+      e.location = "Location is required.";
+    } else if (!form.locationCoordinates) {
+      e.location = "Please select a valid location from the suggestions.";
+    }
+  }
 
   // ─── Salary Validation ─────────────────────────────
   if (!form.salaryNotDisclosed) {
@@ -219,6 +233,17 @@ export default function CreateJobModal({
     }
 
     const merged = { ...form, ...patch };
+    setForm(merged);
+    if (touched) setErrors(validate(merged));
+  };
+
+  const handleWorkModeChange = (mode: WorkMode) => {
+    const merged: JobFormData = {
+      ...form,
+      workMode: mode,
+      location: mode === "REMOTE" ? "Remote" : "",
+      locationCoordinates: null,
+    };
     setForm(merged);
     if (touched) setErrors(validate(merged));
   };
@@ -465,16 +490,66 @@ export default function CreateJobModal({
                   <ErrorMsg msg={errors.jobType} />
                 </div>
               </div>
-
+              {/* Work Mode */}
               <div>
-                <Label required>Location</Label>
-                <LocationInput
-                  value={form.location}
-                  onChange={(v) => set("location", v)}
-                  placeholder="e.g. Bangalore, India · Remote"
-                  inputClassName={`${inputCls(errors.location)} pr-10`}
-                />
-                <ErrorMsg msg={errors.location} />
+                <Label required>Work Mode</Label>
+                <div className="grid grid-cols-3 gap-1 p-1 bg-gray-100 border border-gray-200 rounded-xl">
+                  {(
+                    [
+                      { value: "ONSITE", label: "Onsite" },
+                      { value: "REMOTE", label: "Remote" },
+                      { value: "HYBRID", label: "Hybrid" },
+                    ] as const
+                  ).map((opt) => {
+                    const active = form.workMode === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => handleWorkModeChange(opt.value)}
+                        aria-pressed={active}
+                        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                          active
+                            ? "bg-white text-green-700 shadow-sm border border-green-200"
+                            : "text-gray-500 hover:text-gray-800 border border-transparent"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <Label required={form.workMode !== "REMOTE"}>Location</Label>
+                {form.workMode === "REMOTE" ? (
+                  <input
+                    value="Remote"
+                    disabled
+                    readOnly
+                    className={`${inputCls()} bg-gray-50 text-gray-500 cursor-not-allowed`}
+                  />
+                ) : (
+                  <>
+                    <LocationInput
+                      value={form.location}
+                      onChange={(value) => {
+                        set("location", value);
+                        set("locationCoordinates", null);
+                      }}
+                      onSelect={(suggestion) => {
+                        set("locationCoordinates", {
+                          type: "Point",
+                          coordinates: [suggestion.lon, suggestion.lat],
+                        });
+                      }}
+                      placeholder="Search city or location"
+                      inputClassName={`${inputCls(errors.location)} pr-10`}
+                    />
+                  </>
+                )}
               </div>
 
               <div>

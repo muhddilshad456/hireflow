@@ -1,3 +1,4 @@
+import type { WorkMode } from "../../../../types/job/job/jobForm";
 import type { JobFilters, JobType } from "../../../../types/jobTypes";
 import { CATEGORIES } from "../../../../types/jobTypes";
 
@@ -52,6 +53,46 @@ export function FilterSidebar({
 
             onChange("jobType", updated);
           }}
+          style={{ accentColor: "#e84b30", width: 13, height: 13 }}
+        />
+        <span
+          style={{
+            fontSize: 12,
+            color: checked ? "#e84b30" : "#555",
+            fontWeight: checked ? 600 : 400,
+          }}
+        >
+          {label}
+        </span>
+      </label>
+    );
+  };
+
+  const workModeRow = (label: string, value: WorkMode) => {
+    const selected = filters.workMode || [];
+    const checked = selected.includes(value);
+    return (
+      <label
+        key={value}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+          marginBottom: 6,
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={() =>
+            onChange(
+              "workMode",
+              checked
+                ? selected.filter((v) => v !== value)
+                : [...selected, value],
+            )
+          }
           style={{ accentColor: "#e84b30", width: 13, height: 13 }}
         />
         <span
@@ -165,6 +206,15 @@ export function FilterSidebar({
             </label>
           );
         })}
+      </div>
+
+      <div style={{ height: 1, background: "#f0c8c3", marginBottom: 18 }} />
+
+      <div style={{ marginBottom: 18 }}>
+        <span style={labelStyle}>Work Mode</span>
+        {workModeRow("Onsite", "ONSITE")}
+        {workModeRow("Remote", "REMOTE")}
+        {workModeRow("Hybrid", "HYBRID")}
       </div>
 
       <div style={{ height: 1, background: "#f0c8c3", marginBottom: 18 }} />

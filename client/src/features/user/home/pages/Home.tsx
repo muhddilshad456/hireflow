@@ -2,23 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Briefcase, FileText, Mail, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
-// ⚠️ Adjust these import paths to your project (copied from your Jobs and Profile pages)
-import { Header } from "../../shared/components/Header";
 import { getJobsApi } from "../../../shared/services/jobService";
 import { fetchProfile } from "../../../shared/services/profileService";
 import type { Job, JobFilters } from "../../../../types/jobTypes";
-import { JobCard } from "../../job/components/jobCard";
 import { HomeJobCard } from "../components/HomeJobCard";
 
-/* ------------------------------------------------------------------ */
-/*  Settings                                                           */
-/* ------------------------------------------------------------------ */
+const HOME_JOBS_LIMIT = 5;
+const JOBS_ROUTE = "/jobs";
+const PROFILE_ROUTE = "/profile";
 
-const HOME_JOBS_LIMIT = 5; // how many jobs to show on the home page
-const JOBS_ROUTE = "/jobs"; // ⚠️ your jobs listing page
-const PROFILE_ROUTE = "/profile"; // ⚠️ your profile page
-
-// Same shape as the Jobs page's INITIAL_FILTERS, with no filters applied
 const HOME_JOB_FILTERS: JobFilters = {
   search: "",
   location: "",
@@ -52,7 +44,11 @@ interface HomeProfile {
   jobPreference?: {
     role: string;
     type: string;
-    location: string;
+    location: {
+      name: string;
+      latitude: number | null;
+      longitude: number | null;
+    };
     workMode: string;
   };
 }
@@ -236,8 +232,6 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <Header />
-
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
         {/* Profile completion banner */}
         {showBanner && <ProfileBanner onCta={() => navigate(PROFILE_ROUTE)} />}
@@ -255,7 +249,11 @@ const Home: React.FC = () => {
               <span className="text-sm font-bold text-gray-900">
                 {pref.role}
               </span>
-              {[formatEnum(pref.type), formatEnum(pref.workMode), pref.location]
+              {[
+                formatEnum(pref.type),
+                formatEnum(pref.workMode),
+                pref?.location?.name,
+              ]
                 .filter(Boolean)
                 .map((chip) => (
                   <span

@@ -8,9 +8,14 @@ import {
   Users,
   CalendarClock,
   Lock,
+  Unlock,
 } from "lucide-react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-import { jobDetails, updateJobApi } from "../services/jobServices";
+import {
+  jobDetails,
+  updateJobApi,
+  updateJobStatus,
+} from "../services/jobServices";
 import { EditJobModal } from "../components/jobEditModal";
 import type { JobStageName } from "../../../../../constents/jobStages";
 import toast from "react-hot-toast";
@@ -18,6 +23,8 @@ import type { JobFormData } from "../../../../../types/job/job/jobForm";
 import AiFilterConfirmModal from "../components/AiConfirmationModal";
 import ChatButton from "../components/chatButton";
 import { getCompanyAccess } from "../../../shared/servicces/SubscriptionServices";
+import { useApplicationUpdates } from "../../../../../hooks/Useapplicationupdates";
+import { ConfirmModal } from "../../../../shared/components/ConfirmationModal";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -37,9 +44,13 @@ export interface JobSummary {
   _id: string;
   title: string;
   category: string;
-  status: "OPEN" | "CLOSED" | "FILLED";
+  status: "OPEN" | "CLOSED";
   bannerUrl?: string;
   location: string;
+  locationCoordinates: {
+    type: "Point";
+    coordinates: [number, number];
+  } | null;
   jobType: JobMeta["jobType"];
   salaryMin?: number;
   salaryMax?: number;
@@ -72,6 +83,7 @@ export interface JobLayoutOutletContext {
   stages: ApiJobStage[];
   jobId: string;
   refetchJob: () => Promise<void>;
+  stageRefreshKey: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -181,6 +193,9 @@ export const JobLayout: React.FC = () => {
   const [openEditJobModal, setOpenEditJobModal] = useState(false);
   const [showAiConfirm, setShowAiConfirm] = useState(false);
   const [isCompanySubscribed, setCompanySubscription] = useState(false);
+  const [stageRefreshKey, setStageRefreshKey] = useState(0);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   const getJobDetails = async () => {
     if (!jobId) {
@@ -246,14 +261,54 @@ export const JobLayout: React.FC = () => {
       console.log("Job id missing.");
       throw new Error("Job id missing.");
     }
-    const result = await updateJobApi(jobId, data);
-    toast.success("Job updated.");
-    await getJobDetails();
+    try {
+      console.log("form data : ", data);
+      const result = await updateJobApi(jobId, data);
+      toast.success("Job updated.");
+      await getJobDetails();
+    } catch (error: any) {
+      console.log(error?.reopence);
+      toast.error(error?.reopence?.data?.message);
+    }
   };
 
   const handleRunAutoSelect = () => {
     setShowAiConfirm(false);
     navigate(`/company/recruiter/job/${jobId}/ai-filter-results`);
+  };
+
+  const handleToggleStatus = async () => {
+    if (!jobId || !job) return;
+
+    const nextStatus = job.status === "OPEN" ? "CLOSED" : "OPEN";
+    setShowStatusConfirm(false);
+    setStatusUpdating(true);
+    try {
+      await updateJobStatus(jobId, nextStatus);
+      toast.success(nextStatus === "OPEN" ? "Job opened." : "Job closed.");
+      await getJobDetails();
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ?? "Failed to update job status.",
+      );
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
+
+  const handleApplicationUpdate = () => {
+    refetchJob();
+  };
+
+  useApplicationUpdates({
+    match: (p) => p.jobId === jobId,
+    onUpdate: handleApplicationUpdate,
+    onReconnect: handleApplicationUpdate,
+  });
+
+  const refetchJob = async () => {
+    await getJobDetails();
+    setStageRefreshKey((prev) => prev + 1);
   };
 
   if (loading && !job) {
@@ -432,11 +487,7 @@ export const JobLayout: React.FC = () => {
                     job.status === "OPEN" ? "text-emerald-600" : "text-gray-500"
                   }
                 >
-                  {job.status === "OPEN"
-                    ? "Open"
-                    : job.status === "FILLED"
-                      ? "Filled"
-                      : "Closed"}
+                  {job.status === "OPEN" ? "Open" : "Closed"}
                 </span>
               </p>
 
@@ -450,6 +501,26 @@ export const JobLayout: React.FC = () => {
                 </button>
 
                 <ChatButton jobId={jobId!} />
+                <button
+                  onClick={() => setShowStatusConfirm(true)}
+                  disabled={statusUpdating}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    job.status === "OPEN"
+                      ? "border-red-200 text-red-600 hover:bg-red-50"
+                      : "border-green-200 text-green-600 hover:bg-green-50"
+                  }`}
+                >
+                  {statusUpdating
+                    ? "Updating..."
+                    : job.status === "OPEN"
+                      ? "Close Job"
+                      : "Reopen Job"}
+                  {job.status === "OPEN" ? (
+                    <Lock className="h-3 w-3" />
+                  ) : (
+                    <Unlock className="h-3 w-3" />
+                  )}
+                </button>
               </div>
 
               <dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2 text-xs text-gray-500 sm:grid-cols-2">
@@ -480,19 +551,6 @@ export const JobLayout: React.FC = () => {
                 </div>
               </dl>
             </div>
-
-            <div
-              className="h-24 w-full shrink-0 rounded-xl bg-gradient-to-br from-orange-100 via-orange-50 to-amber-100 sm:w-40"
-              style={
-                job.bannerUrl
-                  ? {
-                      backgroundImage: `url(${job.bannerUrl})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }
-                  : undefined
-              }
-            />
           </div>
           {/* Stage-specific content renders here via StageRenderer */}
           <section className="mt-8">
@@ -501,7 +559,8 @@ export const JobLayout: React.FC = () => {
                 {
                   stages: apiStages,
                   jobId: jobId!,
-                  refetchJob: getJobDetails,
+                  refetchJob,
+                  stageRefreshKey,
                 } satisfies JobLayoutOutletContext
               }
             />
@@ -534,6 +593,19 @@ export const JobLayout: React.FC = () => {
           onConfirm={handleRunAutoSelect}
         />
       )}
+      <ConfirmModal
+        open={showStatusConfirm}
+        title={job.status === "OPEN" ? "Close this job?" : "Reopen this job?"}
+        message={
+          job.status === "OPEN"
+            ? "Candidates will no longer be able to apply. You can reopen it any time."
+            : "This job will be visible again and candidates can apply."
+        }
+        confirmText={job.status === "OPEN" ? "Close Job" : "Reopen Job"}
+        confirmColor={job.status === "OPEN" ? "red" : "green"}
+        onConfirm={handleToggleStatus}
+        onCancel={() => setShowStatusConfirm(false)}
+      />
     </main>
   );
 };

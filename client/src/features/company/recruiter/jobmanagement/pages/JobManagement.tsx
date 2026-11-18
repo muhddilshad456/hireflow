@@ -247,7 +247,7 @@ const JobCard = ({ job }: JobCardProps) => {
       </div>
 
       {/* Stats row */}
-      <div className="flex gap-3 px-5 pb-5">
+      {/* <div className="flex gap-3 px-5 pb-5">
         <StatCard label="Total Applied" value={job.totalApplied} />
         <StatCard
           label="Active Candidates"
@@ -255,7 +255,7 @@ const JobCard = ({ job }: JobCardProps) => {
           highlight
         />
         <StatCard label="Hired Count" value={job.hiredCount} />
-      </div>
+      </div> */}
     </div>
   );
 };
@@ -303,7 +303,7 @@ const FilterBar = ({
     </div>
 
     {/* Status dropdown */}
-    <select
+    {/* <select
       value={statusFilter}
       onChange={(e) => onStatusFilter(e.target.value)}
       className="text-sm border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer"
@@ -312,7 +312,7 @@ const FilterBar = ({
       <option value="OPEN">OPEN</option>
       <option value="CLOSED">CLOSED</option>
       <option value="FILLED">FILLED</option>
-    </select>
+    </select> */}
 
     {/* Category dropdown */}
     <select
@@ -430,6 +430,7 @@ export default function JobManagement() {
       const result = await createJobApi(jobFormData);
       console.log("result of job creation : ", result);
       toast.success("Job created");
+      getJobs();
       setJobModalOpen(false);
       return true;
     } catch (error: any) {
@@ -446,7 +447,7 @@ export default function JobManagement() {
         status: statusFilter,
         category: categoryFilter ? [categoryFilter] : [],
         page: currentPage,
-        limit: 2,
+        limit: 4,
       });
       console.log(result);
       setJobs(result.data.data);

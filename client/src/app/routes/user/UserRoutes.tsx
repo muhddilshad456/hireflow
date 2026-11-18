@@ -19,6 +19,8 @@ import { StageRenderer } from "../../../features/user/application/components/Sta
 import { ChatPage } from "../../../features/user/chat/pages/chat";
 import CandidateInterviewPage from "../../../features/user/application/interview/pages/CandidateInterviewPage";
 import UserNotificationsPage from "../../../features/user/notificaiton/pages/UserNotificationPage";
+import UserLayout from "./UserLayout";
+import Wishlist from "../../../features/user/wishlist/pages/Wishlist";
 
 const UserRoutes = () => {
   return (
@@ -29,28 +31,31 @@ const UserRoutes = () => {
             <ProtectedRoute allowedRoles={["user"]} redirectTo="/login" />
           }
         >
-          <Route path="/" element={<Home />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route
-            path="/verify-email-change"
-            element={<EmailVerificationResultPage />}
-          />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/job" element={<Job />} />
-          <Route path="/applied-jobs" element={<AppliedJobs />} />
-          <Route
-            path="/application/:applicationId"
-            element={<AppliedJobPage />}
-          >
-            <Route path="stage/:stageId" element={<StageRenderer />} />
+          <Route path="/" element={<UserLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/verify-email" element={<EmailVerificationPage />} />
+            <Route
+              path="/verify-email-change"
+              element={<EmailVerificationResultPage />}
+            />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/job" element={<Job />} />
+            <Route path="/applied-jobs" element={<AppliedJobs />} />
+            <Route
+              path="/application/:applicationId"
+              element={<AppliedJobPage />}
+            >
+              <Route path="stage/:stageId" element={<StageRenderer />} />
+            </Route>
+            <Route
+              path="/application/:applicationId/chat"
+              element={<ChatPage />}
+            />
+            <Route path="interview/:id" element={<CandidateInterviewPage />} />
+            <Route path="notifications" element={<UserNotificationsPage />} />
+            <Route path="wishlist" element={<Wishlist />} />
           </Route>
-          <Route
-            path="/application/:applicationId/chat"
-            element={<ChatPage />}
-          />
-          <Route path="interview/:id" element={<CandidateInterviewPage />} />
-          <Route path="notifications" element={<UserNotificationsPage />} />
         </Route>
         <Route element={<PublicRoute />}>
           <Route path="/signup" element={<Signup />} />

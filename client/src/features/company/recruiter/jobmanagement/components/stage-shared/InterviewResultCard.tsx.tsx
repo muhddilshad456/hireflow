@@ -56,11 +56,6 @@ export const InterviewResultCard: React.FC<{
           <span className="text-xs font-medium text-gray-500">
             {progress?.interviewer?.name ?? "Interviewer"}'s assessment
           </span>
-          {typeof progress?.score === "number" && (
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Score: {progress.score}/100
-            </span>
-          )}
         </div>
         <p className="mt-2 text-sm text-gray-700">
           {progress?.feedback || "No written feedback provided."}

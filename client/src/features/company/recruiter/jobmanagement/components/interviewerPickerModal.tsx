@@ -11,6 +11,7 @@ interface InterviewerPickerModalProps {
   open: boolean;
   onClose: () => void;
   onSelect: (interviewer: InterviewerInfo) => void;
+  fetchInterviewers: () => Promise<InterviewerInfo[]>;
 }
 
 export const InterviewerPickerModal: React.FC<InterviewerPickerModalProps> = ({

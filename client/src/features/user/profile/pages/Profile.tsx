@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Header } from "../../shared/components/Header";
 import { fetchProfile } from "../../../shared/services/profileService";
 import {
   changeEmail,
@@ -20,8 +19,16 @@ import {
 } from "../services/profileService";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/reduxHooks";
 import { logout } from "../../../../redux/slice/authSlice";
+import LocationInput from "../../../shared/components/LocationInput";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Location {
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 type TempProfile = {
   name: string;
   file: File | null;
@@ -43,10 +50,14 @@ interface Experience {
   description?: string;
 }
 
+type ExperienceFormData = Omit<Experience, "id" | "years"> & {
+  years: string;
+};
+
 interface JobPreference {
   role: string;
   type: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERNSHIP";
-  location: string;
+  location: Location;
   workMode: "ONSITE" | "REMOTE" | "HYBRID";
   expectedSalary?: number;
 }
@@ -59,6 +70,10 @@ interface Education {
   graduationYear?: number;
 }
 
+type EducationFormData = Omit<Education, "id" | "graduationYear"> & {
+  graduationYear: string;
+};
+
 interface CoverLetter {
   id: string;
   title: string;
@@ -69,9 +84,10 @@ export interface Profile {
   profilePicture?: string;
 
   phone?: string;
-  location?: string;
+  location?: Location;
+  latitude?: number;
+  longitude?: number;
   summary?: string;
-
   skills: string[];
 
   education?: {
@@ -96,6 +112,7 @@ export interface Profile {
     id: string;
     url: string;
     name: string;
+    title: string;
     isDefault: boolean;
     uploadedAt: string;
   }[];
@@ -108,26 +125,6 @@ export interface Profile {
   }[];
 
   profileCompleted: boolean;
-}
-
-function isProfileComplete(p: Profile | null): boolean {
-  if (!p) return false;
-
-  return !!(
-    p.phone &&
-    p.phone.length > 0 &&
-    p.location &&
-    p.location.length > 0 &&
-    p.summary &&
-    p.summary.length > 0 &&
-    p.skills &&
-    p.skills.length > 0 &&
-    p.education &&
-    p.experience &&
-    p.experience.length > 0 &&
-    p.resumes &&
-    p.resumes.length > 0
-  );
 }
 
 // ─── Shared UI ────────────────────────────────────────────────────────────────
@@ -314,6 +311,10 @@ export function Profile() {
   // Location
   const [editLocOpen, setEditLocOpen] = useState(false);
   const [tempLoc, setTempLoc] = useState("");
+  const [tempCoordinates, setTempCoordinates] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
 
   // Skills
   const [addSkillOpen, setAddSkillOpen] = useState(false);
@@ -323,11 +324,11 @@ export function Profile() {
   const [addEduOpen, setAddEduOpen] = useState(false);
   const [editEdu, setEditEdu] = useState<Education | null>(null);
   const [deleteEduId, setDeleteEduId] = useState<string | null>(null);
-  const [tempEdu, setTempEdu] = useState<Omit<Education, "id">>({
+  const [tempEdu, setTempEdu] = useState<Omit<EducationFormData, "id">>({
     degree: "",
     fieldOfStudy: "",
     institution: "",
-    graduationYear: undefined,
+    graduationYear: "",
   });
 
   // Job Preferences
@@ -337,7 +338,11 @@ export function Profile() {
   const [tempJP, setTempJP] = useState<Omit<JobPreference, "id">>({
     role: "",
     type: "FULL_TIME",
-    location: "",
+    location: {
+      name: "",
+      latitude: null,
+      longitude: null,
+    },
     workMode: "ONSITE",
     expectedSalary: 0,
   });
@@ -346,10 +351,10 @@ export function Profile() {
   const [addExpOpen, setAddExpOpen] = useState(false);
   const [editExpOpen, setEditExpOpen] = useState<Experience | null>(null);
   const [deleteExpId, setDeleteExpId] = useState<string | null>(null);
-  const [tempExp, setTempExp] = useState<Omit<Experience, "id">>({
+  const [tempExp, setTempExp] = useState<Omit<ExperienceFormData, "id">>({
     title: "",
     company: "",
-    years: undefined,
+    years: "",
     description: "",
   });
 
@@ -359,6 +364,7 @@ export function Profile() {
   const [selectedResumeFile, setSelectedResumeFile] = useState<File | null>(
     null,
   );
+  const [resumeTitle, setResumeTitle] = useState("");
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
   // Cover Letter
@@ -385,10 +391,10 @@ export function Profile() {
   const [tempNewPassword, setTempNewPassword] = useState("");
   const [tempConfirmPassword, setTempConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
   const [skillToDelete, setSkillToDelete] = useState<string | null>(null);
-
-  const incomplete = !isProfileComplete(profile);
+  const [previewResume, setPreviewResume] = useState<
+    Profile["resumes"][number] | null
+  >(null);
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -569,14 +575,34 @@ export function Profile() {
 
   // ── Location ──
   const openEditLocation = () => {
-    setTempLoc(profile?.location ?? "");
+    setTempLoc(profile?.location?.name || "");
+
+    setTempCoordinates(
+      profile?.location?.latitude != null &&
+        profile?.location?.longitude != null
+        ? {
+            lat: profile.location.latitude,
+            lon: profile.location.longitude,
+          }
+        : null,
+    );
     setEditLocOpen(true);
-    console.log(profile);
   };
 
   const handleChangeLoc = async () => {
+    if (!tempLoc.trim()) {
+      toast.error("Please select a location.");
+      return;
+    }
+    const payload = {
+      location: {
+        name: tempLoc,
+        latitude: tempCoordinates?.lat ?? null,
+        longitude: tempCoordinates?.lon ?? null,
+      },
+    };
     try {
-      const result = await changeBasicProfile({ location: tempLoc });
+      const result = await changeBasicProfile(payload);
       console.log(result);
       toast.success("Location changed successfully.");
       getProfile();
@@ -633,44 +659,55 @@ export function Profile() {
       degree: "",
       fieldOfStudy: "",
       institution: "",
-      graduationYear: undefined,
+      graduationYear: "",
     });
+    setEditEdu(null);
     setAddEduOpen(true);
   };
+
   const openEditEdu = (edu: Education) => {
     setEditEdu(edu);
     setTempEdu({
       degree: edu.degree,
       fieldOfStudy: edu.fieldOfStudy,
       institution: edu.institution,
-      graduationYear: edu.graduationYear,
+      graduationYear: edu.graduationYear ? String(edu.graduationYear) : "",
     });
   };
   const saveEdu = async () => {
+    if (
+      !tempEdu.degree.trim() ||
+      !tempEdu.fieldOfStudy.trim() ||
+      !tempEdu.institution.trim() ||
+      !tempEdu.graduationYear.trim()
+    ) {
+      toast.error("Please fill in all education fields.");
+      return;
+    }
+
+    const educationData = {
+      ...tempEdu,
+      graduationYear: Number(tempEdu.graduationYear),
+    };
+
     try {
       if (editEdu) {
-        const result = await updateProfileItem(
-          "education",
-          editEdu.id,
-          tempEdu,
-        );
-        console.log("Education update result:", result);
+        await updateProfileItem("education", editEdu.id, educationData);
         toast.success("Education updated.");
       } else {
-        const result = await addProfileItem("education", tempEdu);
-        console.log("Education add result:", result);
+        await addProfileItem("education", educationData);
         toast.success("Education added.");
       }
 
-      getProfile();
+      await getProfile();
     } catch (error: any) {
-      console.log(error?.response);
       toast.error(error?.response?.data?.message ?? "Something went wrong");
     } finally {
       setEditEdu(null);
       setAddEduOpen(false);
     }
   };
+
   const confirmDeleteEdu = async () => {
     if (!deleteEduId) {
       console.log("id required");
@@ -692,7 +729,11 @@ export function Profile() {
     setTempJP({
       role: profile?.jobPreference?.role ?? "",
       type: profile?.jobPreference?.type ?? "FULL_TIME",
-      location: profile?.jobPreference?.location ?? "",
+      location: profile?.jobPreference?.location ?? {
+        name: "",
+        latitude: null,
+        longitude: null,
+      },
       workMode: profile?.jobPreference?.workMode ?? "ONSITE",
       expectedSalary: profile?.jobPreference?.expectedSalary ?? 0,
     });
@@ -717,7 +758,7 @@ export function Profile() {
 
   // ── Experience ──
   const openAddExp = () => {
-    setTempExp({ title: "", company: "", years: 0, description: "" });
+    setTempExp({ title: "", company: "", years: "", description: "" });
     setAddExpOpen(true);
   };
   const openEditExp = (exp: Experience) => {
@@ -725,24 +766,33 @@ export function Profile() {
     setTempExp({
       title: exp.title,
       company: exp.company,
-      years: exp.years,
+      years: exp.years != null ? String(exp.years) : "",
       description: exp.description ?? "",
     });
   };
   const saveExp = async () => {
     try {
+      const experienceData: Omit<Experience, "id"> = {
+        title: tempExp.title.trim(),
+        company: tempExp.company.trim(),
+        years: tempExp.years.trim() ? Number(tempExp.years) : undefined,
+        description: tempExp.description?.trim(),
+      };
+      if (!tempExp.title.trim() || !tempExp.company.trim()) {
+        toast.error("Please enter the job title and company.");
+        return;
+      }
       if (editExpOpen) {
-        // Editing an existing experience — call PATCH with its _id
         const result = await updateProfileItem(
           "experience",
           editExpOpen.id,
-          tempExp,
+          experienceData,
         );
         console.log("Experience update result:", result);
         toast.success("Experience updated.");
       } else {
         // Adding a new experience — call POST
-        const result = await addProfileItem("experience", tempExp);
+        const result = await addProfileItem("experience", experienceData);
         console.log("Experience add result:", result);
         toast.success("Experience added.");
       }
@@ -800,11 +850,15 @@ export function Profile() {
       return;
     }
 
+    if (!resumeTitle.trim()) {
+      toast.error("Please enter a resume title.");
+      return;
+    }
+
     const formData = new FormData();
 
-    if (selectedResumeFile) {
-      formData.append("resume", selectedResumeFile);
-    }
+    formData.append("resume", selectedResumeFile);
+    formData.append("title", resumeTitle.trim());
 
     try {
       const result = await addResumeData(formData);
@@ -954,12 +1008,30 @@ export function Profile() {
         <label className="text-xs font-semibold text-gray-500 block mb-1">
           Location
         </label>
-        <input
-          value={tempJP.location}
-          onChange={(e) =>
-            setTempJP((p) => ({ ...p, location: e.target.value }))
+        <LocationInput
+          value={tempJP.location.name}
+          onChange={(value) =>
+            setTempJP((prev) => ({
+              ...prev,
+              location: {
+                name: value,
+                latitude: null,
+                longitude: null,
+              },
+            }))
           }
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
+          onSelect={(suggestion) =>
+            setTempJP((prev) => ({
+              ...prev,
+              location: {
+                name: suggestion.label,
+                latitude: suggestion.lat,
+                longitude: suggestion.lon,
+              },
+            }))
+          }
+          placeholder="Enter preferred job location"
+          inputClassName="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
         />
       </div>
       <div>
@@ -1009,11 +1081,9 @@ export function Profile() {
 
   return (
     <div className="min-h-screen bg-orange-50">
-      <Header />
-
       <main className="max-w-5xl mx-auto px-4 py-6">
         {/* Incomplete banner */}
-        {incomplete && (
+        {!profile?.profileCompleted && (
           <div className="mb-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <svg
               className="w-5 h-5 text-amber-500 mt-0.5 shrink-0"
@@ -1107,7 +1177,7 @@ export function Profile() {
               </div>
               {profile?.location ? (
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {profile.location}
+                  {profile?.location?.name}
                 </p>
               ) : (
                 <p className="text-sm text-gray-400 italic">
@@ -1241,7 +1311,7 @@ export function Profile() {
                       <div>
                         <p className="text-gray-400 text-xs">Location</p>
                         <p className="text-gray-700 font-medium">
-                          {profile.jobPreference.location}
+                          {profile?.jobPreference?.location?.name}{" "}
                         </p>
                       </div>
 
@@ -1385,32 +1455,6 @@ export function Profile() {
               </div>
             </div>
 
-            {/* Activity Stats */}
-            {/* <div className="bg-stone-700 rounded-2xl p-5 text-white">
-              <h2 className="font-bold text-lg mb-1">Activity Stats</h2>
-              <p className="text-stone-300 text-xs mb-4">Applied Jobs</p>
-              <div className="flex flex-col gap-3">
-                <div className="bg-blue-500 rounded-2xl p-4 text-center">
-                  <p className="text-sm font-medium text-blue-100">Ongoing</p>
-                  <p className="text-3xl font-black mt-1">
-                    {activityStats.ongoing}
-                  </p>
-                </div>
-                <div className="bg-green-500 rounded-2xl p-4 text-center">
-                  <p className="text-sm font-medium text-green-100">Hired</p>
-                  <p className="text-3xl font-black mt-1">
-                    {activityStats.hired}
-                  </p>
-                </div>
-                <div className="bg-red-500 rounded-2xl p-4 text-center">
-                  <p className="text-sm font-medium text-red-100">Rejected</p>
-                  <p className="text-3xl font-black mt-1">
-                    {activityStats.rejected}
-                  </p>
-                </div>
-              </div>
-            </div> */}
-
             {/* Resume */}
             <SectionCard>
               <div className="flex items-center justify-between mb-3">
@@ -1418,18 +1462,21 @@ export function Profile() {
                 <OrangeBtn
                   onClick={() => {
                     setSelectedResumeFile(null);
+                    setResumeTitle("");
                     setAddResumeOpen(true);
                   }}
                 >
                   Add
                 </OrangeBtn>
               </div>
+
               <div className="flex flex-col gap-2">
                 {profile?.resumes.length === 0 && (
                   <p className="text-sm text-gray-400 italic">
                     No resume uploaded.
                   </p>
                 )}
+
                 {profile?.resumes.map((r) => (
                   <div
                     key={r.id}
@@ -1446,29 +1493,33 @@ export function Profile() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a2 2 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
                     </div>
+
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-700 truncate">
-                        {r.name}
+                      <p className="text-sm font-semibold text-gray-800 truncate">
+                        {r.title}
                       </p>
+
+                      <p className="text-xs text-gray-500 truncate">{r.name}</p>
+
                       {r.isDefault && (
                         <span className="text-xs bg-orange-100 text-orange-600 font-semibold px-2 py-0.5 rounded-full">
                           Default
                         </span>
                       )}
                     </div>
+
                     <div className="flex flex-col gap-1 shrink-0 items-end">
-                      {/* {!r.isDefault && (
-                        <button
-                          onClick={() => setDefaultResume(r.id)}
-                          className="text-xs text-blue-500 hover:underline font-medium"
-                        >
-                          Set Default
-                        </button>
-                      )} */}
+                      <button
+                        onClick={() => setPreviewResume(r)}
+                        className="text-xs text-blue-500 hover:underline font-medium"
+                      >
+                        Preview
+                      </button>
+
                       <button
                         onClick={() => setDeleteResumeId(r.id)}
                         className="text-xs text-red-500 hover:underline font-medium"
@@ -1638,11 +1689,20 @@ export function Profile() {
               <label className="text-xs font-semibold text-gray-500 block mb-1">
                 Location
               </label>
-              <input
+              <LocationInput
                 value={tempLoc}
-                onChange={(e) => setTempLoc(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
-                placeholder="e.g. Kerala, India"
+                onChange={(value) => {
+                  setTempLoc(value);
+                  setTempCoordinates(null);
+                }}
+                onSelect={(suggestion) => {
+                  setTempCoordinates({
+                    lat: suggestion.lat,
+                    lon: suggestion.lon,
+                  });
+                }}
+                placeholder="Enter your location"
+                inputClassName="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
               />
             </div>
             <button
@@ -1685,7 +1745,7 @@ export function Profile() {
             setEditEdu(null);
           }}
         >
-          <EduForm />
+          {EduForm()}
         </Modal>
       )}
 
@@ -1698,13 +1758,17 @@ export function Profile() {
             setTempJP({
               role: "",
               type: "FULL_TIME",
-              location: "",
+              location: {
+                name: "",
+                latitude: null,
+                longitude: null,
+              },
               workMode: "ONSITE",
               expectedSalary: 0,
             });
           }}
         >
-          <JPForm />
+          {JPForm()}
         </Modal>
       )}
 
@@ -1750,10 +1814,9 @@ export function Profile() {
               </label>
               <input
                 type="number"
-                min={0}
                 value={tempExp.years}
                 onChange={(e) =>
-                  setTempExp((p) => ({ ...p, years: Number(e.target.value) }))
+                  setTempExp((p) => ({ ...p, years: e.target.value }))
                 }
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
               />
@@ -1789,9 +1852,23 @@ export function Profile() {
           onClose={() => {
             setAddResumeOpen(false);
             setSelectedResumeFile(null);
+            setResumeTitle("");
           }}
         >
           <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">
+                Resume Title
+              </label>
+              <input
+                type="text"
+                value={resumeTitle}
+                onChange={(e) => setResumeTitle(e.target.value)}
+                placeholder="e.g. MERN Stack Developer Resume"
+                maxLength={100}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-orange-400"
+              />
+            </div>
             {/* Drop zone — clicking anywhere on it triggers the file picker */}
             <button
               type="button"
@@ -2067,6 +2144,37 @@ export function Profile() {
           confirmLabel="Log Out"
           confirmClass="bg-red-500 hover:bg-red-600"
         />
+      )}
+      {previewResume && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h2 className="font-semibold text-gray-800">
+                  {previewResume.title}
+                </h2>
+                <p className="text-xs text-gray-500">{previewResume.name}</p>
+              </div>
+
+              <button
+                onClick={() => setPreviewResume(null)}
+                className="text-gray-500 hover:text-red-500 text-2xl"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* PDF Preview */}
+            <div className="flex-1 bg-gray-100">
+              <iframe
+                src={`${previewResume.url}#toolbar=1`}
+                title="Resume Preview"
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

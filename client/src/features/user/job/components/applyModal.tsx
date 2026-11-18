@@ -8,8 +8,12 @@ import toast from "react-hot-toast";
 // ---- Types ----
 
 interface ResumeItem {
-  url: string; // cloudinary string
-  _id?: string; // present if your backend stores resumes as subdocs, optional if plain string array
+  _id?: string;
+  url: string;
+  title?: string;
+  name?: string;
+  isDefault?: boolean;
+  uploadedAt?: string;
 }
 
 interface CoverLetterItem {
@@ -77,12 +81,22 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
       setError(null);
       try {
         const result = await fetchProfile();
+        console.log("Profile : ", result);
         const profile = result.data.profile;
 
         // Normalize resumes: backend may return string[] or {url,_id}[]
         const rawResumes = profile?.resumes ?? [];
         const normalizedResumes: ResumeItem[] = rawResumes.map((r: any) =>
-          typeof r === "string" ? { url: r } : { url: r.url, _id: r._id },
+          typeof r === "string"
+            ? { url: r, title: "", name: "" }
+            : {
+                _id: r._id,
+                url: r.url,
+                title: r.title,
+                name: r.name,
+                isDefault: r.isDefault,
+                uploadedAt: r.uploadedAt,
+              },
         );
         setResumes(normalizedResumes);
 
@@ -182,6 +196,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
         },
       });
       toast.success("Application submitted");
+      onApplied?.();
       onClose();
     } catch (err: any) {
       console.log(err?.response?.data);
@@ -229,6 +244,7 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                     {resumes.map((resume) => {
                       const isSelected =
                         selectedResumeUrl === resume.url && !newResumeFile;
+
                       return (
                         <button
                           key={resume._id ?? resume.url}
@@ -244,10 +260,18 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                         >
                           <span className="flex items-center gap-2 min-w-0">
                             <FileText className="w-4 h-4 text-gray-500 shrink-0" />
-                            <span className="text-[13px] text-gray-700 truncate">
-                              {getFileNameFromUrl(resume.url)}
+
+                            <span className="flex flex-col min-w-0">
+                              <span className="text-[13px] font-medium text-gray-800 truncate">
+                                {resume.title}
+                              </span>
+
+                              <span className="text-[11px] text-gray-400 truncate">
+                                {resume.name}
+                              </span>
                             </span>
                           </span>
+
                           {isSelected && (
                             <Check className="w-4 h-4 text-orange-500 shrink-0" />
                           )}
@@ -264,9 +288,11 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({
                 {/* Upload new resume */}
                 <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-gray-300 text-gray-500 text-[13px] cursor-pointer hover:bg-gray-50 transition-colors">
                   <Upload className="w-4 h-4" />
+
                   {newResumeFile
                     ? newResumeFile.name
                     : "Upload a different resume"}
+
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"

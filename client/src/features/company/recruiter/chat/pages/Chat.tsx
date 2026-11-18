@@ -246,9 +246,6 @@ export function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const initializedForRef = useRef<string | null>(null);
 
-  // Step 1: create-or-get the conversation for this application
-  // Recruiter can always initiate, so no "locked" state to worry about here —
-  // only genuine failures (network, not found, not the job owner) hit "error".
   useEffect(() => {
     if (!applicationId) return;
     if (initializedForRef.current === applicationId) return; // StrictMode double-invoke guard
@@ -273,6 +270,11 @@ export function ChatPage() {
   useEffect(() => {
     if (!conversation || !socket) return;
 
+    const markRead = () =>
+      markConversationAsRead(conversation._id).catch((error: any) =>
+        console.error(error?.response ?? error),
+      );
+
     const fetchMessages = async () => {
       try {
         const result = await getMessages(conversation._id);
@@ -284,13 +286,12 @@ export function ChatPage() {
 
     fetchMessages();
     socket.emit("conversation:join", conversation._id);
-    markConversationAsRead(conversation._id).catch((error: any) =>
-      console.error(error?.response ?? error),
-    );
+    markRead();
 
     const handleNewMessage = (message: ChatMessage) => {
       if (message.conversationId !== conversation._id) return;
       setMessages((prev) => [...prev, message]);
+      if (message.senderId !== currentUserId) markRead();
     };
 
     const handleSocketError = (err: { message: string }) => {
@@ -305,7 +306,7 @@ export function ChatPage() {
       socket.off("message:new", handleNewMessage);
       socket.off("error", handleSocketError);
     };
-  }, [conversation, socket]);
+  }, [conversation, socket, currentUserId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
