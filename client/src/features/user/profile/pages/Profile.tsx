@@ -127,6 +127,31 @@ export interface Profile {
   profileCompleted: boolean;
 }
 
+export const validateName = (name: string): string | null => {
+  const trimmedName = name.trim();
+
+  if (!trimmedName) {
+    return "Name is required";
+  }
+
+  if (trimmedName.length < 2) {
+    return "Name must contain at least 2 characters";
+  }
+
+  if (trimmedName.length > 50) {
+    return "Name cannot exceed 50 characters";
+  }
+
+  const nameRegex =
+    /^[\p{L}\p{M}][\p{L}\p{M}0-9]*(?:[ _'-][\p{L}\p{M}0-9]+)*$/u;
+
+  if (!nameRegex.test(trimmedName)) {
+    return "Please enter a valid name";
+  }
+
+  return null;
+};
+
 // ─── Shared UI ────────────────────────────────────────────────────────────────
 function Modal({
   title,
@@ -395,6 +420,10 @@ export function Profile() {
   const [previewResume, setPreviewResume] = useState<
     Profile["resumes"][number] | null
   >(null);
+  // error
+  const [basicProfileError, setBasicProfileError] = useState<string | null>(
+    null,
+  );
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -492,6 +521,7 @@ export function Profile() {
 
   // ── Edit Profile ──
   const openEditProfile = () => {
+    setBasicProfileError(null);
     setTempProfile({
       name: user?.name ?? "",
       file: null,
@@ -513,6 +543,15 @@ export function Profile() {
   };
 
   const handleProfileChange = async () => {
+    const error = validateName(tempProfile.name);
+
+    if (error) {
+      setBasicProfileError(error);
+      return;
+    }
+
+    setBasicProfileError(null);
+
     const formData = new FormData();
 
     formData.append("name", tempProfile.name);
@@ -1609,6 +1648,9 @@ export function Profile() {
                 }
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
               />
+              {basicProfileError && (
+                <p className="text-red-500 text-xs mt-1">{basicProfileError}</p>
+              )}
             </div>
             <button
               onClick={handleProfileChange}
