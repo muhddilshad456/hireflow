@@ -48,12 +48,10 @@ export default function SignUp() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSignup = async () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length !== 0) return;
-
+    setLoading(true);
     try {
       const res = await signUpApi({
         name: form.name,
@@ -66,6 +64,8 @@ export default function SignUp() {
     } catch (error: any) {
       console.error("login failed : ", error.response.data);
       toast.error(error.response?.data?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,6 +199,8 @@ export default function SignUp() {
           {/* Signup Button */}
           <PrimaryButton
             text="Signup"
+            loading={loading}
+            disabled={loading}
             onClick={handleSignup}
             bgColor="#6abf4b"
             hoverColor="#6abf4b"

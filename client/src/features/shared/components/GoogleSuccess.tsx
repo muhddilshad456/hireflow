@@ -15,7 +15,7 @@ const GoogleSuccess = () => {
     if (token) {
       dispatch(
         setCredentials({
-          user: "null",
+          user: null,
           token,
         }),
       );

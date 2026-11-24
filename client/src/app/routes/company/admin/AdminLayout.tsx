@@ -65,13 +65,7 @@ const NAV: { id: Page; label: string; icon: ReactNode; path: string }[] = [
 ];
 
 /* ═══════════════════════ HEADER ════════════════════════════════════════ */
-export function Header({
-  onMenu,
-  status,
-}: {
-  onMenu?: () => void;
-  status?: Status;
-}) {
+export function Header({ onMenu }: { onMenu?: () => void; status?: Status }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -146,9 +140,6 @@ export function Header({
 
 /* ═══════════════════════ SIDEBAR ════════════════════════════════════════ */
 function Sidebar({
-  active,
-  onNav,
-  status,
   onClose,
   isMobile,
 }: {

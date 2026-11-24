@@ -123,26 +123,6 @@ const Badge = ({ status }: BadgeProps) => {
   );
 };
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-interface StatCardProps {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}
-
-const StatCard = ({ label, value, highlight = false }: StatCardProps) => (
-  <div className="bg-slate-50 rounded-xl p-4 flex-1 min-w-0">
-    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-      {label}
-    </p>
-    <p
-      className={`text-2xl font-bold ${highlight ? "text-emerald-500" : "text-slate-800"}`}
-    >
-      {value}
-    </p>
-  </div>
-);
-
 // ── Phase Label ───────────────────────────────────────────────────────────────
 interface PhaseLabelProps {
   phase: string;
@@ -264,8 +244,8 @@ const JobCard = ({ job }: JobCardProps) => {
 interface FilterBarProps {
   search: string;
   onSearch: (v: string) => void;
-  statusFilter: string;
-  onStatusFilter: (v: string) => void;
+  statusFilter?: string;
+  onStatusFilter?: (v: string) => void;
   categoryFilter: string;
   onCategoryFilter: (v: string) => void;
   handleOpenAddJobModal: () => void;
@@ -274,8 +254,6 @@ interface FilterBarProps {
 const FilterBar = ({
   search,
   onSearch,
-  statusFilter,
-  onStatusFilter,
   categoryFilter,
   onCategoryFilter,
   handleOpenAddJobModal,

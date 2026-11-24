@@ -286,7 +286,7 @@ export function EditJobModal({
   const set = useCallback(
     <K extends keyof JobFormData>(key: K, val: JobFormData[K]) => {
       setForm((f) => ({ ...f, [key]: val }));
-      if (touched) setErrors((prev) => validate({ ...form, [key]: val }));
+      if (touched) setErrors(() => validate({ ...form, [key]: val }));
     },
     [form, touched],
   );

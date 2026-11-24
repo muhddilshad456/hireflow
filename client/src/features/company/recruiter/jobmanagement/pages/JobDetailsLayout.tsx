@@ -263,7 +263,7 @@ export const JobLayout: React.FC = () => {
     }
     try {
       console.log("form data : ", data);
-      const result = await updateJobApi(jobId, data);
+      await updateJobApi(jobId, data);
       toast.success("Job updated.");
       await getJobDetails();
     } catch (error: any) {

@@ -20,7 +20,7 @@ interface InterviewStageConfig {
 
 export function createInterviewStage(config: InterviewStageConfig) {
   return function InterviewStage({ stage }: { stage: StageDetail }) {
-    const { jobId, refetchJob } = useOutletContext<JobLayoutOutletContext>();
+    const { refetchJob } = useOutletContext<JobLayoutOutletContext>();
 
     if (stage.candidates.length === 0) {
       return (
@@ -103,7 +103,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                       onRequestInterview={(date, time, interviewerId) =>
                         handleRequestInterview(c, date, time, interviewerId)
                       }
-                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      fetchInterviewers={() => fetchInterviewersStub()}
                       hideSchedule
                     />
                     <FinalResultCard candidate={c} />
@@ -117,7 +117,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                       onRequestInterview={(date, time, interviewerId) =>
                         handleRequestInterview(c, date, time, interviewerId)
                       }
-                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      fetchInterviewers={() => fetchInterviewersStub()}
                       hideSchedule
                     />
                     <InterviewResultCard
@@ -138,7 +138,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                       onRequestInterview={(date, time, interviewerId) =>
                         handleRequestInterview(c, date, time, interviewerId)
                       }
-                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      fetchInterviewers={() => fetchInterviewersStub()}
                       hideSchedule
                     />
                     <div className="rounded-lg border border-green-200 bg-green-50/50 p-3 text-sm">
@@ -166,7 +166,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                       onRequestInterview={(date, time, interviewerId) =>
                         handleRequestInterview(c, date, time, interviewerId)
                       }
-                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      fetchInterviewers={() => fetchInterviewersStub()}
                       hideSchedule
                     />
                     <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
@@ -187,7 +187,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                       onRequestInterview={(date, time, interviewerId) =>
                         handleRequestInterview(c, date, time, interviewerId)
                       }
-                      fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                      fetchInterviewers={() => fetchInterviewersStub()}
                     />
                   </>
                 ) : (
@@ -198,7 +198,7 @@ export function createInterviewStage(config: InterviewStageConfig) {
                     onRequestInterview={(date, time, interviewerId) =>
                       handleRequestInterview(c, date, time, interviewerId)
                     }
-                    fetchInterviewers={() => fetchInterviewersStub(jobId)}
+                    fetchInterviewers={() => fetchInterviewersStub()}
                   />
                 )}
               </div>
@@ -211,6 +211,6 @@ export function createInterviewStage(config: InterviewStageConfig) {
 }
 
 // placeholder until you wire the real endpoint
-async function fetchInterviewersStub(jobId: string) {
+async function fetchInterviewersStub() {
   return [];
 }

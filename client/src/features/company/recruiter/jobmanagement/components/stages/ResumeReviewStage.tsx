@@ -25,7 +25,7 @@ const toTitleCase = (raw: string) =>
     .join(" ");
 
 export function ResumeReviewStage({ stage }: StageComponentProps) {
-  const { jobId, refetchJob } = useOutletContext<JobLayoutOutletContext>();
+  const { refetchJob } = useOutletContext<JobLayoutOutletContext>();
 
   if (stage.candidates.length === 0) {
     return (

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Header } from "../../shared/components/Header";
 import toast from "react-hot-toast";
 import type { JobFilters } from "../../../../types/jobTypes";
 import { getMyApplications } from "../services/userJobService";
@@ -281,10 +280,6 @@ export function AppliedJobs() {
 
   const handleChange = (key: keyof JobFilters, value: string | string[]) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  const handleReset = () => {
-    setFilters(INITIAL_FILTERS);
   };
 
   const handlePageChange = (page: number) => {

@@ -143,7 +143,6 @@ function SuccessState() {
 
 const VerifyOtp = () => {
   const [done, setDone] = useState<boolean>(false);
-
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email;
@@ -162,6 +161,7 @@ const VerifyOtp = () => {
       });
       console.log(res.data);
       toast.success("Account created.");
+      setDone(true);
       navigate("/login");
     } catch (error: any) {
       console.log(error.response?.data);

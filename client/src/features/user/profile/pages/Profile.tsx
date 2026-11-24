@@ -358,7 +358,6 @@ export function Profile() {
 
   // Job Preferences
   const [editJPOpen, setEditJPOpen] = useState(false);
-  const [editJP, setEditJP] = useState<JobPreference | null>(null);
   const [deleteJPId, setDeleteJPId] = useState<string | null>(null);
   const [tempJP, setTempJP] = useState<Omit<JobPreference, "id">>({
     role: "",
@@ -660,7 +659,7 @@ export function Profile() {
       return;
     }
     try {
-      const result = await addSkill({ skill: tempSkill });
+      await addSkill({ skill: tempSkill });
       toast.success("Skill added successfully.");
       setTempSkill("");
       getProfile();
@@ -753,7 +752,7 @@ export function Profile() {
       return;
     }
     try {
-      const result = await removeProfileItem("education", deleteEduId);
+      await removeProfileItem("education", deleteEduId);
       toast.success("Education deleted successfully.");
       setDeleteEduId(null);
       getProfile();
@@ -851,7 +850,7 @@ export function Profile() {
       return;
     }
     try {
-      const result = await removeProfileItem("experience", deleteExpId);
+      await removeProfileItem("experience", deleteExpId);
       toast.success("Experience deleted successfully.");
       setDeleteExpId(null);
       getProfile();
@@ -862,7 +861,6 @@ export function Profile() {
   };
 
   // ── Resume ──
-  const setDefaultResume = (id: string) => {};
   const confirmDeleteResume = async () => {
     console.log("Resume to delete : ", deleteResumeId);
     if (!deleteResumeId) {
@@ -870,7 +868,7 @@ export function Profile() {
       return;
     }
     try {
-      const result = await removeProfileItem("resumes", deleteResumeId);
+      await removeProfileItem("resumes", deleteResumeId);
       toast.success("Resume deleted successfully.");
       setDeleteResumeId(null);
       getProfile();
@@ -959,7 +957,7 @@ export function Profile() {
       return;
     }
     try {
-      const result = await removeProfileItem("coverLetters", deleteCLId);
+      await removeProfileItem("coverLetters", deleteCLId);
       toast.success("Coverletter deleted successfully.");
       setDeleteCLId(null);
       getProfile();
@@ -1794,7 +1792,7 @@ export function Profile() {
       {/* Add/Edit Job Preference */}
       {editJPOpen && (
         <Modal
-          title={editJP ? "Edit Job Preference" : "Add Job Preference"}
+          title="Edit Job Preference"
           onClose={() => {
             setEditJPOpen(false);
             setTempJP({

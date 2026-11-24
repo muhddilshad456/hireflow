@@ -43,11 +43,10 @@ export default function Login() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleLogin = async () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length !== 0) return;
+    setLoading(true);
     try {
       const res = await loginApi({
         email: form.email,
@@ -71,6 +70,8 @@ export default function Login() {
     } catch (error: any) {
       console.error("login failed : ", error.response?.data);
       toast.error(error.response?.data?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -191,6 +192,8 @@ export default function Login() {
           {/* Login Button */}
           <PrimaryButton
             text="Signup"
+            loading={loading}
+            disabled={loading}
             onClick={handleLogin}
             bgColor="#6abf4b"
             hoverColor="#6abf4b"

@@ -6,7 +6,6 @@ import type { GetInterviewDetailsResponse } from "../../../../../types/interview
 import { getInterviewDetails } from "../../../../company/interviewer/interviews/services/interviewServices";
 import { useWebRTC } from "../../../../shared/hooks/useWebRTC";
 import { useWebRTCSignaling } from "../../../../shared/hooks/useWebRTCSignaling";
-import { CandidateHeader } from "../../../../company/recruiter/jobmanagement/components/stage-shared/InterviewPrimitives";
 
 const formatStage = (name?: string) =>
   name

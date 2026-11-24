@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getProfileApi } from "../services/profileService";
-import { Building2, Palette } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { VerifyForm } from "../../dashboard/components/VerifyReqForm";
 import {
   getStatusApi,
@@ -51,32 +51,6 @@ type CompanyDetails = {
   profilePicture?: string; // if added
 };
 
-interface CompanyInfo {
-  companyName: string;
-  legalName: string;
-  registrationNumber: string;
-  businessType: string;
-  taxId: string;
-  contactEmail: string;
-  contactNumber: string;
-  website: string;
-  address: string;
-  logoUrl?: string;
-}
-
-const INITIAL_COMPANY: CompanyInfo = {
-  companyName: "TechCorp Solutions Inc.",
-  legalName: "TechCorp Solutions International Inc.",
-  registrationNumber: "RC-99827364510",
-  businessType: "Technology & Software Services",
-  taxId: "TX-863301-A",
-  contactEmail: "admin@techcorp.io",
-  contactNumber: "+1 (555) 012-3456",
-  website: "www.techcorp.io",
-  address:
-    "One Infinite Loop, Suite 100, Silicon Valley, San Jose, CA 95101, United States",
-};
-
 const passwordSchema = z
   .object({
     currentPassword: z.string().min(6, "Minimum 6 characters"),
@@ -93,9 +67,6 @@ export default function ProfilePage() {
   const [companyDetails, setCompanyDetails] = useState<CompanyDetails | null>(
     null,
   );
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(INITIAL_COMPANY);
-  const [draftCompany, setDraftCompany] =
-    useState<CompanyInfo>(INITIAL_COMPANY);
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationData>({ status: "not_submitted", adminNote: "" });
   const [showEditModal, setShowEditModal] = useState(false);
@@ -117,7 +88,6 @@ export default function ProfilePage() {
   });
 
   const handleOpenEdit = () => {
-    setDraftCompany({ ...companyInfo });
     setShowEditModal(true);
   };
 
@@ -706,79 +676,6 @@ function InfoField({
       ) : (
         <p className="text-sm text-gray-800 font-medium">{value}</p>
       )}
-    </div>
-  );
-}
-
-function FormField({
-  label,
-  value,
-  onChange,
-  type = "text",
-  options,
-  disabled,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: "text" | "select" | "textarea";
-  options?: string[];
-  disabled?: boolean;
-  hint?: string;
-}) {
-  const baseClass = `w-full border rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition ${disabled ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100" : "border-gray-200 bg-white"}`;
-  return (
-    <div>
-      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-        {label}
-      </label>
-      {type === "select" ? (
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={baseClass}
-        >
-          {options?.map((o) => (
-            <option key={o}>{o}</option>
-          ))}
-        </select>
-      ) : type === "textarea" ? (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          className={`${baseClass} resize-none`}
-        />
-      ) : (
-        <div className="relative">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            className={`${baseClass} ${disabled ? "pr-8" : ""}`}
-          />
-          {disabled && (
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25z"
-                />
-              </svg>
-            </span>
-          )}
-        </div>
-      )}
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
   );
 }

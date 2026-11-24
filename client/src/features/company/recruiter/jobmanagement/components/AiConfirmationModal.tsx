@@ -1,4 +1,3 @@
-import React from "react";
 import { Sparkles, X, ShieldCheck, Users, AlertCircle } from "lucide-react";
 
 interface AiFilterConfirmModalProps {

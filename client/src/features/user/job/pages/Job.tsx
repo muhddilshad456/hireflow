@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { MapPin, Briefcase, Wallet, Users, CalendarClock } from "lucide-react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getJobApi } from "../../../shared/services/jobService";
 import { ApplyModal } from "../components/applyModal";
 import { checkApplicationStatus } from "../services/userJobService";

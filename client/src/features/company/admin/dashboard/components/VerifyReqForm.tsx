@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import type { ReactNode, ChangeEvent } from "react";
 import type { VerificationFormData } from "../types/verification.types";
 import { Ico } from "../../../../../assets/icons/CompanyIcons";
+import toast from "react-hot-toast";
 
 interface FormErrors {
   [k: string]: string;
@@ -146,25 +147,33 @@ export function VerifyForm({
   const handleSubmit = async () => {
     if (!validate()) return;
 
-    const formData = new FormData();
+    setLd(true);
 
-    formData.append("companyName", fd.companyName);
-    formData.append("regNumber", fd.regNumber);
-    formData.append("email", fd.email);
-    formData.append("phone", fd.phone);
-    formData.append("website", fd.website || "");
-    formData.append("address", fd.address);
-    formData.append("description", fd.description);
-    formData.append("country", fd.country);
-    formData.append("state", fd.state);
-    formData.append("city", fd.city);
-    formData.append("zip", fd.zip);
+    try {
+      const formData = new FormData();
 
-    if (docFile) formData.append("document", docFile);
+      formData.append("companyName", fd.companyName);
+      formData.append("regNumber", fd.regNumber);
+      formData.append("email", fd.email);
+      formData.append("phone", fd.phone);
+      formData.append("website", fd.website || "");
+      formData.append("address", fd.address);
+      formData.append("description", fd.description);
+      formData.append("country", fd.country);
+      formData.append("state", fd.state);
+      formData.append("city", fd.city);
+      formData.append("zip", fd.zip);
 
-    if (logo) formData.append("profilePicture", logo);
+      if (docFile) formData.append("document", docFile);
+      if (logo) formData.append("profilePicture", logo);
 
-    onSubmit(formData);
+      await onSubmit(formData);
+    } catch (error) {
+      console.error("Company verification submission failed:", error);
+      toast.error("Failed to submit verification. Please try again.");
+    } finally {
+      setLd(false);
+    }
   };
 
   return (

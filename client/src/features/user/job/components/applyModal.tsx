@@ -33,17 +33,6 @@ interface ApplyModalProps {
 // ---- Helpers ----
 
 // Cloudinary urls look like: https://res.cloudinary.com/<cloud>/raw/upload/v123456/resumes/john_resume.pdf
-function getFileNameFromUrl(url: string): string {
-  try {
-    const withoutQuery = url.split("?")[0];
-    const parts = withoutQuery.split("/");
-    const last = parts[parts.length - 1];
-    return decodeURIComponent(last);
-  } catch {
-    return "Resume";
-  }
-}
-
 export const ApplyModal: React.FC<ApplyModalProps> = ({
   isOpen,
   jobId,

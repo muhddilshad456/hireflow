@@ -45,11 +45,10 @@ export default function AcceptInvite() {
   if (!id || !token) return;
 
   const handleCreate = async () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
     const errs = validate(form);
     setErrors(errs);
     if (Object.keys(errs).length !== 0) return;
+    setLoading(true);
     try {
       const result = await acceptInviteApi({
         id,
@@ -62,6 +61,8 @@ export default function AcceptInvite() {
     } catch (error: any) {
       console.error("login failed : ", error.response.data);
       toast.error(error.response?.data?.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -168,6 +169,8 @@ export default function AcceptInvite() {
           {/* Signup Button */}
           <PrimaryButton
             text="Create Account"
+            loading={loading}
+            disabled={loading}
             onClick={handleCreate}
             bgColor="#6abf4b"
             hoverColor="#6abf4b"

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "../../user/shared/components/Header";
 
@@ -26,28 +26,12 @@ export const EmailVerificationPage = () => {
   const newEmail: string = location.state?.email ?? "your new email";
 
   const [countdown, setCountdown] = useState<number>(0);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
 
   useEffect(() => {
     if (countdown <= 0) return;
     const id = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(id);
   }, [countdown]);
-
-  const handleResend = useCallback(async () => {
-    if (countdown > 0 || resendLoading) return;
-    setResendLoading(true);
-    setResendSuccess(false);
-    try {
-      // Replace with your actual API call, e.g. await api.resendVerificationEmail(newEmail)
-      await new Promise((r) => setTimeout(r, 1000));
-      setResendSuccess(true);
-      setCountdown(60);
-    } finally {
-      setResendLoading(false);
-    }
-  }, [countdown, resendLoading]);
 
   //   const canResend = countdown === 0 && !resendLoading;
 
@@ -117,28 +101,6 @@ export const EmailVerificationPage = () => {
                 in that email.
               </Step>
             </div>
-
-            {/* Resend success banner */}
-            {resendSuccess && (
-              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 mb-4 text-left">
-                <svg
-                  className="w-4 h-4 text-green-500 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4.5 12.75l6 6 9-13.5"
-                  />
-                </svg>
-                <p className="text-xs text-green-700">
-                  Verification email resent successfully.
-                </p>
-              </div>
-            )}
 
             {/* Resend button */}
             {/* <button

@@ -17,6 +17,7 @@ export interface AiMatchResultDto {
 }
 
 export interface RankedCandidateDto extends AiMatchResultDto {
+  name: string;
   userId: Types.ObjectId;
   profilePicture?: string;
 }

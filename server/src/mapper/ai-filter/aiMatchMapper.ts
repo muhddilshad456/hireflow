@@ -49,7 +49,7 @@ export class AiMatchMapper {
         ? {
             role: profile.jobPreference.role,
             type: profile.jobPreference.type,
-            location: profile.jobPreference.location,
+            location: profile.jobPreference.location.name,
             workMode: profile.jobPreference.workMode,
           }
         : undefined,
