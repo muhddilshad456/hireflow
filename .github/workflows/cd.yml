@@ -44,5 +44,5 @@ jobs:
           push: true
           tags: ghcr.io/muhddilshad456/hireflow-frontend:latest
           build-args: |
-            VITE_P_API_BASE_URL=http://3.107.8.1/api/v1
-            VITE_SOCKET_URL=http://3.107.8.1
+            VITE_P_API_BASE_URL=http://3.107.8.138/api/v1
+            VITE_SOCKET_URL=http://3.107.8.138
