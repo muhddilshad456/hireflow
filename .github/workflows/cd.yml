@@ -1,0 +1,46 @@
+name: HireFlow CD
+
+on:
+  workflow_run:
+    workflows: ["HireFlow CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./server
+          push: true
+          tags: ghcr.io/muhddilshad456/hireflow-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+        context: ./client
+        push: true
+        tags: ghcr.io/muhddilshad456/hireflow-frontend:latest
+        build-args: |
+          VITE_P_API_BASE_URL=http://3.107.8.138/api/v1
+          VITE_SOCKET_URL=http://3.107.8.138
