@@ -46,3 +46,15 @@ jobs:
           build-args: |
             VITE_P_API_BASE_URL=http://3.107.8.138/api/v1
             VITE_SOCKET_URL=http://3.107.8.138
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd ~/hireflow
+            docker compose pull
+            docker compose up -d
