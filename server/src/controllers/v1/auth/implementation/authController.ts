@@ -123,7 +123,7 @@ export class AuthController implements IAuthController {
       });
 
       res.redirect(
-        `http://localhost:5173/google-success?token=${result.accessToken}`,
+        `${process.env.FRONTEND_URL}/google-success?token=${result.accessToken}`,
       );
     } catch (error) {
       next(error);
