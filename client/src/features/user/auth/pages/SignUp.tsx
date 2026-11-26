@@ -6,6 +6,7 @@ import FormFieldInput from "../../../shared/components/FormFieldInput";
 import { signUpApi } from "../../../shared/services/authService";
 import PrimaryButton from "../../../shared/components/FormButton";
 import toast from "react-hot-toast";
+import { handleGoogleSignup } from "./Login";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -335,8 +336,6 @@ const Signup = () => {
       toast.error(error.response?.data?.message);
     }
   };
-
-  const handleGoogleSignup = () => console.log("Google signup");
 
   return (
     <div

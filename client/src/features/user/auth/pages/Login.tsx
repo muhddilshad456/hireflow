@@ -288,6 +288,15 @@ function LoginForm({
   );
 }
 
+const isLocalhost = window.location.hostname == "localhost";
+const API_URL = isLocalhost
+  ? import.meta.env.VITE_API_BASE_URL
+  : import.meta.env.VITE_P_API_BASE_URL;
+
+export const handleGoogleSignup = () => {
+  window.location.href = `${API_URL}/auth/google`;
+};
+
 // ── Root Component ────────────────────────────────────────────────────────────
 
 const Login = () => {
@@ -326,9 +335,6 @@ const Login = () => {
       console.error("login failed : ", error.response?.data);
     }
   };
-
-  const handleGoogleSignup = () =>
-    (window.location.href = "http://localhost:5000/api/v1/auth/google");
 
   return (
     <div
